@@ -37,6 +37,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("graduate", "졸업생"),
     )
 
+    # 기존 데이터 호환을 위해 nullable 허용 (가입 단계에서만 필수 검증)
+    name = models.CharField(
+        max_length=50,
+        verbose_name="이름",
+    )
     email = models.EmailField(unique=True, verbose_name="이메일")
     nickname = models.CharField(max_length=30, unique=True, verbose_name="닉네임")
     user_type = models.CharField(
@@ -55,6 +60,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
         null=True,
         verbose_name="학년"
+    )
+
+    # 졸업생(graduate)의 입학년도/기수 (13~22 범위, 검증은 serializer에서 수행)
+    admission_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        verbose_name="입학년도(기수)",
     )
 
     # Email verification
