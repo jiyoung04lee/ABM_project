@@ -10,6 +10,8 @@ from .utils import get_email_from_password_reset_token
 class RegisterSerializer(serializers.ModelSerializer):
     """회원가입 Serializer"""
 
+    name = serializers.CharField(required=True, allow_blank=False)
+    
     password = serializers.CharField(
         write_only=True,
         min_length=8,
@@ -26,12 +28,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             "email",
+            "name",
             "nickname",
             "password",
             "password_confirm",
             "user_type",
             "student_id",
             "grade",
+            "admission_year",
         )
 
     def validate_email(self, value):
@@ -54,6 +58,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         email = attrs.get("email")
         student_id = attrs.get("student_id")
         grade = attrs.get("grade")
+        admission_year = attrs.get("admission_year")
 
         # 비밀번호 확인 검증
         if password != password_confirm:
@@ -89,14 +94,25 @@ class RegisterSerializer(serializers.ModelSerializer):
                     "grade": "학년은 1~4 사이의 값이어야 합니다."
                 })
 
+            # 재학생 admission_year (있을 경우만 13~22 범위 검증)
+            if admission_year is not None and not (13 <= admission_year <= 22):
+                raise serializers.ValidationError({
+                    "admission_year": "입학년도는 13~22 사이의 값이어야 합니다."
+                })
+
         # 졸업생(graduate) 검증
         elif user_type == "graduate":
-            # student_id가 제공된 경우 8자리 숫자 검증
-            if student_id and not re.match(r"^\d{8}$", student_id):
+            # admission_year 필수 + 13~22 범위
+            if admission_year is None:
                 raise serializers.ValidationError({
-                    "student_id": "학번은 8자리 숫자여야 합니다."
+                    "admission_year": "졸업생은 입학년도(기수)가 필수입니다."
                 })
-            # grade가 제공된 경우 범위 검증
+            if not (13 <= admission_year <= 22):
+                raise serializers.ValidationError({
+                    "admission_year": "입학년도는 13~22 사이의 값이어야 합니다."
+                })
+
+            # grade가 제공된 경우 범위 검증 (optional)
             if grade is not None and not (1 <= grade <= 4):
                 raise serializers.ValidationError({
                     "grade": "학년은 1~4 사이의 값이어야 합니다."
@@ -161,10 +177,12 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "email",
+            "name",
             "nickname",
             "user_type",
             "student_id",
             "grade",
+            "admission_year",
             "is_verified",
             "created_at",
         )

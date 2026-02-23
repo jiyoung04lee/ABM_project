@@ -12,10 +12,12 @@ class UserAdmin(BaseUserAdmin):
     list_display = (
         "id",
         "email",
+        "name",
         "nickname",
         "user_type",
         "student_id",
         "grade",
+        "admission_year",
         "is_verified",
         "is_staff",
         "is_active",
@@ -34,7 +36,10 @@ class UserAdmin(BaseUserAdmin):
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        (_("Personal info"), {"fields": ("nickname", "user_type", "student_id", "grade")}),
+        (
+            _("Personal info"),
+            {"fields": ("name", "nickname", "user_type", "student_id", "grade", "admission_year")},
+        ),
         (
             _("Permissions"),
             {
