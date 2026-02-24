@@ -40,6 +40,14 @@ class PostListSerializer(serializers.ModelSerializer):
         if first_image:
             return first_image.file.url
         return None
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if instance.is_anonymous:
+            data["author"] = None
+
+        return data
 
 # 게시글 상세 Serializer
 class PostDetailSerializer(serializers.ModelSerializer):
@@ -79,6 +87,14 @@ class PostDetailSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.reactions.filter(user=request.user).exists()
         return False
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if instance.is_anonymous:
+            data["author"] = None
+
+        return data
 
 
 class PostCreateSerializer(serializers.ModelSerializer):
@@ -241,5 +257,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
         if instance.is_deleted:
             data["content"] = "삭제된 댓글입니다."
+
+        if instance.post.is_anonymous:
+            data["author"] = None
 
         return data
