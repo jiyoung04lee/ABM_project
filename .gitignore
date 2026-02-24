@@ -14,3 +14,5 @@ __pycache__/
 .DS_Store
 backend/db.sqlite3
 *.sqlite3
+
+media/  

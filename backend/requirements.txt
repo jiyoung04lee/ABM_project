@@ -6,6 +6,8 @@ djangorestframework-simplejwt==5.3.1
 drf-yasg==1.21.14
 inflection==0.5.1
 packaging==26.0
+pillow==12.1.1
+PyJWT==2.11.0
 python-dotenv==1.2.1
 pytz==2025.2
 PyYAML==6.0.3
