@@ -43,7 +43,11 @@ INSTALLED_APPS = [
     # local apps
     'apps.users',
     'apps.core',
+<<<<<<< HEAD
+    'logs',
+=======
     'apps.community',
+>>>>>>> origin/develop
 ]
 
 MIDDLEWARE = [
