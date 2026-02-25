@@ -43,7 +43,11 @@ INSTALLED_APPS = [
     # local apps
     'apps.users',
     'apps.core',
+<<<<<<< HEAD
     'logs',
+=======
+    'apps.community',
+>>>>>>> origin/develop
 ]
 
 MIDDLEWARE = [
@@ -184,3 +188,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 # production 예시 (주석 해제 후 사용):
 # CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",") or ["https://yourfrontend.com"]
+
+# Media files (파일 업로드용)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
