@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from django.http import JsonResponse
+from logs.utils import create_event_log
 
 from .models import User
 from .serializers import (
@@ -54,11 +55,20 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-
+        
         # 이메일 인증 토큰 생성·저장 후 메일 발송 훅만 호출 (토큰은 응답에 노출하지 않음)
         token = generate_email_verification_token()
         store_verification_token(user.email, token)
         send_verification_email(user.email, token)
+        
+        # 로그 저장 (회원가입)
+        create_event_log(
+            event_type="signup",
+            page="/api/users/register/",
+            user_type=user.user_type,
+            grade_at_event=user.grade,
+            utm_source=request.query_params.get("utm_source"),
+        )
 
         return Response(
             {
@@ -123,6 +133,15 @@ class LoginView(generics.GenericAPIView):
         # JWT 토큰 생성
         refresh = RefreshToken.for_user(user)
         access_token = refresh.access_token
+
+        # 🔥 로그 저장 (로그인)
+        create_event_log(
+            event_type="login",
+            page="/api/users/login/",
+            user_type=user.user_type,
+            grade_at_event=user.grade,
+            utm_source=request.query_params.get("utm_source"),
+        )
 
         return Response(
             {
