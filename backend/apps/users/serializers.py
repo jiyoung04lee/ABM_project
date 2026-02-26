@@ -11,7 +11,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     """회원가입 Serializer"""
 
     name = serializers.CharField(required=True, allow_blank=False)
-    
+
     password = serializers.CharField(
         write_only=True,
         min_length=8,
@@ -50,6 +50,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("이미 사용 중인 닉네임입니다.")
         return value
 
+    def validate_student_id(self, value):
+        """학번 중복 검증 (값이 있을 때만)"""
+        if value and User.objects.filter(student_id=value).exists():
+            raise serializers.ValidationError("이미 등록된 학번입니다.")
+        return value
+
     def validate(self, attrs):
         """전체 필드 검증"""
         password = attrs.get("password")
@@ -68,12 +74,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         # 재학생(student) 검증
         if user_type == "student":
-            # 이메일 도메인 검증 (@kookmin.ac.kr)
-            if not email.endswith("@kookmin.ac.kr"):
-                raise serializers.ValidationError({
-                    "email": "재학생은 @kookmin.ac.kr 도메인의 이메일만 사용 가능합니다."
-                })
-
             # student_id 필수 및 8자리 숫자 검증
             if not student_id:
                 raise serializers.ValidationError({
@@ -157,11 +157,6 @@ class LoginSerializer(serializers.Serializer):
             if not user.is_active:
                 raise serializers.ValidationError("비활성화된 계정입니다.")
 
-            if not user.is_verified:
-                raise serializers.ValidationError(
-                    "이메일 인증이 완료되지 않았습니다. 이메일을 확인해주세요."
-                )
-
             attrs["user"] = user
         else:
             raise serializers.ValidationError("이메일과 비밀번호를 모두 입력해주세요.")
@@ -223,6 +218,39 @@ class EmailVerificationSerializer(serializers.Serializer):
             })
 
         attrs["user"] = user
+        return attrs
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """비밀번호 변경 Serializer (로그인 상태)"""
+
+    current_password = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        help_text="현재 비밀번호"
+    )
+    new_password = serializers.CharField(
+        write_only=True,
+        min_length=8,
+        style={"input_type": "password"},
+        help_text="새 비밀번호 (최소 8자)"
+    )
+    new_password_confirm = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        help_text="새 비밀번호 확인"
+    )
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        if not user.check_password(attrs["current_password"]):
+            raise serializers.ValidationError({
+                "current_password": "현재 비밀번호가 올바르지 않습니다."
+            })
+        if attrs["new_password"] != attrs["new_password_confirm"]:
+            raise serializers.ValidationError({
+                "new_password_confirm": "새 비밀번호가 일치하지 않습니다."
+            })
         return attrs
 
 

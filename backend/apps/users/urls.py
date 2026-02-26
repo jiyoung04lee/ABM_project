@@ -13,6 +13,11 @@ urlpatterns = [
     path("login/", views.LoginView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("me/", views.MeView.as_view(), name="me"),
+    # 비밀번호 변경 (로그인 필수)
+    path("change-password/", views.ChangePasswordView.as_view(), name="change_password"),
+    # 중복확인 (throttle 없음)
+    path("check-nickname/", views.check_nickname, name="check_nickname"),
+    path("check-student-id/", views.check_student_id, name="check_student_id"),
     # Password reset (PasswordResetThrottle: 3/min)
     path("password-reset/request/", views.PasswordResetRequestView.as_view(), name="password_reset_request"),
     path("password-reset/confirm/", views.PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
