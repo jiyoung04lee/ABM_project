@@ -177,6 +177,16 @@ SIMPLE_JWT = {
     "TOKEN_TYPE_CLAIM": "token_type",
 }
 
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+        }
+    }
+}
+
 # CORS: 로컬 개발은 아래만 사용. production 에서는 프론트 도메인만 허용하도록 변경.
 # 예: CORS_ALLOWED_ORIGINS = ["https://yourfrontend.com"] 또는 env 로 로드
 CORS_ALLOWED_ORIGINS = [
