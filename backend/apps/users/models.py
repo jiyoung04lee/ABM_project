@@ -70,7 +70,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     # Email verification
-    is_verified = models.BooleanField(default=False, verbose_name="이메일 인증 완료")
+    is_verified = models.BooleanField(default=True, verbose_name="이메일 인증 완료")
 
     # Django default fields
     is_staff = models.BooleanField(default=False, verbose_name="관리자 권한")

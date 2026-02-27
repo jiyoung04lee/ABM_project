@@ -1,0 +1,117 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { CommunityPost } from "../types";
+import Image from "next/image";
+import PostMeta from "./PostMeta";
+import { togglePostLike } from "@/shared/api/community";
+import { AxiosError } from "axios";
+
+interface Props {
+  post: CommunityPost;
+}
+
+export default function CommunityPostItem({ post }: Props) {
+  const router = useRouter();
+
+  const handleMoveDetail = () => {
+    router.push(`/community/${post.id}`);
+  };
+
+  // 초기값은 서버 응답 기반
+  const [liked, setLiked] = useState(post.is_liked);
+  const [likeCount, setLikeCount] = useState(post.like_count);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (isLoading) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const res = await togglePostLike(post.id);
+
+      // 서버 응답 기준으로 상태 변경
+      setLiked(res.data.liked);
+      setLikeCount(res.data.like_count);
+    } catch (err) {
+      const error = err as AxiosError;
+
+      if (error.response?.status === 401) {
+        alert("로그인이 필요합니다.");
+      } else {
+        setError("좋아요 처리 중 오류가 발생했습니다.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+  return (
+    <div onClick={handleMoveDetail} className="cursor-pointer">
+      <div className="border-b border-[#E5E7EB] py-3">
+
+        <PostMeta
+          author={post.author_name}
+          createdAt={post.created_at}
+        />
+
+        {post.thumbnail && (
+          <div className="mb-4 rounded-lg overflow-hidden">
+            <Image
+              src={`${BASE_URL}${post.thumbnail}`}
+              alt={post.title}
+              width={800}
+              height={400}
+              className="w-full object-cover rounded-lg"
+            />
+          </div>
+        )}
+
+        <h3 className="text-[16px] font-semibold leading-[24px] tracking-[-0.31px] text-[#0A0A0A]">
+          {post.title}
+        </h3>
+
+        <div className="mt-4 flex justify-end gap-4 text-[12px] text-[#6A7282]">
+          <button
+            onClick={handleLike}
+            disabled={isLoading}
+            className="flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Image
+              src={liked ? "/icons/like-filled.svg" : "/icons/like.svg"}
+              alt="like"
+              width={14}
+              height={14}
+            />
+            {likeCount}
+          </button>
+
+          <div className="flex items-center gap-1">
+            <Image
+              src="/icons/comment.svg"
+              alt="comment"
+              width={14}
+              height={14}
+            />
+            {post.comment_count}
+          </div>
+        </div>
+
+        {error && (
+          <div className="text-red-500 text-xs mt-1 text-right">
+            {error}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}

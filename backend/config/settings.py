@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     # local apps
     'apps.users',
     'apps.core',
+    'logs',
     'apps.community',
 ]
 

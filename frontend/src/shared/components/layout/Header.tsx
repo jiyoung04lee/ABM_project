@@ -1,15 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Mail, Bell } from "lucide-react";
 
-interface HeaderProps {
-  isLoggedIn?: boolean;
-}
-
-export default function Header({ isLoggedIn = true }: HeaderProps) {
+export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // TODO: 추후 쪽지/알림 API로 대체
+  const messageCount = 0;
+  const notificationCount = 0;
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    setIsLoggedIn(!!token);
+  }, [pathname]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    setIsLoggedIn(false);
+    window.location.href = "/";
+  };
 
   const menus = [
     { name: "홈", path: "/" },
@@ -58,28 +72,22 @@ export default function Header({ isLoggedIn = true }: HeaderProps) {
         <div className="flex items-center gap-6">
           {isLoggedIn ? (
             <>
-              <div className="relative">
-                <Image
-                  src="/icons/email.svg"
-                  alt="email"
-                  width={24}
-                  height={24}
-                />
-                <span className="absolute -top-2 -right-2 bg-[#FB2C36] text-white text-xs px-1.5 rounded-full">
-                  5
-                </span>
+              <div className="relative cursor-pointer">
+                <Mail className="w-6 h-6 text-gray-600" />
+                {messageCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-[#FB2C36] text-white text-xs px-1.5 rounded-full">
+                    {messageCount > 99 ? "99+" : messageCount}
+                  </span>
+                )}
               </div>
 
-              <div className="relative">
-                <Image
-                  src="/icons/bell.svg"
-                  alt="bell"
-                  width={24}
-                  height={24}
-                />
-                <span className="absolute -top-2 -right-2 bg-[#FB2C36] text-white text-xs px-1.5 rounded-full">
-                  99+
-                </span>
+              <div className="relative cursor-pointer">
+                <Bell className="w-6 h-6 text-gray-600" />
+                {notificationCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-[#FB2C36] text-white text-xs px-1.5 rounded-full">
+                    {notificationCount > 99 ? "99+" : notificationCount}
+                  </span>
+                )}
               </div>
 
               <Link
@@ -89,7 +97,10 @@ export default function Header({ isLoggedIn = true }: HeaderProps) {
                 내 정보
               </Link>
 
-              <button className="text-gray-600 font-medium">
+              <button
+                onClick={handleLogout}
+                className="text-gray-600 font-medium hover:text-gray-900"
+              >
                 로그아웃
               </button>
             </>
