@@ -261,4 +261,22 @@ class CommentSerializer(serializers.ModelSerializer):
         if instance.post.is_anonymous:
             data["author"] = None
 
+
+class MyActivityCommentSerializer(serializers.ModelSerializer):
+    """내 활동 - 작성 댓글용 Serializer (원글 제목 포함)"""
+
+    post_id = serializers.IntegerField(source="post.id", read_only=True)
+    post_title = serializers.CharField(source="post.title", read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = [
+            "id",
+            "post_id",
+            "post_title",
+            "content",
+            "like_count",
+            "created_at",
+        ]
+
         return data
