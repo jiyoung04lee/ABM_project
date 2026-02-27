@@ -1,5 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    PermissionsMixin,
+    BaseUserManager,
+)
 
 
 class UserManager(BaseUserManager):
@@ -67,6 +71,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
         null=True,
         verbose_name="입학년도(기수)",
+    )
+
+    bio = models.TextField(blank=True, default="", verbose_name="자기소개")
+    profile_image = models.ImageField(
+        upload_to="users/profile/",
+        null=True,
+        blank=True,
+        verbose_name="프로필 사진",
     )
 
     # Email verification

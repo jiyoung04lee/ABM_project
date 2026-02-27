@@ -9,10 +9,11 @@ urlpatterns = [
     path("health/", views.health_check, name="health_check"),
     # Authentication (AuthThrottle: 5/min)
     path("register/", views.RegisterView.as_view(), name="register"),
-    path("verify-email/", views.VerifyEmailView.as_view(), name="verify_email"),
     path("login/", views.LoginView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("me/", views.MeView.as_view(), name="me"),
+    path("me/posts/", views.MyPostsView.as_view(), name="my_posts"),
+    path("me/comments/", views.MyCommentsView.as_view(), name="my_comments"),
     # 비밀번호 변경 (로그인 필수)
     path("change-password/", views.ChangePasswordView.as_view(), name="change_password"),
     # 중복확인 (throttle 없음)

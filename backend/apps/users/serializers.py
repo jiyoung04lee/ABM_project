@@ -178,6 +178,8 @@ class UserSerializer(serializers.ModelSerializer):
             "student_id",
             "grade",
             "admission_year",
+            "bio",
+            "profile_image",
             "is_verified",
             "created_at",
         )
@@ -308,4 +310,57 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError({"token": "해당 사용자를 찾을 수 없습니다."})
         attrs["user"] = user
+        return attrs
+
+
+class UpdateProfileSerializer(serializers.ModelSerializer):
+    """프로필 수정 Serializer (PATCH /api/users/me/)"""
+
+    class Meta:
+        model = User
+        fields = (
+            "name",
+            "nickname",
+            "bio",
+            "profile_image",
+            "grade",
+            "student_id",
+            "admission_year",
+        )
+
+    def validate_nickname(self, value):
+        user = self.context["request"].user
+        if User.objects.exclude(pk=user.pk).filter(nickname=value).exists():
+            raise serializers.ValidationError("이미 사용 중인 닉네임입니다.")
+        return value
+
+    def validate_student_id(self, value):
+        if not value:
+            return value
+        user = self.context["request"].user
+        if User.objects.exclude(pk=user.pk).filter(student_id=value).exists():
+            raise serializers.ValidationError("이미 등록된 학번입니다.")
+        return value
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        user_type = user.user_type
+
+        grade = attrs.get("grade", getattr(user, "grade", None))
+        student_id = attrs.get("student_id", getattr(user, "student_id", None))
+        admission_year = attrs.get("admission_year", getattr(user, "admission_year", None))
+
+        if user_type == "student":
+            if grade is not None and not (1 <= grade <= 4):
+                raise serializers.ValidationError({"grade": "학년은 1~4 사이의 값이어야 합니다."})
+            if student_id and not re.match(r"^\d{8}$", student_id):
+                raise serializers.ValidationError({"student_id": "학번은 8자리 숫자여야 합니다."})
+            attrs.pop("admission_year", None)
+
+        elif user_type == "graduate":
+            if admission_year is not None and not (13 <= admission_year <= 25):
+                raise serializers.ValidationError({"admission_year": "입학년도는 13~25 사이의 값이어야 합니다."})
+            attrs.pop("grade", None)
+            attrs.pop("student_id", None)
+
         return attrs

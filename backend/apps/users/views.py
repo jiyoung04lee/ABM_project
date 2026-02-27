@@ -11,7 +11,7 @@ from .serializers import (
     RegisterSerializer,
     LoginSerializer,
     UserSerializer,
-    EmailVerificationSerializer,
+    UpdateProfileSerializer,
     ChangePasswordSerializer,
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
@@ -71,39 +71,6 @@ class RegisterView(generics.CreateAPIView):
         )
 
 
-class VerifyEmailView(generics.GenericAPIView):
-    """
-    이메일 인증 API
-    POST /api/users/verify-email/
-    Body: {"token": "인증토큰"}
-    Throttle: AuthThrottle (IP 기준 분당 5회)
-    """
-    serializer_class = EmailVerificationSerializer
-    permission_classes = [permissions.AllowAny]
-    throttle_classes = [AuthThrottle]
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.validated_data["user"]
-        token = serializer.validated_data["token"]
-
-        # 이메일 인증 완료 처리
-        user.is_verified = True
-        user.save()
-
-        # 토큰 삭제
-        delete_verification_token(token)
-
-        return Response(
-            {
-                "message": "이메일 인증이 완료되었습니다.",
-                "user": UserSerializer(user).data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
 
 class LoginView(generics.GenericAPIView):
     """
@@ -148,17 +115,27 @@ class LoginView(generics.GenericAPIView):
         )
 
 
-class MeView(generics.RetrieveAPIView):
+class MeView(generics.RetrieveUpdateAPIView):
     """
-    현재 로그인한 사용자 정보 조회 API
-    GET /api/users/me/
-    (throttle 없음)
+    GET  /api/users/me/ — 내 정보 조회
+    PATCH /api/users/me/ — 프로필 수정
     """
-    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method in ("PUT", "PATCH"):
+            return UpdateProfileSerializer
+        return UserSerializer
 
     def get_object(self):
         return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return super().update(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        serializer.save()
 
 
 class LogoutView(generics.GenericAPIView):
@@ -299,3 +276,45 @@ class PasswordResetConfirmView(generics.GenericAPIView):
             {"message": "비밀번호가 변경되었습니다."},
             status=status.HTTP_200_OK,
         )
+
+
+class MyPostsView(generics.ListAPIView):
+    """
+    내가 쓴 글 목록
+    GET /api/users/me/posts/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        from apps.community.models import Post
+        return (
+            Post.objects
+            .filter(author=self.request.user, is_deleted=False)
+            .select_related("category")
+            .order_by("-created_at")
+        )
+
+    def get_serializer_class(self):
+        from apps.community.serializers import PostListSerializer
+        return PostListSerializer
+
+
+class MyCommentsView(generics.ListAPIView):
+    """
+    내가 쓴 댓글 목록
+    GET /api/users/me/comments/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        from apps.community.models import Comment
+        return (
+            Comment.objects
+            .filter(author=self.request.user, is_deleted=False)
+            .select_related("post")
+            .order_by("-created_at")
+        )
+
+    def get_serializer_class(self):
+        from apps.community.serializers import MyActivityCommentSerializer
+        return MyActivityCommentSerializer
