@@ -3,7 +3,7 @@ from rest_framework.exceptions import ValidationError
 from django.db import transaction
 import os
 
-from .models import Post, PostFile, Comment
+from .models import Post, PostFile, Comment, Category
 
 # 파일 Serializer
 class PostFileSerializer(serializers.ModelSerializer):
@@ -22,6 +22,7 @@ class PostListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "content",
             "author_name",
             "like_count",
             "is_liked",
@@ -41,6 +42,7 @@ class PostListSerializer(serializers.ModelSerializer):
             return first_image.file.url
         return None
     
+    
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
@@ -55,6 +57,8 @@ class PostDetailSerializer(serializers.ModelSerializer):
     files = PostFileSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
     category_name = serializers.CharField(source="category.name", read_only=True)
+    thumbnail = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -74,6 +78,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "files",
             "category",
             "category_name",
+            "comments",
         ]
         read_only_fields = ["author"]   
 
@@ -95,6 +100,27 @@ class PostDetailSerializer(serializers.ModelSerializer):
             data["author"] = None
 
         return data
+    
+    def get_thumbnail(self, obj):
+        request = self.context.get("request")
+        if obj.thumbnail:
+            return request.build_absolute_uri(obj.thumbnail.url)
+        return None
+    
+    def get_comments(self, obj):
+        request = self.context.get("request")
+
+        comments = (
+            obj.comments
+            .filter(parent__isnull=True, is_deleted=False)
+            .select_related("author")
+        )
+
+        return CommentSerializer(
+            comments,
+            many=True,
+            context={"request": request}
+        ).data
 
 
 class PostCreateSerializer(serializers.ModelSerializer):
@@ -108,11 +134,22 @@ class PostCreateSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True
     )
+    thumbnail_index = serializers.IntegerField(
+        required=False,
+        write_only=True
+    )
 
     class Meta:
         model = Post
-        fields = ["title", "content", "is_anonymous", "category", "existing_files", "new_files"]
-
+        fields = [
+            "title",
+            "content",
+            "is_anonymous",
+            "category",
+            "existing_files",
+            "new_files",
+            "thumbnail_index", 
+        ]
     # 파일 검증 추가
     def validate_files(self, files):
         allowed_image_ext = [".jpg", ".jpeg", ".png", ".webp"]
@@ -148,32 +185,42 @@ class PostCreateSerializer(serializers.ModelSerializer):
     # 트랜잭션 처리 추가 (안전성 강화)
     @transaction.atomic
     def create(self, validated_data):
-        files = validated_data.pop("files", [])
+        new_files = validated_data.pop("new_files", [])
+        thumbnail_index = validated_data.pop("thumbnail_index", None)
+
         user = self.context["request"].user
         post = Post.objects.create(author=user, **validated_data)
-        first_image = None
 
-        for index, file in enumerate(files):
+        created_files = []
+
+        for index, file in enumerate(new_files):
             content_type = getattr(file, "content_type", "")
 
             if content_type.startswith("image/"):
                 file_type = "image"
-                if first_image is None:
-                    first_image = file
             else:
                 file_type = "pdf"
 
-            PostFile.objects.create(
+            post_file = PostFile.objects.create(
                 post=post,
                 file=file,
                 file_type=file_type,
                 order=index
             )
 
-        # 대표 이미지 자동 지정
-        if first_image:
-            post.thumbnail = first_image
-            post.save(update_fields=["thumbnail"])
+            created_files.append(post_file)
+
+        # 대표 이미지 설정
+        if thumbnail_index is not None:
+            try:
+                selected_file = created_files[int(thumbnail_index)]
+
+                if selected_file.file_type == "image":
+                    post.thumbnail = selected_file.file
+                    post.save(update_fields=["thumbnail"])
+
+            except (IndexError, ValueError):
+                pass
 
         return post
     
@@ -233,6 +280,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "content",
             "parent",
             "is_deleted",
+            "is_anonymous",
             "created_at",
             "replies",
             "is_liked",
@@ -243,6 +291,8 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_author_name(self, obj):
         if obj.is_deleted:
             return None
+        if obj.is_anonymous:
+            return "익명"
         return obj.author.nickname
 
     def get_replies(self, obj):
@@ -258,7 +308,7 @@ class CommentSerializer(serializers.ModelSerializer):
         if instance.is_deleted:
             data["content"] = "삭제된 댓글입니다."
 
-        if instance.post.is_anonymous:
+        if instance.is_anonymous:
             data["author"] = None
 
 
@@ -280,3 +330,8 @@ class MyActivityCommentSerializer(serializers.ModelSerializer):
         ]
 
         return data
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "group"]

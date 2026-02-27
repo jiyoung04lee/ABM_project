@@ -1,33 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CommunityPost } from "../types";
+import { Post } from "../types";
 import Image from "next/image";
 import PostMeta from "./PostMeta";
 import { togglePostLike } from "@/shared/api/community";
 import { AxiosError } from "axios";
 
 interface Props {
-  post: CommunityPost;
+  post: Post;
 }
 
-export default function CommunityPostItem({ post }: Props) {
+export default function PostItem({ post }: Props) {
   const router = useRouter();
 
   const handleMoveDetail = () => {
     router.push(`/community/${post.id}`);
   };
 
-  // 초기값은 서버 응답 기반
   const [liked, setLiked] = useState(post.is_liked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const MAX_LENGTH = 100;
+
+  const truncatedContent =
+    post.content.length > MAX_LENGTH
+      ? post.content.slice(0, MAX_LENGTH)
+      : post.content;
+
+  const isLong = post.content.length > MAX_LENGTH;
+
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-
     if (isLoading) return;
 
     try {
@@ -36,7 +43,6 @@ export default function CommunityPostItem({ post }: Props) {
 
       const res = await togglePostLike(post.id);
 
-      // 서버 응답 기준으로 상태 변경
       setLiked(res.data.liked);
       setLikeCount(res.data.like_count);
     } catch (err) {
@@ -52,38 +58,57 @@ export default function CommunityPostItem({ post }: Props) {
     }
   };
 
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  useEffect(() => {
+    setLiked(post.is_liked);
+    setLikeCount(post.like_count);
+  }, [post.is_liked, post.like_count]);
+
+  const BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
   return (
     <div onClick={handleMoveDetail} className="cursor-pointer">
       <div className="border-b border-[#E5E7EB] py-3">
 
         <PostMeta
-          author={post.author_name}
+          author={post.author_name ?? null}
           createdAt={post.created_at}
+          isAnonymous={post.is_anonymous}
         />
 
         {post.thumbnail && (
           <div className="mb-4 rounded-lg overflow-hidden">
-            <Image
+            <img
               src={`${BASE_URL}${post.thumbnail}`}
               alt={post.title}
               width={800}
-              height={400}
+              height={200}
               className="w-full object-cover rounded-lg"
             />
           </div>
         )}
 
-        <h3 className="text-[16px] font-semibold leading-[24px] tracking-[-0.31px] text-[#0A0A0A]">
+        <h3 className="text-[16px] font-semibold text-[#0A0A0A]">
           {post.title}
         </h3>
+
+        <p className="text-[15px] text-[#4B5563] mt-2 whitespace-pre-line">
+          {truncatedContent}
+          {isLong && (
+            <span
+              onClick={() => router.push(`/community/${post.id}`)}
+              className="text-[#6B7280] cursor-pointer ml-1"
+            >
+              ... 더보기
+            </span>
+          )}
+        </p>
 
         <div className="mt-4 flex justify-end gap-4 text-[12px] text-[#6A7282]">
           <button
             onClick={handleLike}
             disabled={isLoading}
-            className="flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1 disabled:opacity-50"
           >
             <Image
               src={liked ? "/icons/like-filled.svg" : "/icons/like.svg"}
@@ -110,7 +135,6 @@ export default function CommunityPostItem({ post }: Props) {
             {error}
           </div>
         )}
-
       </div>
     </div>
   );
