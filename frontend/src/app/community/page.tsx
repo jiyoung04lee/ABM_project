@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import CommunityWriteBox from "@/features/community/components/CommunityWriteBox";
-import CommunityPostItem from "@/features/community/components/CommunityPostItem";
-import CommunityFilterBar from "@/features/community/components/CommunityFilterBar";
-import { CommunityPost } from "@/features/community/types";
+import WriteBox from "@/features/post/components/WriteBox";
+import PostItem from "@/features/post/components/PostItem";
+import FilterBar from "@/features/post/components/FilterBar";
+import { Post } from "@/features/post/types";
 import { getPosts } from "@/shared/api/community";
 
 export default function CommunityPage() {
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedFilter, setSelectedFilter] = useState("전체");
@@ -46,7 +46,7 @@ export default function CommunityPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
-      <CommunityFilterBar
+      <FilterBar
         selectedFilter={selectedFilter}
         onFilterChange={setSelectedFilter}
         sortType={sortType}
@@ -55,14 +55,14 @@ export default function CommunityPage() {
         onSearchChange={setSearchKeyword}
       />
 
-      <CommunityWriteBox />
+      <WriteBox />
 
       <div className="mt-1">
         {loading ? (
           <div>로딩중...</div>
         ) : (
           posts.map((post) => (
-            <CommunityPostItem key={post.id} post={post} />
+            <PostItem key={post.id} post={post} />
           ))
         )}
       </div>

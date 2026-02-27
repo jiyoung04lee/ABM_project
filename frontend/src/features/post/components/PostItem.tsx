@@ -2,24 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CommunityPost } from "../types";
+import { Post } from "../types";
 import Image from "next/image";
 import PostMeta from "./PostMeta";
 import { togglePostLike } from "@/shared/api/community";
 import { AxiosError } from "axios";
 
 interface Props {
-  post: CommunityPost;
+  post: Post;
 }
 
-export default function CommunityPostItem({ post }: Props) {
+export default function PostItem({ post }: Props) {
   const router = useRouter();
 
   const handleMoveDetail = () => {
     router.push(`/community/${post.id}`);
   };
 
-  // 초기값은 서버 응답 기반
   const [liked, setLiked] = useState(post.is_liked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +26,6 @@ export default function CommunityPostItem({ post }: Props) {
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-
     if (isLoading) return;
 
     try {
@@ -36,7 +34,6 @@ export default function CommunityPostItem({ post }: Props) {
 
       const res = await togglePostLike(post.id);
 
-      // 서버 응답 기준으로 상태 변경
       setLiked(res.data.liked);
       setLikeCount(res.data.like_count);
     } catch (err) {
@@ -52,15 +49,17 @@ export default function CommunityPostItem({ post }: Props) {
     }
   };
 
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
   return (
     <div onClick={handleMoveDetail} className="cursor-pointer">
       <div className="border-b border-[#E5E7EB] py-3">
 
         <PostMeta
-          author={post.author_name}
+          author={post.author_name ?? null}
           createdAt={post.created_at}
+          isAnonymous={post.is_anonymous}
         />
 
         {post.thumbnail && (
@@ -75,7 +74,7 @@ export default function CommunityPostItem({ post }: Props) {
           </div>
         )}
 
-        <h3 className="text-[16px] font-semibold leading-[24px] tracking-[-0.31px] text-[#0A0A0A]">
+        <h3 className="text-[16px] font-semibold text-[#0A0A0A]">
           {post.title}
         </h3>
 
@@ -83,7 +82,7 @@ export default function CommunityPostItem({ post }: Props) {
           <button
             onClick={handleLike}
             disabled={isLoading}
-            className="flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1 disabled:opacity-50"
           >
             <Image
               src={liked ? "/icons/like-filled.svg" : "/icons/like.svg"}
@@ -110,7 +109,6 @@ export default function CommunityPostItem({ post }: Props) {
             {error}
           </div>
         )}
-
       </div>
     </div>
   );

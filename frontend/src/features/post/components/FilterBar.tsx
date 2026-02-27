@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { COMMUNITY_CATEGORIES } from "@/constants/communityCategories";
 
-const categories = ["전체", "공지", "홍보", "알쓸잡생", "기타"];
+const categories = COMMUNITY_CATEGORIES;
 
 interface Props {
   selectedFilter: string;
@@ -14,7 +15,7 @@ interface Props {
   onSearchChange: (value: string) => void;
 }
 
-export default function CommunityFilterBar({
+export default function FilterBar({
   selectedFilter,
   onFilterChange,
   sortType,
