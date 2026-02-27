@@ -20,10 +20,10 @@ export default function Header({ isLoggedIn = true }: HeaderProps) {
 
   return (
     <header className="fixed top-0 left-0 w-full bg-white border-b border-[#E5E7EB] z-50 min-w-[1024px]">
-      <div className="max-w-[1200px] mx-auto px-6 h-20 flex items-center justify-between">
+      <div className="max-w-[1200px] mx-auto px-6 h-18 flex items-center justify-between">
 
         {/* 왼쪽 영역 */}
-        <div className="flex items-center gap-14">
+        <div className="flex items-center gap-8">
           
           {/* 로고 */}
           <Link href="/" className="flex items-center">
@@ -33,7 +33,7 @@ export default function Header({ isLoggedIn = true }: HeaderProps) {
           </Link>
 
           {/* 메뉴 */}
-          <nav className="flex items-center gap-12 text-[18px] font-semibold">
+          <nav className="flex items-center gap-8 text-[18px] font-semibold">
             {menus.map((menu) => {
               const isActive = pathname === menu.path;
 
