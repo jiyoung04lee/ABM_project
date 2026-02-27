@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Post } from "../types";
 import Image from "next/image";
@@ -23,6 +23,15 @@ export default function PostItem({ post }: Props) {
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const MAX_LENGTH = 100;
+
+  const truncatedContent =
+    post.content.length > MAX_LENGTH
+      ? post.content.slice(0, MAX_LENGTH)
+      : post.content;
+
+  const isLong = post.content.length > MAX_LENGTH;
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -49,6 +58,11 @@ export default function PostItem({ post }: Props) {
     }
   };
 
+  useEffect(() => {
+    setLiked(post.is_liked);
+    setLikeCount(post.like_count);
+  }, [post.is_liked, post.like_count]);
+
   const BASE_URL =
     process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -64,11 +78,11 @@ export default function PostItem({ post }: Props) {
 
         {post.thumbnail && (
           <div className="mb-4 rounded-lg overflow-hidden">
-            <Image
+            <img
               src={`${BASE_URL}${post.thumbnail}`}
               alt={post.title}
               width={800}
-              height={400}
+              height={200}
               className="w-full object-cover rounded-lg"
             />
           </div>
@@ -77,6 +91,18 @@ export default function PostItem({ post }: Props) {
         <h3 className="text-[16px] font-semibold text-[#0A0A0A]">
           {post.title}
         </h3>
+
+        <p className="text-[15px] text-[#4B5563] mt-2 whitespace-pre-line">
+          {truncatedContent}
+          {isLong && (
+            <span
+              onClick={() => router.push(`/community/${post.id}`)}
+              className="text-[#6B7280] cursor-pointer ml-1"
+            >
+              ... 더보기
+            </span>
+          )}
+        </p>
 
         <div className="mt-4 flex justify-end gap-4 text-[12px] text-[#6A7282]">
           <button

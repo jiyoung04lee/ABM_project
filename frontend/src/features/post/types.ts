@@ -13,3 +13,33 @@ export interface Post {
   thumbnail?: string | null;
   category: string;
 }
+
+export interface PostDetail {
+  id: number;
+  title: string;
+  content: string;
+  author_name: string | null;
+  is_anonymous: boolean;
+  like_count: number;
+  is_liked: boolean;
+  category: string;
+  comment_count: number;
+  comments: Comment[];
+  thumbnail?: string | null;
+  attachments?: {
+    file: string;
+    type: "image" | "pdf";
+  }[];
+  created_at: string;
+}
+
+export interface Comment {
+  id: number;
+  author_name: string;
+  content: string;
+  created_at: string;
+  like_count: number;
+  is_liked: boolean;
+  parent: number | null;
+  replies: Comment[];
+}
