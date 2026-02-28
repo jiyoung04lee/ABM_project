@@ -91,7 +91,7 @@ export default function Header() {
               </div>
 
               <Link
-                href="/mypage"
+                href="/profile"
                 className="px-6 py-2 bg-[#2B7FFF] text-white rounded-xl font-medium"
               >
                 내 정보
