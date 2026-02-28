@@ -3,11 +3,27 @@ from django.conf import settings
 
 # Category
 class Category(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    slug = models.SlugField(unique=True)
+
+    GROUP_CHOICES = (
+        ("community", "커뮤니티"),
+        ("network_student", "네트워크-재학생"),
+        ("network_graduate", "네트워크-졸업생"),
+        ("network_qna", "네트워크-QNA"),
+    )
+
+    name = models.CharField(max_length=50)
+    slug = models.SlugField()
+    group = models.CharField(
+        max_length=30,
+        choices=GROUP_CHOICES,
+        default="community"  
+)
+
+    class Meta:
+        unique_together = ("slug", "group")
 
     def __str__(self):
-        return self.name
+        return f"{self.group} - {self.name}"
 
 # Post
 class Post(models.Model):
@@ -130,6 +146,7 @@ class Comment(models.Model):
     is_deleted = models.BooleanField(default=False)
     like_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_anonymous = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["created_at"]

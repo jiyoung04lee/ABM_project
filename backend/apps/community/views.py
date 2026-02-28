@@ -1,12 +1,12 @@
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 
 from django.db import models
-from django.db.models import Q, Exists, OuterRef, Prefetch
+from django.db.models import Q, Exists, OuterRef, Prefetch, F
 from django.utils import timezone
 from django.http import Http404
 from django.core.cache import cache
@@ -14,12 +14,13 @@ from django.core.cache import cache
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-from .models import Post, Comment, Reaction, CommentReaction
+from .models import Post, Comment, Reaction, CommentReaction, Category
 from .serializers import (
     PostListSerializer,
     PostDetailSerializer,
     PostCreateSerializer,
     CommentSerializer,
+    CategorySerializer,
 )
 from .permissions import IsAuthorOrReadOnly
 
@@ -116,14 +117,31 @@ class PostViewSet(ModelViewSet):
 
         if reaction:
             reaction.delete()
-            post.like_count = max(0, post.like_count - 1)
-            post.save()
-            return Response({"liked": False, "like_count": post.like_count})
+
+            Post.objects.filter(pk=post.pk).update(
+                like_count=F("like_count") - 1
+            )
+
+            post.refresh_from_db()
+
+            return Response({
+                "liked": False,
+                "like_count": post.like_count
+            })
+
         else:
             Reaction.objects.create(post=post, user=user)
-            post.like_count += 1
-            post.save()
-            return Response({"liked": True, "like_count": post.like_count})
+
+            Post.objects.filter(pk=post.pk).update(
+                like_count=F("like_count") + 1
+            )
+
+            post.refresh_from_db()
+
+            return Response({
+                "liked": True,
+                "like_count": post.like_count
+            })
         
     @action(detail=True, methods=["get"])
     def comments(self, request, pk=None):
@@ -136,15 +154,29 @@ class PostViewSet(ModelViewSet):
     def add_comment(self, request, pk=None):
         post = self.get_object()
 
-        serializer = CommentSerializer(data=request.data, context={"request": request})
+        serializer = CommentSerializer(
+            data=request.data,
+            context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
 
-        serializer.save(author=request.user, post=post)
+        comment = serializer.save(
+            author=request.user,
+            post=post
+        )
 
-        post.comment_count += 1
-        post.save()
+        # 여기서 직접 세팅 (더 안전)
+        comment.is_anonymous = request.data.get("is_anonymous", False)
+        comment.save()
 
-        return Response(serializer.data)
+        post.comment_count = F("comment_count") + 1
+        post.save(update_fields=["comment_count"])
+
+        comment.refresh_from_db()
+
+        return Response(
+            CommentSerializer(comment, context={"request": request}).data
+        )
     
     # 조회수 증가
     def retrieve(self, request, *args, **kwargs):
@@ -306,20 +338,42 @@ class CommentViewSet(ModelViewSet):
 
         if reaction:
             reaction.delete()
-            comment.like_count = max(0, comment.like_count - 1)
-            comment.save(update_fields=["like_count"])
+
+            Comment.objects.filter(pk=comment.pk).update(
+                like_count=F("like_count") - 1
+            )
+
+            comment.refresh_from_db()
+
             return Response({
                 "liked": False,
                 "like_count": comment.like_count
             })
+
         else:
             CommentReaction.objects.create(
                 comment=comment,
                 user=user
             )
-            comment.like_count += 1
-            comment.save(update_fields=["like_count"])
+
+            Comment.objects.filter(pk=comment.pk).update(
+                like_count=F("like_count") + 1
+            )
+
+            comment.refresh_from_db()
+
             return Response({
                 "liked": True,
                 "like_count": comment.like_count
             })
+
+class CategoryViewSet(ReadOnlyModelViewSet):
+    serializer_class = CategorySerializer
+    queryset = Category.objects.all()
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        group = self.request.query_params.get("group")
+        if group:
+            return self.queryset.filter(group=group)
+        return self.queryset
