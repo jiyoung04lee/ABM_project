@@ -329,7 +329,6 @@ class MyActivityCommentSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-        return data
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
