@@ -1,0 +1,83 @@
+from django.shortcuts import render
+from django.utils import timezone
+from datetime import timedelta
+from django.contrib.auth import get_user_model
+
+from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from .models import Notification
+from .serializers import NotificationSerializer
+
+User = get_user_model()
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # 30일 지난 알림 삭제
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+
+        Notification.objects.filter(
+            created_at__lt=thirty_days_ago
+        ).delete()
+
+        return Notification.objects.filter(
+            recipient=self.request.user
+        ).select_related("actor", "post", "comment")
+
+    # 읽지 않은 개수
+    @action(detail=False, methods=["get"])
+    def unread_count(self, request):
+        count = Notification.objects.filter(
+            recipient=request.user,
+            is_read=False
+        ).count()
+
+        return Response({"unread_count": count})
+
+    # 개별 읽음 처리 
+    @action(detail=True, methods=["patch"])
+    def read(self, request, pk=None):
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        return Response({"status": "read"})
+
+    # 전체 읽음 처리
+    @action(detail=False, methods=["patch"])
+    def read_all(self, request):
+        queryset = self.get_queryset().filter(is_read=False)
+        updated_count = queryset.update(is_read=True)
+
+        return Response({
+            "detail": f"{updated_count}개의 알림을 읽음 처리했습니다."
+        })
+
+    # 관리자 공지 발송
+    @action(detail=False, methods=["post"], permission_classes=[IsAdminUser])
+    def broadcast(self, request):
+        message = request.data.get("message")
+
+        if not message:
+            return Response(
+                {"detail": "메시지를 입력하세요."},
+                status=400
+            )
+
+        users = User.objects.all()
+
+        notifications = [
+            Notification(
+                recipient=user,
+                type="ADMIN_NOTICE",
+                message=message
+            )
+            for user in users
+        ]
+
+        Notification.objects.bulk_create(notifications)
+
+        return Response({"detail": "공지 발송 완료"})

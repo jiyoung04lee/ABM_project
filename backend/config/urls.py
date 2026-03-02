@@ -37,6 +37,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('apps.users.urls')),
     path('api/community/', include('apps.community.urls')),
+    path("api/notifications/", include("apps.notifications.urls")),
 
     # Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0)),

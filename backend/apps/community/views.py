@@ -23,6 +23,7 @@ from .serializers import (
     CategorySerializer,
 )
 from .permissions import IsAuthorOrReadOnly
+from apps.notifications.models import Notification
 
 class PostViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
@@ -118,6 +119,14 @@ class PostViewSet(ModelViewSet):
         if reaction:
             reaction.delete()
 
+            # 좋아요 알림 삭제
+            Notification.objects.filter(
+                recipient=post.author,
+                actor=user,
+                type="POST_LIKE",
+                post=post
+            ).delete()
+
             Post.objects.filter(pk=post.pk).update(
                 like_count=F("like_count") - 1
             )
@@ -137,6 +146,15 @@ class PostViewSet(ModelViewSet):
             )
 
             post.refresh_from_db()
+
+            # 알림 생성 (본인 제외)
+            if post.author != user:
+                Notification.objects.get_or_create(
+                    recipient=post.author,
+                    actor=user,
+                    type="POST_LIKE",
+                    post=post
+                )
 
             return Response({
                 "liked": True,
@@ -165,9 +183,29 @@ class PostViewSet(ModelViewSet):
             post=post
         )
 
-        # 여기서 직접 세팅 (더 안전)
         comment.is_anonymous = request.data.get("is_anonymous", False)
         comment.save()
+
+        if comment.parent:
+            # 대댓글이면 부모 댓글 작성자에게 알림
+            if comment.parent.author != request.user:
+                Notification.objects.create(
+                    recipient=comment.parent.author,
+                    actor=request.user,
+                    type="COMMENT_REPLY",
+                    post=post,
+                    comment=comment
+                )
+        else:
+            # 일반 댓글이면 게시글 작성자에게 알림
+            if post.author != request.user:
+                Notification.objects.create(
+                    recipient=post.author,
+                    actor=request.user,
+                    type="POST_COMMENT",
+                    post=post,
+                    comment=comment
+                )
 
         post.comment_count = F("comment_count") + 1
         post.save(update_fields=["comment_count"])
@@ -339,6 +377,13 @@ class CommentViewSet(ModelViewSet):
         if reaction:
             reaction.delete()
 
+            Notification.objects.filter(
+                recipient=comment.author,
+                actor=user,
+                type="COMMENT_LIKE",
+                comment=comment
+            ).delete()
+
             Comment.objects.filter(pk=comment.pk).update(
                 like_count=F("like_count") - 1
             )
@@ -361,6 +406,15 @@ class CommentViewSet(ModelViewSet):
             )
 
             comment.refresh_from_db()
+
+            if comment.author != user:
+                Notification.objects.get_or_create(
+                    recipient=comment.author,
+                    actor=user,
+                    type="COMMENT_LIKE",
+                    post=comment.post,
+                    comment=comment
+                )
 
             return Response({
                 "liked": True,
