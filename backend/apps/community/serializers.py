@@ -330,7 +330,8 @@ class MyActivityCommentSerializer(serializers.ModelSerializer):
             "like_count",
             "created_at",
         ]
-        
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category

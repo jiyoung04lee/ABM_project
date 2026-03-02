@@ -192,7 +192,9 @@ SWAGGER_SETTINGS = {
 # 예: CORS_ALLOWED_ORIGINS = ["https://yourfrontend.com"] 또는 env 로 로드
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
 ]
 # production 예시 (주석 해제 후 사용):
 # CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",") or ["https://yourfrontend.com"]
