@@ -3,7 +3,6 @@ from .models import Notification
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-
     actor_name = serializers.CharField(source="actor.nickname", read_only=True)
     post_title = serializers.CharField(source="post.title", read_only=True)
 
@@ -18,6 +17,8 @@ class NotificationSerializer(serializers.ModelSerializer):
             "type",
             "display_message",  
             "redirect_url",
+            "actor_name",
+            "post_title",
             "is_read",
             "created_at",
         ]
