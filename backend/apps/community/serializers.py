@@ -311,6 +311,8 @@ class CommentSerializer(serializers.ModelSerializer):
         if instance.is_anonymous:
             data["author"] = None
 
+        return data
+
 
 class MyActivityCommentSerializer(serializers.ModelSerializer):
     """내 활동 - 작성 댓글용 Serializer (원글 제목 포함)"""
