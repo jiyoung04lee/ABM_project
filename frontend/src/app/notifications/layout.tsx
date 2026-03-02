@@ -1,0 +1,17 @@
+import HeroBackground from "@/shared/components/layout/HeroBackground";
+import Header from "@/shared/components/layout/Header";
+
+export default function NotificationsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <HeroBackground variant="large">
+      <div className="w-full flex justify-center pt-32 pb-20 min-h-screen">
+        <Header />
+        {children}
+      </div>
+    </HeroBackground>
+  );
+}

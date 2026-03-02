@@ -1,4 +1,5 @@
 import "./globals.css";
+import { NotificationProvider } from "@/shared/contexts/NotificationContext";
 
 export default function RootLayout({
   children,
@@ -8,7 +9,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-screen">
-        {children}
+        <NotificationProvider>
+          {children}
+        </NotificationProvider>
       </body>
     </html>
   );
