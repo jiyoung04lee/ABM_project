@@ -37,11 +37,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('apps.users.urls')),
     path('api/community/', include('apps.community.urls')),
-<<<<<<< Updated upstream
     path("api/notifications/", include("apps.notifications.urls")),
-=======
     path("api/networks/", include("apps.networks.urls")),
->>>>>>> Stashed changes
 
     # Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0)),
