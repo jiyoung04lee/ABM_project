@@ -6,19 +6,24 @@ import { useEffect, useState } from "react";
 import { Mail, Bell } from "lucide-react";
 import api from "@/shared/api/axios";
 import { useNotification } from "@/shared/contexts/NotificationContext";
+import Logo from "@/shared/components/layout/Logo";
 
 export default function Header() {
   const router = useRouter();
 
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("access_token");
-  });
+  // SSR 단계에서는 항상 로그아웃 상태로 렌더링하고,
+  // 클라이언트 마운트 후에만 실제 로그인 여부를 반영한다.
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [notificationCount, setNotificationCount] = useState(0);
   const { unreadCount, setUnreadCount } = useNotification();
 
   const messageCount = 0;
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    setIsLoggedIn(!!token);
+  }, []);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -67,9 +72,7 @@ export default function Header() {
 
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center">
-            <div className="w-10 h-10 bg-[#2B7FFF] rounded-2xl flex items-center justify-center text-white font-semibold">
-              로고
-            </div>
+            <Logo />
           </Link>
 
           <nav className="flex items-center gap-8 text-[18px] font-semibold">
