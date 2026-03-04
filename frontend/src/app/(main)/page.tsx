@@ -9,9 +9,27 @@ import {
   GraduationCap,
   TrendingUp,
 } from "lucide-react";
+import { fetchPosts, PostListItem } from "@/shared/api/network";
+import { getPosts as getCommunityPosts } from "@/shared/api/community";
+
+type HomePost = {
+  id: number;
+  title: string;
+  author: string;
+  category?: string | null;
+  date: string;
+};
+
+const formatDate = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  // YYYY-MM-DD → YYYY.MM.DD
+  return iso.slice(0, 10).replace(/-/g, ".");
+};
 
 export default function HomeView() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [latestNetworkPosts, setLatestNetworkPosts] = useState<HomePost[]>([]);
+  const [latestCommunityPosts, setLatestCommunityPosts] = useState<HomePost[]>([]);
 
   useEffect(() => {
     const token =
@@ -19,28 +37,67 @@ export default function HomeView() {
     setIsLoggedIn(!!token);
   }, []);
 
-  // TODO: 추후 네트워크 게시판 API로 대체
-  const latestNetworkPosts = [
-    { id: 0, tab: "graduate", title: "네이버 데이터 분석가로 입사한 후기", author: "박지훈", category: "취업", date: "2026.02.03" },
-    { id: 1, tab: "current", title: "일본 교환학생 후기", author: "김서연", category: "국제교류", date: "2026.02.01" },
-  ];
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setLatestNetworkPosts([]);
+      setLatestCommunityPosts([]);
+      return;
+    }
 
-  // TODO: 추후 커뮤니티 게시판 API로 대체
-  const latestCommunityPosts = [
-    { id: 0, title: "네이버 AI 직제로도 입사한 후기", author: "박지훈", category: "취업", date: "2026.03.21" },
-    { id: 1, title: "빅데이터 대학원 후기", author: "김서연", category: "대학원", date: "2026.03.23" },
-  ];
+    // 최신 네트워크 / 커뮤니티 글 불러오기
+    (async () => {
+      try {
+        // 네트워크: 최신 글 2개 (고정글 + 일반글 기준)
+        const networkRes = await fetchPosts({ type: "student", page: 1 });
+        const networkList: PostListItem[] = [];
+        if (networkRes.pinned) networkList.push(networkRes.pinned);
+        if (networkRes.posts) networkList.push(...networkRes.posts);
 
+        setLatestNetworkPosts(
+          networkList.slice(0, 2).map((p) => ({
+            id: p.id,
+            title: p.title,
+            author: p.author_name,
+            category: p.category_name,
+            date: formatDate(p.created_at),
+          }))
+        );
+      } catch {
+        setLatestNetworkPosts([]);
+      }
+
+      try {
+        // 커뮤니티: 최신 글 2개
+        const { data } = await getCommunityPosts({ ordering: "latest" });
+        const payload = (data as any).results ?? data;
+        const list = [];
+        if (payload.pinned) list.push(payload.pinned);
+        if (payload.posts) list.push(...payload.posts);
+
+        setLatestCommunityPosts(
+          list.slice(0, 2).map((p: any) => ({
+            id: p.id,
+            title: p.title,
+            author: p.author_name,
+            category: null, // 커뮤니티는 목록에 category_name이 없으므로 생략
+            date: formatDate(p.created_at),
+          }))
+        );
+      } catch {
+        setLatestCommunityPosts([]);
+      }
+    })();
+  }, [isLoggedIn]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 relative overflow-hidden">
+    <div className="-mt-40 min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 relative overflow-hidden">
       {/* Decorative Blobs */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30" />
       <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30" />
 
       {/* Hero Section */}
-      <div className="relative max-w-5xl mx-auto px-4 pt-20 pb-16 text-center">
+      <div className="relative max-w-5xl mx-auto px-4 pt-40 pb-16 text-center">
         <div className="inline-block mb-6 px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full text-sm">
           ✨ AI빅데이터융합경영학과 학생들을 위한
         </div>
@@ -54,12 +111,12 @@ export default function HomeView() {
         </div>
 
         <p className="text-gray-700 text-lg mb-3 leading-relaxed">
-          선배와 동료의 경험을 모아 더 나은 선택을 돕는 공간
+          선배와 동기의 경험을 모아 더 나은 선택을 돕는 공간
         </p>
         <p className="text-gray-600 mb-10 leading-relaxed">
-          경험담부터, 취업에서 그룹 졸업된 나의 팁과,
+          학교생활 이야기부터 수업, 공모전, 취업 준비, 수상 경험까지
           <br />
-          수업, 공모, 수상 경험을 한곳에 모았습니다.
+          AI빅데이터융합경영학과의 다양한 정보를 한곳에 모았습니다.
         </p>
 
         {!isLoggedIn ? (
@@ -71,7 +128,7 @@ export default function HomeView() {
           </Link>
         ) : (
           <Link
-            href="/network"
+            href="/department"
             className="inline-block px-8 py-4 bg-[#2563EB] text-white rounded-full hover:bg-[#1d4ed8] transition-colors font-medium text-lg shadow-lg"
           >
             지금 시작하기
@@ -97,49 +154,85 @@ export default function HomeView() {
         {/* 로그인 시에만 표시 */}
         {isLoggedIn && (
           <div className="grid grid-cols-2 gap-6 mb-20">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-[#2563EB]" />
-                  최신 네트워크 글
-                </h2>
-                <Link href="/network" className="text-sm text-[#2563EB] hover:underline">더보기 →</Link>
-              </div>
-              <div className="space-y-3">
-                {latestNetworkPosts.map((post, index) => (
-                  <Link key={index} href={`/network/${post.tab}/${post.id}`} className="block p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="text-sm font-semibold text-gray-900 mb-1">{post.title}</div>
-                    <div className="flex items-center gap-2 text-xs text-gray-700">
-                      <span>{post.author}</span><span>·</span>
-                      <span>{post.category}</span><span>·</span>
-                      <span>{post.date}</span>
-                    </div>
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-[#2563EB]" />
+                    최신 네트워크 글
+                  </h2>
+                  <Link href="/network" className="text-sm text-[#2563EB] hover:underline">
+                    더보기 →
                   </Link>
-                ))}
+                </div>
+                <div className="space-y-3">
+                  {latestNetworkPosts.map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/network/${post.id}`}
+                      className="block p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="text-sm font-semibold text-gray-900 mb-1">
+                        {post.title}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-700">
+                        <span>{post.author}</span>
+                        {post.category && (
+                          <>
+                            <span>·</span>
+                            <span>{post.category}</span>
+                          </>
+                        )}
+                        {post.date && (
+                          <>
+                            <span>·</span>
+                            <span>{post.date}</span>
+                          </>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                  {latestNetworkPosts.length === 0 && (
+                    <p className="text-sm text-gray-500">아직 등록된 네트워크 글이 없습니다.</p>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-[#2563EB]" />
-                  최신 커뮤니티 글
-                </h2>
-                <Link href="/community" className="text-sm text-[#2563EB] hover:underline">더보기 →</Link>
-              </div>
-              <div className="space-y-3">
-                {latestCommunityPosts.map((post, index) => (
-                  <Link key={index} href={`/community/${post.id}`} className="block p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="text-sm font-semibold text-gray-900 mb-1">{post.title}</div>
-                    <div className="flex items-center gap-2 text-xs text-gray-700">
-                      <span>{post.author}</span><span>·</span>
-                      <span>{post.category}</span><span>·</span>
-                      <span>{post.date}</span>
-                    </div>
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-[#2563EB]" />
+                    최신 커뮤니티 글
+                  </h2>
+                  <Link href="/community" className="text-sm text-[#2563EB] hover:underline">
+                    더보기 →
                   </Link>
-                ))}
+                </div>
+                <div className="space-y-3">
+                  {latestCommunityPosts.map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/community/${post.id}`}
+                      className="block p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="text-sm font-semibold text-gray-900 mb-1">
+                        {post.title}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-700">
+                        <span>{post.author}</span>
+                        {post.date && (
+                          <>
+                            <span>·</span>
+                            <span>{post.date}</span>
+                          </>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                  {latestCommunityPosts.length === 0 && (
+                    <p className="text-sm text-gray-500">아직 등록된 커뮤니티 글이 없습니다.</p>
+                  )}
+                </div>
               </div>
-            </div>
           </div>
         )}
 

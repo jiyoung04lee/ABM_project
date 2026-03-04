@@ -10,6 +10,13 @@ export interface Category {
   slug: string;
 }
 
+interface Paginated<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 export interface PostListItem {
   id: number;
   type: NetworkType;
@@ -70,10 +77,10 @@ export interface Comment {
  */
 
 export async function fetchCategories(type: NetworkType) {
-  const { data } = await api.get<Category[]>("networks/categories/", {
+  const { data } = await api.get<Paginated<Category>>("networks/categories/", {
     params: { type },
   });
-  return data;
+  return data.results;
 }
 
 export async function fetchPosts(params: {
@@ -82,9 +89,20 @@ export async function fetchPosts(params: {
   search?: string;
   ordering?: "likes";
   page?: number;
-}) {
-  const { data } = await api.get<PostListResponse>("networks/posts/", { params });
-  return data;
+}): Promise<PostListResponse> {
+  const { data } = await api.get("networks/posts/", { params });
+
+  // DRF 전역 pagination 이 적용되면 { count, next, previous, results: { pinned, posts } }
+  // 로 감싸져서 오기 때문에 results 안쪽을 꺼낸다.
+  const payload = (data as any).results ?? data;
+
+  return {
+    pinned: payload.pinned ?? null,
+    posts: payload.posts ?? [],
+    count: (data as any).count,
+    next: (data as any).next ?? null,
+    previous: (data as any).previous ?? null,
+  };
 }
 
 export async function fetchPostDetail(id: number) {

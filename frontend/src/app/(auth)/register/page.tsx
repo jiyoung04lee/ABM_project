@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Logo from "@/shared/components/layout/Logo";
 
 const API_BASE = "http://localhost:8000";
 
@@ -160,8 +161,8 @@ export default function RegisterPage() {
   return (
     <>
       {/* Logo */}
-      <div className="w-14 h-14 bg-[#4F6EF7] rounded-2xl flex items-center justify-center text-white font-semibold text-base mb-5 shadow-md">
-        로고
+      <div className="mb-5">
+        <Logo />
       </div>
 
       {/* Title */}
