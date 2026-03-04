@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'apps.community',
     'apps.notifications',
     'apps.networks',
+    'apps.direct_messages',
 ]
 
 MIDDLEWARE = [
