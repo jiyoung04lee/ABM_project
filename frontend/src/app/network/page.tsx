@@ -8,6 +8,7 @@ import {
   Category,
   PostListItem,
 } from "@/shared/api/network";
+import { useRequireAuth } from "@/shared/hooks/useRequireAuth";
 
 const TABS: { key: NetworkType; label: string }[] = [
   { key: "student", label: "재학생" },
@@ -40,7 +41,6 @@ const styles = {
   hero: {
     position: "relative",
     width: "100%",
-    height: 367,
     background: "linear-gradient(135deg, #DBEAFE 0%, #EEF2FF 50%, #EFF6FF 100%)",
     borderBottom: "1px solid #E5E7EB",
     overflow: "hidden",
@@ -84,14 +84,14 @@ const styles = {
 
   heroCenter: {
     position: "relative",
-    height: "100%",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     textAlign: "center",
     gap: 14,
-    paddingTop: 20,
+    paddingTop: 128,
+    paddingBottom: 64,
   } as React.CSSProperties,
 
   pillWrap: {
@@ -490,6 +490,7 @@ function formatDotDate(iso?: string) {
 }
 
 export default function NetworkPage() {
+  useRequireAuth();
   const [tab, setTab] = useState<NetworkType>("student");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySlug, setCategorySlug] = useState<string | undefined>(undefined);
@@ -543,7 +544,7 @@ export default function NetworkPage() {
   }, [merged, keyword]);
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, marginTop: "-80px" }}>
       <div style={styles.main}>
         <section style={styles.hero}>
           <div style={styles.blur1} />

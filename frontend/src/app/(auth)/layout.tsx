@@ -4,7 +4,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#DBEAFE] via-[#EEF2FF] to-[#EFF6FF] flex flex-col items-center justify-center py-12 px-4">
+    <div className="relative -mt-20 min-h-screen overflow-hidden bg-gradient-to-br from-[#DBEAFE] via-[#EEF2FF] to-[#EFF6FF] flex flex-col items-center justify-center pt-28 pb-12 px-4">
       {/* blur circles matching HeroBackground */}
       <div className="absolute top-0 left-0 w-[358px] h-[358px] bg-[#8EC5FF] rounded-full blur-[128px] opacity-30 pointer-events-none" />
       <div className="absolute top-0 right-0 w-[376px] h-[376px] bg-[#A3B3FF] rounded-full blur-[128px] opacity-30 pointer-events-none" />
