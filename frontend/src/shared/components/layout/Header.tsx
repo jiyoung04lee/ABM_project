@@ -17,8 +17,8 @@ export default function Header() {
 
   const [notificationCount, setNotificationCount] = useState(0);
   const { unreadCount, setUnreadCount } = useNotification();
-
-  const messageCount = 0;
+  const [messageCount, setMessageCount] = useState(0);
+  
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -37,6 +37,20 @@ export default function Header() {
       }
     })();
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) return;
+
+    (async () => {
+      try {
+        const res = await api.get("/messages/messages/unread_count/");
+        setMessageCount(res.data.unread_count);
+      } catch (err) {
+        console.error("쪽지 개수 불러오기 실패", err);
+      }
+    })();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -91,8 +105,17 @@ export default function Header() {
         <div className="flex items-center gap-6">
           {isLoggedIn ? (
             <>
-              <div className="relative cursor-pointer">
+              <div
+                className="relative cursor-pointer"
+                onClick={() => router.push("/messages")}
+              >
                 <Mail className="w-6 h-6 text-gray-600" />
+
+                {messageCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-[#FB2C36] text-white text-xs px-1.5 rounded-full">
+                    {messageCount > 99 ? "99+" : messageCount}
+                  </span>
+                )}
               </div>
 
               <div
