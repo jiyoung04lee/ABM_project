@@ -17,8 +17,8 @@
    student_id: string | null;
    grade: number | null;
    admission_year: number | null;
+   department: string | null;
    bio: string;
-   major: string;
    created_at: string;
  }
 
@@ -35,14 +35,14 @@
 
  function toAdmissionYearDisplay(admissionYear: number | null) {
    if (admissionYear == null) return "";
-   return String(2000 + admissionYear);
+   return String(admissionYear);
  }
 
  function toAdmissionYearValue(display: string) {
    if (!display) return null;
    const year = Number(display);
    if (!Number.isFinite(year)) return null;
-   return year - 2000;
+   return year;
  }
 
  export default function ProfileEditPage() {
@@ -88,8 +88,8 @@
          const initial: ProfileForm = {
            name: data.name,
            nickname: data.nickname,
-           email: data.email,
-           major: data.major || "AI빅데이터융합경영학과",
+           email: data.email ?? "",
+           major: data.department ?? "AI빅데이터융합경영학과",
            grade: data.grade != null ? String(data.grade) : "",
            student_id: data.student_id ?? "",
            admission_year: toAdmissionYearDisplay(data.admission_year),
@@ -153,7 +153,7 @@
          name: form.name,
          nickname: form.nickname,
          bio: form.bio,
-         major: form.major || "AI빅데이터융합경영학과",
+         department: form.major || "AI빅데이터융합경영학과",
        };
 
        if (user.user_type === "student") {
@@ -368,9 +368,9 @@
                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2563EB] transition-all font-semibold text-gray-900"
                  required
                />
-               {fieldErrors.major && (
+               {(fieldErrors.major ?? fieldErrors.department) && (
                  <p className="text-xs text-red-500 mt-1">
-                   {fieldErrors.major}
+                   {fieldErrors.major ?? fieldErrors.department}
                  </p>
                )}
              </div>

@@ -145,12 +145,20 @@ export default function Header() {
               </button>
             </>
           ) : (
-            <Link
-              href="/login"
-              className="px-6 py-2 bg-[#2B7FFF] text-white rounded-xl font-medium"
-            >
-              로그인
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/register"
+                className="px-5 py-2 border border-[#2B7FFF] text-[#2B7FFF] rounded-xl font-medium hover:bg-[#EFF6FF]"
+              >
+                회원가입
+              </Link>
+              <Link
+                href="/login"
+                className="px-6 py-2 bg-[#2B7FFF] text-white rounded-xl font-medium"
+              >
+                로그인
+              </Link>
+            </div>
           )}
         </div>
       </div>
