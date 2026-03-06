@@ -27,6 +27,7 @@
    student_id: string | null;
    grade: number | null;
    admission_year: number | null;
+   department: string | null;
    bio: string;
    major: string;
    profile_image: string | null;
@@ -74,8 +75,8 @@ type Tab = "profile" | "activity";
      ? user.student_id
        ? `${user.student_id.slice(0, 4)}년도`
        : null
-     : user.admission_year
-     ? `${2000 + user.admission_year}년도`
+     : user.admission_year != null
+     ? `${user.admission_year}년도`
      : null;
 
    const gradeLabel = user.grade ? `${user.grade}학년` : null;
@@ -300,8 +301,21 @@ type Tab = "profile" | "activity";
                </div>
              </div>
 
-             {/* 학력 & 자기소개 */}
+             {/* 닉네임 & 학력 & 자기소개 */}
             <div className="mt-4 space-y-4">
+              {/* 닉네임 */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <MessageCircle className="w-6 h-6 text-gray-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-500 mb-1">닉네임</p>
+                  <p className="text-base font-semibold text-gray-700 leading-relaxed">
+                    {user.nickname || "-"}
+                  </p>
+                </div>
+              </div>
+
               {/* 학력 */}
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100 flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
@@ -310,7 +324,7 @@ type Tab = "profile" | "activity";
                 <div>
                   <p className="text-sm font-bold text-gray-500 mb-1">학력</p>
                   <p className="text-base font-semibold text-gray-700 leading-relaxed">
-                    국민대학교 {user.major || "AI빅데이터융합경영학과"}
+                    국민대학교 {user.department || "AI빅데이터융합경영학과"}
                   </p>
                 </div>
               </div>

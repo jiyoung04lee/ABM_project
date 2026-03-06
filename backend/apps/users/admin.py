@@ -18,27 +18,76 @@ class UserAdmin(BaseUserAdmin):
         "student_id",
         "grade",
         "admission_year",
+        "social_provider",
+        "kakao_id",
+        "is_profile_complete",
         "is_verified",
         "is_staff",
         "is_active",
         "created_at",
     )
+
     list_filter = (
         "user_type",
+        "social_provider",
+        "is_profile_complete",
         "is_verified",
         "is_staff",
         "is_active",
         "created_at",
     )
-    search_fields = ("email", "nickname", "student_id")
+
+    search_fields = (
+        "email",
+        "nickname",
+        "student_id",
+        "kakao_id",
+    )
+
     ordering = ("-created_at",)
-    readonly_fields = ("created_at", "updated_at", "last_login")
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "last_login",
+    )
 
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
+        (
+            None,
+            {
+                "fields": (
+                    "email",
+                    "password",
+                    "social_provider",
+                    "kakao_id",
+                )
+            },
+        ),
         (
             _("Personal info"),
-            {"fields": ("name", "nickname", "user_type", "student_id", "grade", "admission_year")},
+            {
+                "fields": (
+                    "name",
+                    "nickname",
+                    "department",
+                    "user_type",
+                    "student_id",
+                    "grade",
+                    "admission_year",
+                    "bio",
+                    "profile_image",
+                )
+            },
+        ),
+        (
+            _("Onboarding"),
+            {
+                "fields": (
+                    "personal_info_consent",
+                    "is_profile_complete",
+                )
+            },
         ),
         (
             _("Permissions"),
@@ -53,7 +102,16 @@ class UserAdmin(BaseUserAdmin):
                 ),
             },
         ),
-        (_("Important dates"), {"fields": ("last_login", "created_at", "updated_at")}),
+        (
+            _("Important dates"),
+            {
+                "fields": (
+                    "last_login",
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
     )
 
     add_fieldsets = (
@@ -63,6 +121,7 @@ class UserAdmin(BaseUserAdmin):
                 "classes": ("wide",),
                 "fields": (
                     "email",
+                    "name",
                     "nickname",
                     "user_type",
                     "password1",
@@ -77,7 +136,9 @@ class UserAdmin(BaseUserAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         """생성일시는 항상 읽기 전용"""
-        readonly = list(super().get_readonly_fields(request, obj))
-        if obj:  # 편집 모드
-            readonly.append("email")  # 이메일은 수정 불가
+        readonly: list[str] = list(super().get_readonly_fields(request, obj))
+
+        if obj:
+            readonly.append("email")
+
         return readonly

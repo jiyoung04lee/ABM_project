@@ -490,7 +490,7 @@ function formatDotDate(iso?: string) {
 }
 
 export default function NetworkPage() {
-  useRequireAuth();
+  const { isReady } = useRequireAuth();
   const [tab, setTab] = useState<NetworkType>("student");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySlug, setCategorySlug] = useState<string | undefined>(undefined);
@@ -542,6 +542,8 @@ export default function NetworkPage() {
       return t.includes(q) || a.includes(q) || c.includes(q);
     });
   }, [merged, keyword]);
+
+  if (!isReady) return null;
 
   return (
     <div style={{ ...styles.page, marginTop: "-80px" }}>
