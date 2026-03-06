@@ -9,7 +9,7 @@ import { getPosts } from "@/shared/api/community";
 import { useRequireAuth } from "@/shared/hooks/useRequireAuth";
 
 export default function CommunityPage() {
-  useRequireAuth();
+  const { isReady } = useRequireAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +45,8 @@ export default function CommunityPage() {
       setLoading(false);
     }
   };
+
+  if (!isReady) return null;
 
   return (
     <div className="max-w-3xl mx-auto px-6 pb-10">

@@ -10,20 +10,29 @@ class UserManager(BaseUserManager):
     """Custom user manager for email-based authentication."""
 
     def create_user(self, email, password=None, **extra_fields):
-        """Create and return a regular user with email and password."""
+        """Create and return a regular user."""
         if not email:
             raise ValueError("The Email field must be set")
+
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        user.set_password(password)
+
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+
         user.save(using=self._db)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        """Create and return a superuser with email and password."""
+        """Create and return a superuser."""
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_verified", True)
+        extra_fields.setdefault("is_profile_complete", True)
+        extra_fields.setdefault("personal_info_consent", True)
+        extra_fields.setdefault("social_provider", "email")
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
@@ -34,46 +43,83 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """Custom User model with email-based authentication."""
+    """Custom User: email or social (e.g. Kakao) login."""
+
+    USER_TYPE_STUDENT = "student"
+    USER_TYPE_GRADUATE = "graduate"
 
     USER_TYPE_CHOICES = (
-        ("student", "재학생"),
-        ("graduate", "졸업생"),
+        (USER_TYPE_STUDENT, "재학생"),
+        (USER_TYPE_GRADUATE, "졸업생"),
     )
 
-    # 기존 데이터 호환을 위해 nullable 허용 (가입 단계에서만 필수 검증)
+    SOCIAL_PROVIDER_EMAIL = "email"
+    SOCIAL_PROVIDER_KAKAO = "kakao"
+
+    SOCIAL_PROVIDER_CHOICES = (
+        (SOCIAL_PROVIDER_EMAIL, "Email"),
+        (SOCIAL_PROVIDER_KAKAO, "Kakao"),
+    )
+
+    # 기본 정보
     name = models.CharField(
         max_length=50,
         verbose_name="이름",
     )
-    email = models.EmailField(unique=True, verbose_name="이메일")
-    nickname = models.CharField(max_length=30, unique=True, verbose_name="닉네임")
+    email = models.EmailField(
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name="이메일",
+    )
+    nickname = models.CharField(
+        max_length=30,
+        unique=True,
+        verbose_name="닉네임",
+    )
+
+    # 사용자 유형
     user_type = models.CharField(
         max_length=10,
         choices=USER_TYPE_CHOICES,
-        verbose_name="사용자 유형"
+        blank=True,
+        default="",
+        verbose_name="사용자 유형",
     )
+
+    # 재학생 정보
     student_id = models.CharField(
         max_length=8,
         blank=True,
         null=True,
         unique=True,
-        verbose_name="학번"
+        verbose_name="학번",
     )
     grade = models.PositiveSmallIntegerField(
         blank=True,
         null=True,
-        verbose_name="학년"
+        verbose_name="학년",
     )
 
-    # 졸업생(graduate)의 입학년도/기수 (13~22 범위, 검증은 serializer에서 수행)
+    # 졸업생 정보
     admission_year = models.PositiveSmallIntegerField(
         blank=True,
         null=True,
         verbose_name="입학년도(기수)",
     )
 
-    bio = models.TextField(blank=True, default="", verbose_name="자기소개")
+    # 프로필
+    department = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="학과",
+    )
+    bio = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="자기소개",
+    )
     profile_image = models.ImageField(
         upload_to="users/profile/",
         null=True,
@@ -81,19 +127,59 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name="프로필 사진",
     )
 
-    # Email verification
-    is_verified = models.BooleanField(default=True, verbose_name="이메일 인증 완료")
+    # 소셜 로그인
+    social_provider = models.CharField(
+        max_length=20,
+        choices=SOCIAL_PROVIDER_CHOICES,
+        default=SOCIAL_PROVIDER_EMAIL,
+        verbose_name="소셜 제공자",
+    )
+    kakao_id = models.CharField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name="카카오 ID",
+    )
 
-    # Django default fields
-    is_staff = models.BooleanField(default=False, verbose_name="관리자 권한")
-    is_active = models.BooleanField(default=True, verbose_name="활성화")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
+    # 동의/온보딩
+    personal_info_consent = models.BooleanField(
+        default=False,  # type: ignore[reportArgumentType]
+        verbose_name="개인정보 수집·이용 동의",
+    )
+    is_profile_complete = models.BooleanField(
+        default=False,  # type: ignore[reportArgumentType]
+        verbose_name="온보딩 완료 여부",
+    )
+
+    # 인증/권한
+    is_verified = models.BooleanField(
+        default=False,  # type: ignore[reportArgumentType]
+        verbose_name="인증 완료",
+    )
+    is_staff = models.BooleanField(
+        default=False,  # type: ignore[reportArgumentType]
+        verbose_name="관리자 권한",
+    )
+    is_active = models.BooleanField(
+        default=True,  # type: ignore[reportArgumentType]
+        verbose_name="활성화",
+    )
+
+    # 타임스탬프
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="생성일시",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="수정일시",
+    )
 
     objects = UserManager()
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["nickname", "user_type"]
+    REQUIRED_FIELDS = ["nickname"]
 
     class Meta:
         verbose_name = "사용자"
@@ -102,3 +188,26 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.email}({self.nickname})"
+
+    @property
+    def is_social_user(self):
+        return self.social_provider != self.SOCIAL_PROVIDER_EMAIL
+
+    def check_profile_complete(self):
+        """현재 유저 정보 기준으로 온보딩 완료 여부를 계산."""
+        if not self.nickname:
+            return False
+
+        if not self.department:
+            return False
+
+        if not self.personal_info_consent:
+            return False
+
+        if self.user_type == self.USER_TYPE_STUDENT:
+            return bool(self.student_id and self.grade)
+
+        if self.user_type == self.USER_TYPE_GRADUATE:
+            return bool(self.admission_year)
+
+        return False
