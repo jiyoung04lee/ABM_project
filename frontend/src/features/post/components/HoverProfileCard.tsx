@@ -1,36 +1,36 @@
 "use client";
 
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface Props {
   name: string;
   grade?: string | null;
+  profileImage?: string | null;
+  userId?: number | null;
 }
 
-export default function HoverProfileCard({ name, grade }: Props) {
+export default function HoverProfileCard({ name, grade, profileImage, userId }: Props) {
+  const router = useRouter();
+  console.log("hover userId:", userId);
+
+  const handleMessage = () => {
+    if (!userId) {
+      console.log("userId 없음");
+      return;
+    }
+
+    router.push(`/messages?userId=${userId}`);
+  };
+
   return (
-    <div
-      className="
-        absolute
-        top-full
-        left-0
-        mt-2
-        w-52                
-        bg-white
-        border border-[#E5E7EB]
-        rounded-lg         
-        shadow-lg          
-        p-3                
-        z-50
-      "
-    >
+    <div className="absolute top-full left-0 mt-2 w-52 bg-white border border-[#E5E7EB] rounded-lg shadow-lg p-3 z-50">
+      
       <div className="flex items-center gap-3 mb-3">
         <div className="w-9 h-9 rounded-full overflow-hidden">
-          <Image
-            src="/icons/userbaseimage.svg"
+          <img
+            src={profileImage ? profileImage : "/icons/userbaseimage.svg"}
             alt="user"
-            width={36}
-            height={36}
+            className="w-full h-full object-cover"
           />
         </div>
 
@@ -48,16 +48,8 @@ export default function HoverProfileCard({ name, grade }: Props) {
       </div>
 
       <button
-        className="
-          w-full
-          py-2               
-          text-[13px]
-          bg-[#2B7FFF]
-          text-white
-          rounded-md
-          hover:bg-[#1f6ae0]
-          transition
-        "
+        onClick={handleMessage}
+        className="w-full py-2 text-[13px] bg-[#2B7FFF] text-white rounded-md hover:bg-[#1f6ae0]"
       >
         메시지 보내기
       </button>

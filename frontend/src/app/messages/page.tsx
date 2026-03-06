@@ -4,6 +4,7 @@ import { User } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import api from "@/shared/api/axios";
+import { useSearchParams } from "next/navigation";
 
 interface Conversation {
   id: number;
@@ -26,6 +27,9 @@ interface Message {
 }
 
 export default function MessagesPage() {
+  const searchParams = useSearchParams();
+  const targetUserId = searchParams.get("userId");
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
@@ -48,8 +52,8 @@ export default function MessagesPage() {
     scrollToBottom();
   }, [messages]);
 
-  // 대화 목록
-  const fetchConversations = async () => {
+  // 대화 목록 조회
+  const fetchConversations = async (): Promise<Conversation[]> => {
     try {
       const res = await api.get("/messages/conversations/");
       const data = res.data.results || res.data;
@@ -57,9 +61,9 @@ export default function MessagesPage() {
       const formatted = data.map((c: any) => ({
         id: c.id,
         other_user: {
-          id: c.other_user.id,
-          name: c.other_user.name,
-          info: c.other_user.info || "",
+          id: c.other_user?.id,
+          name: c.other_user?.name,
+          info: c.other_user?.info || "",
         },
         last_message: c.last_message || "",
         last_date: c.last_date || "",
@@ -67,8 +71,10 @@ export default function MessagesPage() {
       }));
 
       setConversations(formatted);
+      return formatted;
     } catch (err) {
       console.error("대화 목록 불러오기 실패", err);
+      return [];
     }
   };
 
@@ -96,10 +102,7 @@ export default function MessagesPage() {
   // 대화 선택
   const handleSelectConversation = async (conv: Conversation) => {
     setSelectedConversation(conv);
-
     await fetchMessages(conv.id);
-
-    // 백에서 자동 읽음 처리 → 다시 목록 갱신
     await fetchConversations();
   };
 
@@ -130,15 +133,57 @@ export default function MessagesPage() {
     }
   };
 
+  // 새 대화 생성
+  const createConversation = async (userId: number) => {
+    try {
+      await api.post("/messages/conversations/", {
+        user_id: userId,
+      });
+    } catch (err) {
+      console.error("대화 생성 실패", err);
+    }
+  };
+
+  // 초기 로드
   useEffect(() => {
     fetchConversations();
   }, []);
+
+  // userId로 자동 채팅 생성
+  useEffect(() => {
+    if (!targetUserId) return;
+    if (conversations.length === 0) return;
+
+    const userId = Number(targetUserId);
+
+    const existing = conversations.find(
+      (c) => c.other_user && c.other_user.id === userId
+    );
+
+    if (existing) {
+      handleSelectConversation(existing);
+      return;
+    }
+
+    createConversation(userId).then(async () => {
+      const updated = await fetchConversations();
+
+      const created = updated.find(
+        (c) => c.other_user && c.other_user.id === userId
+      );
+
+      if (created) {
+        handleSelectConversation(created);
+      }
+    });
+  }, [targetUserId, conversations]);
 
   return (
     <div className="max-w-6xl w-full px-4 text-left">
       <h1 className="text-2xl font-bold mb-6 text-gray-800 ml-2">메시지</h1>
 
       <div className="grid grid-cols-12 gap-6 h-[750px]">
+
         {/* 대화 목록 */}
         <div className="col-span-4 bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm">
           <div className="overflow-y-auto">
@@ -158,15 +203,9 @@ export default function MessagesPage() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-gray-900">
-                        {conv.other_user.name}
-                      </span>
-
-                      {conv.unread_count > 0 && (
-                        <div className="w-1.5 h-1.5 bg-[#FF4D4F] rounded-full" />
-                      )}
-                    </div>
+                    <span className="font-bold text-gray-900">
+                      {conv.other_user?.name}
+                    </span>
 
                     <span className="text-[11px] text-gray-400">
                       {conv.last_date}
@@ -186,24 +225,22 @@ export default function MessagesPage() {
         <div className="col-span-8 bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-hidden shadow-sm">
           {selectedConversation ? (
             <>
-              {/* 헤더 */}
               <div className="p-6 border-b border-[#E5E7EB] flex items-center gap-4">
                 <div className="w-12 h-12 bg-[#2B7FFF] rounded-full flex items-center justify-center">
                   <User className="w-6 h-6 text-white" />
                 </div>
 
-                <div className="text-left">
+                <div>
                   <div className="font-bold text-lg text-gray-900">
-                    {selectedConversation.other_user.name}
+                    {selectedConversation.other_user?.name}
                   </div>
 
                   <div className="text-xs text-gray-400">
-                    {selectedConversation.other_user.info}
+                    {selectedConversation.other_user?.info}
                   </div>
                 </div>
               </div>
 
-              {/* 메시지 */}
               <div className="flex-1 p-8 overflow-y-auto space-y-6 bg-white">
                 {messages.map((msg) => {
                   const isMe = msg.sender === myId;
@@ -216,12 +253,12 @@ export default function MessagesPage() {
                       }`}
                     >
                       <div
-                        className={`max-w-[75%] ${
+                        className={`max-w-[75%] flex flex-col ${
                           isMe ? "items-end" : "items-start"
-                        } flex flex-col`}
+                        }`}
                       >
                         <div
-                          className={`px-5 py-3 rounded-[18px] text-[14px] leading-relaxed ${
+                          className={`px-5 py-3 rounded-[18px] text-[14px] ${
                             isMe
                               ? "bg-[#2B7FFF] text-white rounded-tr-none"
                               : "bg-[#F1F3F5] text-gray-800 rounded-tl-none"
@@ -241,22 +278,19 @@ export default function MessagesPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* 입력 */}
               <div className="border-t border-[#E5E7EB] p-6 bg-white">
                 <div className="flex items-center gap-4">
-                  <div className="relative flex-1">
-                    <input
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="메시지를 입력하세요..."
-                      className="w-full bg-white border border-[#E5E7EB] rounded-full py-4 px-8 text-[15px] focus:outline-none focus:border-[#2B7FFF]"
-                    />
-                  </div>
+                  <input
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="메시지를 입력하세요..."
+                    className="flex-1 border border-[#E5E7EB] rounded-full py-4 px-8 text-[15px] focus:outline-none focus:border-[#2B7FFF]"
+                  />
 
                   <button
                     onClick={handleSendMessage}
-                    className="w-14 h-14 bg-[#2B7FFF] rounded-full flex items-center justify-center hover:opacity-90 transition-opacity shrink-0 shadow-md"
+                    className="w-14 h-14 bg-[#2B7FFF] rounded-full flex items-center justify-center"
                   >
                     <Image
                       src="/icons/send.svg"
@@ -269,7 +303,7 @@ export default function MessagesPage() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-400 bg-white">
+            <div className="flex-1 flex items-center justify-center text-gray-400">
               메시지를 선택하세요
             </div>
           )}

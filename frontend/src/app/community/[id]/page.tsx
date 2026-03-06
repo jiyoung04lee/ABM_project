@@ -148,8 +148,10 @@ export default function PostDetailPage() {
 
       <PostMeta
         author={post.author_name}
+        profileImage={post.author_profile_image}
         createdAt={post.created_at}
         isAnonymous={post.is_anonymous}
+        authorId={post.author_id}
       />
 
       <div className="border-b border-[#E5E7EB] mb-10" />
@@ -212,7 +214,15 @@ export default function PostDetailPage() {
           <div key={comment.id} className="mb-12">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full overflow-hidden">
-                <Image src="/icons/userbaseimage.svg" alt="user" width={40} height={40} />
+                <img
+                  src={
+                    comment.author_profile_image
+                      ? comment.author_profile_image
+                      : "/icons/userbaseimage.svg"
+                  }
+                  alt="user"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
               </div>
 
               <div className="flex-1">

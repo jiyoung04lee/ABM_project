@@ -5,30 +5,37 @@ import HoverProfileCard from "./HoverProfileCard";
 
 interface Props {
   author: string | null;
+  profileImage?: string | null;
   grade?: string | null;
   createdAt: string;
   isAnonymous?: boolean;
+  authorId?: number | null;
 }
 
 export default function PostMeta({
   author,
+  profileImage,
   grade,
   createdAt,
   isAnonymous = false,
+  authorId,
 }: Props) {
   const displayName = isAnonymous ? "익명" : author ?? "알 수 없음";
-
+  console.log("meta authorId:", authorId);
   return (
     <div className="flex justify-between items-start mb-4">
       <div className="flex items-center gap-3 relative group">
         
         {/* 프로필 이미지 */}
         <div className="w-10 h-10 rounded-full overflow-hidden">
-          <Image
-            src="/icons/userbaseimage.svg"
+          <img
+            src={
+              !isAnonymous && profileImage
+                ? profileImage
+                : "/icons/userbaseimage.svg"
+            }
             alt="user"
-            width={40}
-            height={40}
+            className="w-full h-full object-cover"
           />
         </div>
 
@@ -50,6 +57,8 @@ export default function PostMeta({
               <HoverProfileCard
                 name={displayName}
                 grade={grade}
+                profileImage={profileImage}
+                userId={authorId}
               />
             </div>
           )}

@@ -29,6 +29,8 @@
    admission_year: number | null;
    department: string | null;
    bio: string;
+   major: string;
+   profile_image: string | null;
    created_at: string;
  }
 
@@ -258,8 +260,16 @@ type Tab = "profile" | "activity";
                </Link>
 
                <div className="flex items-start gap-6">
-                 <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0">
-                   <span className="text-4xl">👤</span>
+                 <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {user.profile_image ? (
+                    <img
+                      src={`${user.profile_image}?t=${Date.now()}`}
+                      alt="profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl">👤</span>
+                  )}
                  </div>
                  <div className="flex-1">
                    <h2 className="text-3xl font-bold mb-2">{user.name}</h2>
@@ -359,10 +369,11 @@ type Tab = "profile" | "activity";
                      const views = post.view_count ?? 0;
 
                      return (
-                       <div
-                         key={post.id}
-                         className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
-                       >
+                       <Link
+                          key={post.id}
+                          href={`/community/${post.id}`}
+                          className="block p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
+                        >
                          <div className="flex items-start justify-between mb-3">
                            <div>
                              <div className="inline-block px-4 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-3">
@@ -382,7 +393,7 @@ type Tab = "profile" | "activity";
                            <span>좋아요 {post.like_count}</span>
                            <span>댓글 {post.comment_count}</span>
                          </div>
-                       </div>
+                       </Link>
                      );
                    })}
                  </div>

@@ -2,8 +2,9 @@ export interface Post {
   id: number;
   title: string;
   content?: string;
-  author_name: string | null;
-  author_id: number | null;
+  author_id?: number | null;
+  author_name?: string | null;
+  author_profile_image?: string | null; 
   is_pinned: boolean;
   is_anonymous: boolean;
   like_count: number;
@@ -19,6 +20,7 @@ export interface PostDetail {
   title: string;
   content: string;
   author_name: string | null;
+  author_profile_image?: string | null; 
   is_anonymous: boolean;
   like_count: number;
   is_liked: boolean;
@@ -36,6 +38,7 @@ export interface PostDetail {
 export interface Comment {
   id: number;
   author_name: string;
+  author_profile_image?: string | null; 
   content: string;
   created_at: string;
   like_count: number;
