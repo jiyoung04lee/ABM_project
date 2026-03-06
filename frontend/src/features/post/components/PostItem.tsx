@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function PostItem({ post }: Props) {
+  console.log(post);
   const router = useRouter();
 
   const handleMoveDetail = () => {
@@ -72,8 +73,10 @@ export default function PostItem({ post }: Props) {
 
         <PostMeta
           author={post.author_name ?? null}
+          profileImage={post.author_profile_image ?? null}
           createdAt={post.created_at}
           isAnonymous={post.is_anonymous}
+          authorId={post.author_id}
         />
 
         {post.thumbnail && (

@@ -19,6 +19,7 @@
    admission_year: number | null;
    bio: string;
    major: string;
+   profile_image: string | null;
    created_at: string;
  }
 
@@ -54,6 +55,7 @@
    const [saving, setSaving] = useState(false);
    const [error, setError] = useState("");
    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+   const [imageFile, setImageFile] = useState<File | null>(null);
 
    useEffect(() => {
      const token =
@@ -84,6 +86,10 @@
 
          const data: UserMeResponse = await res.json();
          setUser(data);
+
+         if (data.profile_image) {
+          setProfileImage(`${API_BASE}${data.profile_image}`);
+        }
 
          const initial: ProfileForm = {
            name: data.name,
@@ -119,16 +125,18 @@
      setError("");
    };
 
-   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-     const file = e.target.files?.[0];
-     if (file) {
-       const reader = new FileReader();
-       reader.onloadend = () => {
-         setProfileImage(reader.result as string);
-       };
-       reader.readAsDataURL(file);
-     }
-   };
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
    const handleSubmit = async (e: React.FormEvent) => {
      e.preventDefault();
@@ -149,35 +157,38 @@
        setError("");
        setFieldErrors({});
 
-       const payload: Record<string, unknown> = {
-         name: form.name,
-         nickname: form.nickname,
-         bio: form.bio,
-         major: form.major || "AI빅데이터융합경영학과",
-       };
+      const formData = new FormData();
 
-       if (user.user_type === "student") {
-         if (form.grade) {
-           payload.grade = Number(form.grade);
-         }
-         if (form.student_id) {
-           payload.student_id = form.student_id;
-         }
-       } else if (user.user_type === "graduate") {
-         const admissionValue = toAdmissionYearValue(form.admission_year);
-         if (admissionValue != null) {
-           payload.admission_year = admissionValue;
-         }
-       }
+      formData.append("name", form.name);
+      formData.append("nickname", form.nickname);
+      formData.append("bio", form.bio);
+      formData.append("major", form.major || "AI빅데이터융합경영학과");
 
-       const res = await fetch(`${API_BASE}/api/users/me/`, {
-         method: "PATCH",
-         headers: {
-           "Content-Type": "application/json",
-           Authorization: `Bearer ${token}`,
-         },
-         body: JSON.stringify(payload),
-       });
+      if (imageFile) {
+        formData.append("profile_image", imageFile);
+      }
+
+      if (user.user_type === "student") {
+        if (form.grade) {
+          formData.append("grade", form.grade);
+        }
+        if (form.student_id) {
+          formData.append("student_id", form.student_id);
+        }
+      } else if (user.user_type === "graduate") {
+        const admissionValue = toAdmissionYearValue(form.admission_year);
+        if (admissionValue != null) {
+          formData.append("admission_year", String(admissionValue));
+        }
+      }
+
+      const res = await fetch(`${API_BASE}/api/users/me/`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
        const data = await res.json();
 
@@ -248,13 +259,15 @@
              <div className="inline-block relative">
                <div className="w-32 h-32 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-2xl flex items-center justify-center mx-auto mb-4 overflow-hidden">
                  {profileImage ? (
-                   // 현재는 프론트 미리보기만 지원 (백엔드 업로드는 추후 구현)
-                   // eslint-disable-next-line @next/next/no-img-element
-                   <img
-                     src={profileImage}
-                     alt="Profile"
-                     className="w-full h-full object-cover"
-                   />
+                  <img
+                    src={
+                      profileImage?.startsWith("data:")
+                        ? profileImage
+                        : `${profileImage}?t=${Date.now()}`
+                    }
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
                  ) : (
                    <span className="text-5xl">👤</span>
                  )}

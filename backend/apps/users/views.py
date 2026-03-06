@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.http import JsonResponse
 from logs.utils import create_event_log
 
@@ -122,6 +123,8 @@ class MeView(generics.RetrieveUpdateAPIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    parser_classes = [MultiPartParser, FormParser]
+
     def get_serializer_class(self):
         if self.request.method in ("PUT", "PATCH"):
             return UpdateProfileSerializer
@@ -133,9 +136,6 @@ class MeView(generics.RetrieveUpdateAPIView):
     def update(self, request, *args, **kwargs):
         kwargs["partial"] = True
         return super().update(request, *args, **kwargs)
-
-    def perform_update(self, serializer):
-        serializer.save()
 
 
 class LogoutView(generics.GenericAPIView):

@@ -13,7 +13,9 @@ class PostFileSerializer(serializers.ModelSerializer):
 
 # 게시글 목록 Serializer
 class PostListSerializer(serializers.ModelSerializer):
+    author_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
+    author_profile_image = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
     is_liked = serializers.BooleanField(read_only=True)
 
@@ -23,7 +25,9 @@ class PostListSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "content",
+            "author_id",
             "author_name",
+            "author_profile_image",
             "like_count",
             "is_liked",
             "comment_count",
@@ -31,10 +35,28 @@ class PostListSerializer(serializers.ModelSerializer):
             "thumbnail",
         ]
 
+    def get_author_id(self, obj):
+        if obj.is_anonymous or not obj.author:
+            return None
+        return obj.author.id
+
     def get_author_name(self, obj):
         if obj.is_anonymous:
             return "익명"
         return obj.author.nickname
+
+    def get_author_profile_image(self, obj):
+        request = self.context.get("request")
+
+        if obj.is_anonymous or not obj.author:
+            return None
+
+        if obj.author.profile_image:
+            if request:
+                return request.build_absolute_uri(obj.author.profile_image.url)
+            return obj.author.profile_image.url
+
+        return None
 
     def get_thumbnail(self, obj):
         first_image = obj.files.filter(file_type="image").first()
@@ -42,18 +64,20 @@ class PostListSerializer(serializers.ModelSerializer):
             return first_image.file.url
         return None
     
-    
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
         if instance.is_anonymous:
+            data["author"] = None
             data["author"] = None
 
         return data
 
 # 게시글 상세 Serializer
 class PostDetailSerializer(serializers.ModelSerializer):
+    author_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
+    author_profile_image = serializers.SerializerMethodField()
     files = PostFileSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
     category_name = serializers.CharField(source="category.name", read_only=True)
@@ -66,7 +90,9 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "content",
+            "author_id",
             "author_name",
+            "author_profile_image",
             "is_anonymous",
             "view_count",
             "like_count",
@@ -82,10 +108,28 @@ class PostDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["author"]   
 
+    def get_author_id(self, obj):
+        if obj.is_anonymous or not obj.author:
+            return None
+        return obj.author.id
+
     def get_author_name(self, obj):
         if obj.is_anonymous:
             return "익명"
         return obj.author.nickname
+
+    def get_author_profile_image(self, obj):
+        request = self.context.get("request")
+
+        if obj.is_anonymous or not obj.author:
+            return None
+
+        if obj.author.profile_image:
+            if request:
+                return request.build_absolute_uri(obj.author.profile_image.url)
+            return obj.author.profile_image.url
+
+        return None
     
     def get_is_liked(self, obj):
         request = self.context.get("request")
@@ -268,6 +312,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 # 댓글 
 class CommentSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
+    author_profile_image = serializers.SerializerMethodField()
     replies = serializers.SerializerMethodField()
     is_liked = serializers.BooleanField(read_only=True)
 
@@ -277,6 +322,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "id",
             "author",
             "author_name",
+            "author_profile_image",
             "content",
             "parent",
             "is_deleted",
@@ -294,6 +340,19 @@ class CommentSerializer(serializers.ModelSerializer):
         if obj.is_anonymous:
             return "익명"
         return obj.author.nickname
+
+    def get_author_profile_image(self, obj):
+        request = self.context.get("request")
+
+        if obj.is_anonymous or not obj.author:
+            return None
+
+        if obj.author.profile_image:
+            if request:
+                return request.build_absolute_uri(obj.author.profile_image.url)
+            return obj.author.profile_image.url
+
+        return None
 
     def get_replies(self, obj):
         if self.context.get("request") is None:
