@@ -22,6 +22,7 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from django.http import JsonResponse
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -33,7 +34,11 @@ schema_view = get_schema_view(
     permission_classes=[permissions.AllowAny],
 )
 
+def health_root(request):
+    return JsonResponse({"status": "ok"})
+
 urlpatterns = [
+    path("", health_root), 
     path('admin/', admin.site.urls),
     path('api/users/', include('apps.users.urls')),
     path('api/community/', include('apps.community.urls')),
