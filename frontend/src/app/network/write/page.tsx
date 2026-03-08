@@ -1,6 +1,7 @@
 "use client";
 
 import { AxiosError } from "axios";
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -15,7 +16,7 @@ interface Category {
   slug: string;
 }
 
-export default function WritePage() {
+function WriteContent() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -237,5 +238,13 @@ export default function WritePage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function WritePage() {
+  return (
+    <Suspense fallback={<div className="max-w-3xl mx-auto px-6 py-10 text-gray-500">로딩...</div>}>
+      <WriteContent />
+    </Suspense>
   );
 }

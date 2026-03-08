@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/shared/components/layout/Logo";
@@ -9,7 +9,13 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type UserType = "student" | "graduate";
 
-export default function OnboardingPage() {
+const INTEREST_OPTIONS: { value: string; label: string }[] = [
+  { value: "ai", label: "AI" },
+  { value: "data", label: "데이터" },
+  { value: "business", label: "경영" },
+];
+
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const signupToken = searchParams.get("signup_token");
@@ -18,6 +24,7 @@ export default function OnboardingPage() {
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
   const [department, setDepartment] = useState("");
+  const [interests, setInterests] = useState<string[]>([]);
   const [email, setEmail] = useState("");
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
   const [studentId, setStudentId] = useState("");
@@ -46,6 +53,7 @@ export default function OnboardingPage() {
       name: name.trim(),
       nickname: nickname.trim(),
       department: department.trim(),
+      interests: interests,
       email: email.trim() || undefined,
       personal_info_consent: personalInfoConsent,
     };
@@ -190,15 +198,59 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              이메일 (선택)
+              관심분야 (선택)
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#4F6EF7]"
-            />
+            <div className="overflow-x-auto pb-2 -mx-1">
+              <div className="flex gap-2 min-w-0">
+                {INTEREST_OPTIONS.map((opt) => {
+                  const selected = interests.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() =>
+                        setInterests((prev) =>
+                          prev.includes(opt.value)
+                            ? prev.filter((x) => x !== opt.value)
+                            : [...prev, opt.value]
+                        )
+                      }
+                      className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition border ${
+                        selected
+                          ? "bg-[#4F6EF7] text-white border-[#4F6EF7]"
+                          : "bg-gray-50 text-gray-700 border-gray-200 hover:border-[#4F6EF7] hover:bg-[#EFF6FF]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {fieldErrors.interests && (
+              <p className="text-red-500 text-xs mt-1">{fieldErrors.interests}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              학교 이메일 <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden focus-within:border-[#4F6EF7]">
+              <input
+                type="text"
+                value={email.replace(/@kookmin\.ac\.kr$/, "")}
+                onChange={(e) =>
+                  setEmail(e.target.value.replace(/@.*/, "") + "@kookmin.ac.kr")
+                }
+                placeholder="학번 또는 아이디"
+                className="flex-1 px-4 py-3 outline-none bg-white text-sm"
+                required
+              />
+              <span className="px-3 py-3 bg-gray-50 text-gray-500 text-sm font-medium border-l border-gray-200 whitespace-nowrap">
+                @kookmin.ac.kr
+              </span>
+            </div>
             {fieldErrors.email && (
               <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>
             )}
@@ -299,5 +351,13 @@ export default function OnboardingPage() {
         </p>
       </div>
     </>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-gray-500">로딩...</div>}>
+      <OnboardingContent />
+    </Suspense>
   );
 }

@@ -24,7 +24,8 @@ export interface PostDetail {
   is_anonymous: boolean;
   like_count: number;
   is_liked: boolean;
-  category: string;
+  category?: string;
+  category_name?: string;
   comment_count: number;
   comments: Comment[];
   thumbnail?: string | null;
@@ -33,6 +34,7 @@ export interface PostDetail {
     type: "image" | "pdf";
   }[];
   created_at: string;
+  is_pinned?: boolean;
 }
 
 export interface Comment {
@@ -45,4 +47,5 @@ export interface Comment {
   is_liked: boolean;
   parent: number | null;
   replies: Comment[];
+  is_anonymous?: boolean;
 }

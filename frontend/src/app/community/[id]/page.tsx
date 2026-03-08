@@ -10,9 +10,13 @@ import {
   toggleCommentLike,
   createComment,
   deleteComment,
+  pinPost,
+  unpinPost,
 } from "@/shared/api/community";
+import api from "@/shared/api/axios";
 import PostMeta from "@/features/post/components/PostMeta";
 import Image from "next/image";
+import { Pin } from "lucide-react";
 
 export default function PostDetailPage() {
   const { id } = useParams();
@@ -27,15 +31,21 @@ export default function PostDetailPage() {
   const [replyInput, setReplyInput] = useState<{ [key: number]: string }>({});
   const [replyOpen, setReplyOpen] = useState<number | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [pinning, setPinning] = useState(false);
 
   useEffect(() => {
     fetchDetail();
   }, []);
 
+  useEffect(() => {
+    api.get("users/me/").then((r) => setIsAdmin(!!r.data?.is_staff)).catch(() => {});
+  }, []);
+
   const fetchDetail = async () => {
     try {
       const res = await getPostDetail(Number(id));
-      setPost(res.data);
+      setPost(res.data as PostDetail);
       setLiked(res.data.is_liked);
       setLikeCount(res.data.like_count);
       setComments(res.data.comments || []);
@@ -118,6 +128,32 @@ export default function PostDetailPage() {
   };
 
   // 댓글 삭제 
+  const handlePin = async () => {
+    if (pinning || !post) return;
+    setPinning(true);
+    try {
+      await pinPost(post.id);
+      setPost({ ...post, is_pinned: true });
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail ?? "고정에 실패했습니다.";
+      alert(msg);
+    } finally {
+      setPinning(false);
+    }
+  };
+  const handleUnpin = async () => {
+    if (pinning || !post) return;
+    setPinning(true);
+    try {
+      await unpinPost(post.id);
+      setPost({ ...post, is_pinned: false });
+    } catch {
+      alert("고정 해제에 실패했습니다.");
+    } finally {
+      setPinning(false);
+    }
+  };
+
   const handleDeleteComment = async (commentId: number) => {
     try {
       await deleteComment(commentId);
@@ -142,9 +178,36 @@ export default function PostDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
-      <button onClick={() => router.back()} className="mb-6">
-        <Image src="/icons/back.svg" alt="back" width={24} height={24} />
-      </button>
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={() => router.back()}>
+          <Image src="/icons/back.svg" alt="back" width={24} height={24} />
+        </button>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            {post.is_pinned ? (
+              <button
+                type="button"
+                onClick={handleUnpin}
+                disabled={pinning}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm font-medium hover:bg-amber-100 disabled:opacity-50"
+              >
+                <Pin className="w-4 h-4 fill-current" />
+                고정 해제
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handlePin}
+                disabled={pinning}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100 disabled:opacity-50"
+              >
+                <Pin className="w-4 h-4" />
+                상단 고정
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       <PostMeta
         author={post.author_name}

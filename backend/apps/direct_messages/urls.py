@@ -2,9 +2,10 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    AdminBroadcastMessageView,
     ConversationViewSet,
     MessageViewSet,
-    ConversationStartViewSet
+    ConversationStartViewSet,
 )
 
 router = DefaultRouter()
@@ -13,4 +14,5 @@ router.register("messages", MessageViewSet, basename="message")
 
 urlpatterns = router.urls + [
     path("start/", ConversationStartViewSet.as_view({"post": "create"})),
+    path("admin-broadcast/", AdminBroadcastMessageView.as_view()),
 ]

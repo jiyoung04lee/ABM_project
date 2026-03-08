@@ -8,6 +8,7 @@ const mockPosts: Post[] = [
     title: "네이버 AI 공모전 합격 후기",
     author_name: "김서연",
     author_id: 3,
+    is_pinned: false,
     is_anonymous: false,
     like_count: 12,
     is_liked: false,

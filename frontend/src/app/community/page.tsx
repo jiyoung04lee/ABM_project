@@ -31,12 +31,14 @@ export default function CommunityPage() {
         search: searchKeyword || undefined,
       });
 
-      const pinned = res.data.results.pinned;
-      const normalPosts = res.data.results.posts;
-
-      const combined = pinned
-        ? [pinned, ...normalPosts]
-        : normalPosts;
+      const rawPinned = res.data.results.pinned;
+      const normalPosts = res.data.results.posts ?? [];
+      const pinnedList = Array.isArray(rawPinned)
+        ? rawPinned
+        : rawPinned
+          ? [rawPinned]
+          : [];
+      const combined = [...pinnedList, ...normalPosts];
 
       setPosts(combined);
     } catch (err) {

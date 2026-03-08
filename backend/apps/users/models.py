@@ -120,6 +120,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         default="",
         verbose_name="자기소개",
     )
+    interests = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="관심분야",
+        help_text="예: ['ai', 'data', 'business']",
+    )
     profile_image = models.ImageField(
         upload_to="users/profile/",
         null=True,

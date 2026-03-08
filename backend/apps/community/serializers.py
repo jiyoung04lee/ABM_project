@@ -1,17 +1,19 @@
+from django.db import transaction
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from django.db import transaction
+
 import os
 
 from .models import Post, PostFile, Comment, Category
 
-# 파일 Serializer
+
 class PostFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostFile
         fields = ["id", "file", "file_type", "order"]
 
-# 게시글 목록 Serializer
+
 class PostListSerializer(serializers.ModelSerializer):
     author_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
@@ -33,6 +35,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "comment_count",
             "created_at",
             "thumbnail",
+            "is_pinned",
         ]
 
     def get_author_id(self, obj):
@@ -63,7 +66,7 @@ class PostListSerializer(serializers.ModelSerializer):
         if first_image:
             return first_image.file.url
         return None
-    
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
@@ -73,14 +76,16 @@ class PostListSerializer(serializers.ModelSerializer):
 
         return data
 
-# 게시글 상세 Serializer
+
 class PostDetailSerializer(serializers.ModelSerializer):
     author_id = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
     author_profile_image = serializers.SerializerMethodField()
     files = PostFileSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
-    category_name = serializers.CharField(source="category.name", read_only=True)
+    category_name = serializers.CharField(
+        source="category.name", read_only=True
+    )
     thumbnail = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField()
 
@@ -105,8 +110,9 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "category",
             "category_name",
             "comments",
+            "is_pinned",
         ]
-        read_only_fields = ["author"]   
+        read_only_fields = ["author"]
 
     def get_author_id(self, obj):
         if obj.is_anonymous or not obj.author:
@@ -130,27 +136,25 @@ class PostDetailSerializer(serializers.ModelSerializer):
             return obj.author.profile_image.url
 
         return None
-    
+
     def get_is_liked(self, obj):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             return obj.reactions.filter(user=request.user).exists()
         return False
-    
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
-
         if instance.is_anonymous:
             data["author"] = None
-
         return data
-    
+
     def get_thumbnail(self, obj):
         request = self.context.get("request")
-        if obj.thumbnail:
+        if obj.thumbnail and request:
             return request.build_absolute_uri(obj.thumbnail.url)
         return None
-    
+
     def get_comments(self, obj):
         request = self.context.get("request")
 
@@ -171,16 +175,16 @@ class PostCreateSerializer(serializers.ModelSerializer):
     existing_files = serializers.ListField(
         child=serializers.IntegerField(),
         required=False,
-        write_only=True
+        write_only=True,
     )
     new_files = serializers.ListField(
         child=serializers.FileField(),
         required=False,
-        write_only=True
+        write_only=True,
     )
     thumbnail_index = serializers.IntegerField(
         required=False,
-        write_only=True
+        write_only=True,
     )
 
     class Meta:
@@ -192,9 +196,10 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "category",
             "existing_files",
             "new_files",
-            "thumbnail_index", 
+            "thumbnail_index",
         ]
-    # 파일 검증 추가
+
+
     def validate_files(self, files):
         allowed_image_ext = [".jpg", ".jpeg", ".png", ".webp"]
         allowed_pdf_ext = [".pdf"]
@@ -233,7 +238,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         thumbnail_index = validated_data.pop("thumbnail_index", None)
 
         user = self.context["request"].user
-        post = Post.objects.create(author=user, **validated_data)
+        post = Post.objects.create(author=user, **validated_data)  # type: ignore[reportAttributeAccessIssue]
 
         created_files = []
 
@@ -245,11 +250,11 @@ class PostCreateSerializer(serializers.ModelSerializer):
             else:
                 file_type = "pdf"
 
-            post_file = PostFile.objects.create(
+            post_file = PostFile.objects.create(  # type: ignore[reportAttributeAccessIssue]
                 post=post,
                 file=file,
                 file_type=file_type,
-                order=index
+                order=index,
             )
 
             created_files.append(post_file)
@@ -267,7 +272,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 pass
 
         return post
-    
+
     @transaction.atomic
     def update(self, instance, validated_data):
 
@@ -295,11 +300,11 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 else:
                     file_type = "pdf"
 
-                PostFile.objects.create(
+                PostFile.objects.create(  # type: ignore[reportAttributeAccessIssue]
                     post=instance,
                     file=file,
                     file_type=file_type,
-                    order=current_count + index
+                    order=current_count + index,
                 )
 
         # 썸네일 재설정
@@ -308,8 +313,8 @@ class PostCreateSerializer(serializers.ModelSerializer):
         instance.save(update_fields=["thumbnail"])
 
         return instance
-    
-# 댓글 
+
+
 class CommentSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     author_profile_image = serializers.SerializerMethodField()
@@ -389,6 +394,7 @@ class MyActivityCommentSerializer(serializers.ModelSerializer):
             "like_count",
             "created_at",
         ]
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

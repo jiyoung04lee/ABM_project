@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 
 from django.db import models
-from django.db.models import Q, Exists, OuterRef, Prefetch, F
+from django.db.models import Q, Exists, OuterRef, F
 from django.utils import timezone
 from django.http import Http404
 from django.core.cache import cache
@@ -24,6 +24,11 @@ from .serializers import (
 )
 from .permissions import IsAuthorOrReadOnly
 from apps.notifications.models import Notification
+from logs.utils import (
+    create_event_log,
+    get_author_grade_info,
+    get_viewer_grade_info,
+)
 
 class PostViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
@@ -97,6 +102,18 @@ class PostViewSet(ModelViewSet):
             return PostCreateSerializer
         return PostDetailSerializer
 
+    def perform_create(self, serializer):
+        post = serializer.save(author=self.request.user)
+        viewer = get_viewer_grade_info(self.request.user)
+        create_event_log(
+            event_type="post_create",
+            section="community",
+            page="/community",
+            post_id=post.pk,
+            user=self.request.user,
+            **viewer,
+        )
+
     def perform_destroy(self, instance):
         instance.is_deleted = True
         instance.save()
@@ -156,16 +173,29 @@ class PostViewSet(ModelViewSet):
                     post=post
                 )
 
+            viewer = get_viewer_grade_info(user)
+            author = get_author_grade_info(post.author)
+            create_event_log(
+                event_type="like",
+                section="community",
+                post_id=post.pk,
+                user=user,
+                **viewer,
+                **author,
+            )
+
             return Response({
                 "liked": True,
                 "like_count": post.like_count
             })
-        
+
     @action(detail=True, methods=["get"])
     def comments(self, request, pk=None):
         post = self.get_object()
         comments = post.comments.filter(parent__isnull=True, is_deleted=False)
-        serializer = CommentSerializer(comments, many=True, context={"request": request})
+        serializer = CommentSerializer(
+            comments, many=True, context={"request": request}
+        )
         return Response(serializer.data)
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
@@ -212,6 +242,17 @@ class PostViewSet(ModelViewSet):
 
         comment.refresh_from_db()
 
+        viewer = get_viewer_grade_info(request.user)
+        author = get_author_grade_info(post.author)
+        create_event_log(
+            event_type="comment",
+            section="community",
+            post_id=post.pk,
+            user=request.user,
+            **viewer,
+            **author,
+        )
+
         return Response(
             CommentSerializer(comment, context={"request": request}).data
         )
@@ -232,7 +273,18 @@ class PostViewSet(ModelViewSet):
             if not cache.get(cache_key):
                 instance.view_count += 1
                 instance.save(update_fields=["view_count"])
-                cache.set(cache_key, True, timeout=60 * 60 * 24)  # 24시간
+                cache.set(cache_key, True, timeout=60 * 60 * 24)  # 24h
+
+                viewer = get_viewer_grade_info(user)
+                author = get_author_grade_info(getattr(instance, "author", None))
+                create_event_log(
+                    event_type="post_view",
+                    section="community",
+                    post_id=instance.pk,
+                    user=user,
+                    **viewer,
+                    **author,
+                )
         else:
             # 비로그인 사용자는 IP 기준
             ip = request.META.get("REMOTE_ADDR")
@@ -243,17 +295,33 @@ class PostViewSet(ModelViewSet):
                 instance.save(update_fields=["view_count"])
                 cache.set(cache_key, True, timeout=60 * 60 * 24)
 
+                author = get_author_grade_info(getattr(instance, "author", None))
+                create_event_log(
+                    event_type="post_view",
+                    section="community",
+                    post_id=instance.pk,
+                    **author,
+                )
+
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
-    
-    # 게시글 고정/해제 (관리자 전용)
+
+    # 게시글 고정/해제 (관리자 전용, 최대 3개 고정)
+    MAX_PINNED = 3
+
     @action(detail=True, methods=["post"], permission_classes=[IsAdminUser])
     def pin(self, request, pk=None):
         post = self.get_object()
 
-        if Post.objects.filter(is_pinned=True).exclude(pk=post.pk).exists():
+        if post.is_pinned:
             return Response(
-                {"detail": "이미 고정된 게시글이 존재합니다."},
+                {"detail": "이미 고정된 게시글입니다."},
+                status=400
+            )
+        pinned_count = Post.objects.filter(is_pinned=True).count()
+        if pinned_count >= self.MAX_PINNED:
+            return Response(
+                {"detail": f"고정 글은 최대 {self.MAX_PINNED}개까지 가능합니다."},
                 status=400
             )
 
@@ -262,7 +330,6 @@ class PostViewSet(ModelViewSet):
         post.save(update_fields=["is_pinned", "pinned_at"])
 
         return Response({"detail": "게시글이 상단 고정되었습니다."})
-
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminUser])
     def unpin(self, request, pk=None):
@@ -275,20 +342,41 @@ class PostViewSet(ModelViewSet):
         return Response({"detail": "고정이 해제되었습니다."})
     
     def list(self, request, *args, **kwargs):
+        # 검색 이벤트 로그
+        search_kw = request.query_params.get("search", "").strip()
+        if search_kw:
+            viewer = get_viewer_grade_info(
+                request.user if request.user.is_authenticated else None
+            )
+            interest = None
+            user = request.user
+            if user.is_authenticated and getattr(user, "interests", None):
+                interests = user.interests or []
+                if interests:
+                    interest = interests[0]
+            create_event_log(
+                event_type="search",
+                section="community",
+                page="/community",
+                search_keyword=search_kw,
+                interest_at_event=interest,
+                user=user if user.is_authenticated else None,
+                **viewer,
+            )
+
         queryset = self.filter_queryset(self.get_queryset())
 
-        # 고정글 분리 (최대 1개)
-        pinned_post = queryset.filter(is_pinned=True).first()
+        # 고정글 분리 (최대 3개, pinned_at 순)
+        pinned_qs = queryset.filter(is_pinned=True).order_by("-pinned_at")[: self.MAX_PINNED]
         normal_posts = queryset.filter(is_pinned=False)
         page = self.paginate_queryset(normal_posts)
         serializer_context = {"request": request}
 
-        pinned_data = None
-        if pinned_post:
-            pinned_data = PostListSerializer(
-                pinned_post,
-                context=serializer_context
-            ).data
+        pinned_data = PostListSerializer(
+            pinned_qs,
+            many=True,
+            context=serializer_context
+        ).data
 
         if page is not None:
             serializer = PostListSerializer(
@@ -312,7 +400,8 @@ class PostViewSet(ModelViewSet):
             "pinned": pinned_data,
             "posts": serializer.data
         })
-        
+
+
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated]
@@ -349,7 +438,9 @@ class CommentViewSet(ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        if instance.author != request.user:
+        if instance.author != request.user and not getattr(
+            request.user, "is_staff", False
+        ):
             return Response(
                 {"detail": "삭제 권한이 없습니다."},
                 status=status.HTTP_403_FORBIDDEN
@@ -363,7 +454,7 @@ class CommentViewSet(ModelViewSet):
         post.save()
 
         return Response({"detail": "삭제 완료"})
-    
+
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def like(self, request, pk=None):
         comment = self.get_object()
@@ -420,6 +511,7 @@ class CommentViewSet(ModelViewSet):
                 "liked": True,
                 "like_count": comment.like_count
             })
+
 
 class CategoryViewSet(ReadOnlyModelViewSet):
     serializer_class = CategorySerializer

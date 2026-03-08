@@ -67,3 +67,13 @@ export const createComment = (
 export const deleteComment = (commentId: number) => {
   return api.delete(`community/comments/${commentId}/`);
 };
+
+/* =======================
+   게시글 고정/해제 (관리자 전용)
+======================= */
+export const pinPost = (id: number) => {
+  return api.post(`community/posts/${id}/pin/`);
+};
+export const unpinPost = (id: number) => {
+  return api.post(`community/posts/${id}/unpin/`);
+};

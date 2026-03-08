@@ -1,3 +1,9 @@
+from django.db import models
+from django.db.models import Q, Exists, OuterRef, F
+from django.utils import timezone
+from django.http import Http404
+from django.core.cache import cache
+
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.permissions import (
@@ -6,18 +12,8 @@ from rest_framework.permissions import (
     IsAdminUser,
     AllowAny,
 )
-
-from .models import Category
-from .serializers import CategorySerializer
-
 from rest_framework.response import Response
 from rest_framework.decorators import action
-
-from django.db import models
-from django.db.models import Q, Exists, OuterRef, F
-from django.utils import timezone
-from django.http import Http404
-from django.core.cache import cache
 
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -31,6 +27,12 @@ from .serializers import (
     CategorySerializer,
 )
 from .permissions import IsAuthorOrReadOnly
+from logs.utils import (
+    create_event_log,
+    get_author_grade_info,
+    get_viewer_grade_info,
+)
+
 
 class CategoryViewSet(ReadOnlyModelViewSet):
     serializer_class = CategorySerializer
@@ -39,10 +41,11 @@ class CategoryViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        t = self.request.query_params.get("type")  # student/graduate/qa
+        t = self.request.query_params.get("type")
         if t:
             qs = qs.filter(type=t)
         return qs
+
 
 class PostViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
@@ -69,38 +72,38 @@ class PostViewSet(ModelViewSet):
             queryset = queryset.annotate(is_liked=Exists(user_reactions))
         else:
             queryset = queryset.annotate(
-                is_liked=models.Value(False, output_field=models.BooleanField())
+                is_liked=models.Value(
+                    False, output_field=models.BooleanField()
+                )
             )
 
-        # ✅ 탭 필터: type=student|graduate|qa
+        # 탭 필터: type=student|graduate|qa
         post_type = self.request.query_params.get("type")
         if post_type:
             queryset = queryset.filter(type=post_type)
 
-        # ✅ 카테고리 필터: category=slug
         category = self.request.query_params.get("category")
         if category:
             queryset = queryset.filter(category__slug=category)
 
-        # ✅ 탭 + 카테고리 섞임 방지 (중요)
-        # 예: type=student인데 category.type=graduate인 글이 섞이는 것 방지
         if post_type:
             queryset = queryset.filter(category__type=post_type)
 
-        # ✅ 검색: search=키워드 (title/content)
         search = self.request.query_params.get("search")
         if search:
             queryset = queryset.filter(
-                Q(title__icontains=search) |
-                Q(content__icontains=search)
+                Q(title__icontains=search) | Q(content__icontains=search)
             )
 
-        # ✅ 정렬
         ordering = self.request.query_params.get("ordering")
         if ordering == "likes":
-            queryset = queryset.order_by("-is_pinned", "-pinned_at", "-like_count")
+            queryset = queryset.order_by(
+                "-is_pinned", "-pinned_at", "-like_count"
+            )
         else:
-            queryset = queryset.order_by("-is_pinned", "-pinned_at", "-created_at")
+            queryset = queryset.order_by(
+                "-is_pinned", "-pinned_at", "-created_at"
+            )
 
         return queryset
 
@@ -111,14 +114,17 @@ class PostViewSet(ModelViewSet):
             return PostCreateSerializer
         return PostDetailSerializer
 
-    # (선택) 작성 시 type을 query 기준으로 강제하고 싶으면 사용
-    # 지금은 serializer가 body로 type을 받으니 필요 없으면 지워도 됨.
-    # def perform_create(self, serializer):
-    #     post_type = self.request.query_params.get("type")
-    #     if post_type:
-    #         serializer.save(author=self.request.user, type=post_type)
-    #     else:
-    #         serializer.save(author=self.request.user)
+    def perform_create(self, serializer):
+        post = serializer.save(author=self.request.user)
+        viewer = get_viewer_grade_info(self.request.user)
+        create_event_log(
+            event_type="post_create",
+            section="network",
+            page="/network",
+            post_id=post.pk,
+            user=self.request.user,
+            **viewer,
+        )
 
     def perform_destroy(self, instance):
         instance.is_deleted = True
@@ -142,6 +148,17 @@ class PostViewSet(ModelViewSet):
             Post.objects.filter(pk=instance.pk).update(view_count=F("view_count") + 1)
             cache.set(cache_key, True, timeout=60 * 60 * 24)
             instance.refresh_from_db(fields=["view_count"])
+
+            viewer = get_viewer_grade_info(user if user.is_authenticated else None)
+            author = get_author_grade_info(getattr(instance, "author", None))
+            create_event_log(
+                event_type="post_view",
+                section="network",
+                post_id=instance.pk,
+                user=user if user.is_authenticated else None,
+                **viewer,
+                **author,
+            )
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
@@ -169,6 +186,18 @@ class PostViewSet(ModelViewSet):
         Reaction.objects.create(post=post, user=user)
         Post.objects.filter(pk=post.pk).update(like_count=F("like_count") + 1)
         post.refresh_from_db(fields=["like_count"])
+
+        viewer = get_viewer_grade_info(user)
+        author = get_author_grade_info(post.author)
+        create_event_log(
+            event_type="like",
+            section="network",
+            post_id=post.pk,
+            user=user,
+            **viewer,
+            **author,
+        )
+
         return Response({"liked": True, "like_count": post.like_count})
 
     @action(detail=True, methods=["get"])
@@ -190,14 +219,31 @@ class PostViewSet(ModelViewSet):
         Post.objects.filter(pk=post.pk).update(comment_count=F("comment_count") + 1)
         post.refresh_from_db(fields=["comment_count"])
 
+        viewer = get_viewer_grade_info(request.user)
+        author = get_author_grade_info(post.author)
+        create_event_log(
+            event_type="comment",
+            section="network",
+            post_id=post.pk,
+            **viewer,
+            **author,
+        )
+
         return Response(CommentSerializer(comment, context={"request": request}).data)
+
+    MAX_PINNED = 3
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminUser])
     def pin(self, request, pk=None):
         post = self.get_object()
 
-        if Post.objects.filter(is_pinned=True).exclude(pk=post.pk).exists():
-            return Response({"detail": "이미 고정된 게시글이 존재합니다."}, status=400)
+        if post.is_pinned:
+            return Response({"detail": "이미 고정된 게시글입니다."}, status=400)
+        if Post.objects.filter(is_pinned=True).count() >= self.MAX_PINNED:
+            return Response(
+                {"detail": f"고정 글은 최대 {self.MAX_PINNED}개까지 가능합니다."},
+                status=400,
+            )
 
         post.is_pinned = True
         post.pinned_at = timezone.now()
@@ -216,15 +262,38 @@ class PostViewSet(ModelViewSet):
         return Response({"detail": "고정이 해제되었습니다."})
 
     def list(self, request, *args, **kwargs):
+        # 검색 이벤트 로그
+        search_kw = request.query_params.get("search", "").strip()
+        if search_kw:
+            viewer = get_viewer_grade_info(
+                request.user if request.user.is_authenticated else None
+            )
+            interest = None
+            if request.user.is_authenticated and getattr(request.user, "interests", None):
+                interests = request.user.interests or []
+                if interests:
+                    interest = interests[0]
+            create_event_log(
+                event_type="search",
+                section="network",
+                page="/network",
+                search_keyword=search_kw,
+                interest_at_event=interest,
+                user=request.user if request.user.is_authenticated else None,
+                **viewer,
+            )
+
         queryset = self.filter_queryset(self.get_queryset())
 
-        pinned_post = queryset.filter(is_pinned=True).first()
+        pinned_qs = queryset.filter(is_pinned=True).order_by("-pinned_at")[: self.MAX_PINNED]
         normal_posts = queryset.filter(is_pinned=False)
 
         page = self.paginate_queryset(normal_posts)
         serializer_context = {"request": request}
 
-        pinned_data = PostListSerializer(pinned_post, context=serializer_context).data if pinned_post else None
+        pinned_data = PostListSerializer(
+            pinned_qs, many=True, context=serializer_context
+        ).data
 
         if page is not None:
             serializer = PostListSerializer(page, many=True, context=serializer_context)
@@ -299,15 +368,3 @@ class CommentViewSet(ModelViewSet):
         Comment.objects.filter(pk=comment.pk).update(like_count=F("like_count") + 1)
         comment.refresh_from_db(fields=["like_count"])
         return Response({"liked": True, "like_count": comment.like_count})
-
-class CategoryViewSet(ReadOnlyModelViewSet):
-    serializer_class = CategorySerializer
-    permission_classes = [AllowAny]
-    queryset = Category.objects.all()
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        t = self.request.query_params.get("type")  # ✅ student/graduate/qa
-        if t:
-            qs = qs.filter(type=t)
-        return qs

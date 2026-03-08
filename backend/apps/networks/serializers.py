@@ -38,7 +38,9 @@ class PostListSerializer(serializers.ModelSerializer):
     is_liked = serializers.BooleanField(read_only=True)
 
     type = serializers.CharField(read_only=True)
-    category_name = serializers.CharField(source="category.name", read_only=True)
+    category_name = serializers.CharField(
+        source="category.name", read_only=True
+    )
 
     class Meta:
         model = Post
@@ -55,6 +57,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "comment_count",
             "created_at",
             "thumbnail",
+            "is_pinned",
         ]
 
     def get_author_name(self, obj):
@@ -84,7 +87,9 @@ class PostDetailSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     files = PostFileSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
-    category_name = serializers.CharField(source="category.name", read_only=True)
+    category_name = serializers.CharField(
+        source="category.name", read_only=True
+    )
     thumbnail = serializers.SerializerMethodField()
     type = serializers.CharField(read_only=True)
 
@@ -108,6 +113,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "files",
             "category",
             "category_name",
+            "is_pinned",
         ]
         read_only_fields = ["author"]
 

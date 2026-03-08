@@ -1,6 +1,6 @@
 "use client";
 
-import { User } from "lucide-react";
+import { User, Headphones } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import api from "@/shared/api/axios";
@@ -36,6 +36,8 @@ export default function MessagesPage() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [replyText, setReplyText] = useState("");
+  const [contactingAdmin, setContactingAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -144,6 +146,33 @@ export default function MessagesPage() {
     }
   };
 
+  // 관리자에게 문의: 대화 시작 후 선택
+  const handleContactAdmin = async () => {
+    setContactingAdmin(true);
+    try {
+      const adminRes = await api.get("/users/admin-info/");
+      const adminId = adminRes.data.id;
+      const convRes = await api.post("/messages/start/", { user_id: adminId });
+      const conv: Conversation = {
+        id: convRes.data.id,
+        other_user: {
+          id: adminRes.data.id,
+          name: adminRes.data.name,
+          info: "관리자",
+        },
+        last_message: convRes.data.last_message || "",
+        unread_count: convRes.data.unread_count || 0,
+      };
+      await fetchConversations();
+      setSelectedConversation(conv);
+      await fetchMessages(conv.id);
+    } catch {
+      alert("관리자에게 문의하기에 실패했습니다.");
+    } finally {
+      setContactingAdmin(false);
+    }
+  };
+
   // 초기 로드
   useEffect(() => {
     fetchConversations();
@@ -178,6 +207,10 @@ export default function MessagesPage() {
     });
   }, [targetUserId, conversations]);
 
+  useEffect(() => {
+    api.get("/users/me/").then((res) => setIsAdmin(!!res.data?.is_staff)).catch(() => {});
+  }, []);
+
   return (
     <div className="max-w-6xl w-full px-4 text-left">
       <h1 className="text-2xl font-bold mb-6 text-gray-800 ml-2">메시지</h1>
@@ -186,6 +219,20 @@ export default function MessagesPage() {
 
         {/* 대화 목록 */}
         <div className="col-span-4 bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm">
+          {/* 일반 사용자만: 관리자에게 문의하기 버튼 (관리자는 대화 목록만) */}
+          {!isAdmin && (
+            <div className="px-4 pt-4 pb-2">
+              <button
+                type="button"
+                onClick={handleContactAdmin}
+                disabled={contactingAdmin}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white hover:shadow-md transition-all disabled:opacity-60"
+              >
+                <Headphones className="w-4 h-4" />
+                {contactingAdmin ? "연결 중..." : "관리자에게 문의하기"}
+              </button>
+            </div>
+          )}
           <div className="overflow-y-auto">
             {conversations.map((conv) => (
               <button

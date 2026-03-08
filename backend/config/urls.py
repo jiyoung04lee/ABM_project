@@ -40,6 +40,8 @@ urlpatterns = [
     path("api/notifications/", include("apps.notifications.urls")),
     path("api/networks/", include("apps.networks.urls")),
     path('api/messages/', include('apps.direct_messages.urls')),
+    path('api/announcements/', include('apps.announcements.urls')),
+    path('api/logs/', include('logs.urls')),
 
     # Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0)),
@@ -48,4 +50,6 @@ urlpatterns = [
 
 # 개발 환경에서 media 파일 서빙
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(
+        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+    )

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Mail, Bell } from "lucide-react";
+import { Mail, Bell, LayoutDashboard } from "lucide-react";
 import api from "@/shared/api/axios";
 import { useNotification } from "@/shared/contexts/NotificationContext";
 import Logo from "@/shared/components/layout/Logo";
@@ -14,6 +14,7 @@ export default function Header() {
   // SSR 단계에서는 항상 로그아웃 상태로 렌더링하고,
   // 클라이언트 마운트 후에만 실제 로그인 여부를 반영한다.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [notificationCount, setNotificationCount] = useState(0);
   const { unreadCount, setUnreadCount } = useNotification();
@@ -23,6 +24,11 @@ export default function Header() {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     setIsLoggedIn(!!token);
+    if (token) {
+      api.get("users/me/")
+        .then((res) => setIsAdmin(res.data.is_staff === true))
+        .catch(() => setIsAdmin(false));
+    }
   }, []);
 
   useEffect(() => {
@@ -130,6 +136,15 @@ export default function Header() {
                 )}
               </div>
 
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white rounded-xl font-medium text-sm hover:shadow-md transition-all"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  관리자
+                </Link>
+              )}
               <Link
                 href="/profile"
                 className="px-6 py-2 bg-[#2B7FFF] text-white rounded-xl font-medium"
@@ -148,13 +163,13 @@ export default function Header() {
             <div className="flex items-center gap-3">
               <Link
                 href="/register"
-                className="px-5 py-2 border border-[#2B7FFF] text-[#2B7FFF] rounded-xl font-medium hover:bg-[#EFF6FF]"
+                className="px-5 py-2 border border-[#2B7FFF] text-[#2B7FFF] rounded-xl font-medium hover:bg-[#EFF6FF] transition-colors"
               >
                 회원가입
               </Link>
               <Link
                 href="/login"
-                className="px-6 py-2 bg-[#2B7FFF] text-white rounded-xl font-medium"
+                className="px-6 py-2 bg-[#2B7FFF] text-white rounded-xl font-medium hover:bg-[#1d4ed8] transition-colors"
               >
                 로그인
               </Link>
