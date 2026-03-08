@@ -19,6 +19,7 @@ export interface PostDetail {
   id: number;
   title: string;
   content: string;
+  author_id?: number | null;
   author_name: string | null;
   author_profile_image?: string | null; 
   is_anonymous: boolean;
