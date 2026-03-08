@@ -14,3 +14,11 @@ PyYAML==6.0.3
 sqlparse==0.5.5
 typing_extensions==4.15.0
 uritemplate==4.2.0
+
+# Production
+gunicorn==23.0.0
+whitenoise==6.9.0
+psycopg2-binary==2.9.10
+dj-database-url==2.3.0
+boto3==1.37.1
+django-storages==1.14.4
