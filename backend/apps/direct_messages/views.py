@@ -1,6 +1,7 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 
 from .models import Conversation, Message
@@ -75,6 +76,60 @@ class MessageViewSet(viewsets.ModelViewSet):
         ).exclude(sender=request.user).count()
 
         return Response({"unread_count": count})
+
+
+class AdminBroadcastMessageView(APIView):
+    """
+    관리자 전용: 여러 유저에게 동일 쪽지 발송.
+    POST /api/messages/admin-broadcast/
+    Body: { "content": "내용" } 또는 { "content": "내용", "user_ids": [1,2,3] }
+    - user_ids 생략 시: is_staff=False인 모든 유저(본인 제외)에게 발송
+    - user_ids 있으면: 해당 id 유저들에게만 발송
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if not request.user.is_staff:
+            return Response(
+                {"detail": "관리자만 사용할 수 있습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        content = (request.data.get("content") or "").strip()
+        if not content:
+            return Response(
+                {"detail": "content를 입력해주세요."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user_ids = request.data.get("user_ids")
+        if user_ids is not None:
+            try:
+                target_users = list(User.objects.filter(id__in=user_ids).exclude(id=request.user.id))
+            except (TypeError, ValueError):
+                target_users = []
+        else:
+            target_users = list(
+                User.objects.filter(is_staff=False).exclude(id=request.user.id)
+            )
+        created = 0
+        for target in target_users:
+            convs = Conversation.objects.filter(
+                participants=request.user
+            ).filter(participants=target)
+            if convs.exists():
+                conv = convs.first()
+            else:
+                conv = Conversation.objects.create()
+                conv.participants.add(request.user, target)
+            Message.objects.create(
+                conversation=conv,
+                sender=request.user,
+                content=content,
+            )
+            created += 1
+        return Response({
+            "detail": f"{created}명에게 쪽지를 보냈습니다.",
+            "sent_count": created,
+        })
 
 
 class ConversationStartViewSet(viewsets.ViewSet):

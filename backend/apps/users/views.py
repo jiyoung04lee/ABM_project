@@ -1,6 +1,7 @@
 import requests
 from typing import Any, cast
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
 from rest_framework import generics, permissions, status
@@ -19,6 +20,7 @@ from .serializers import (
     UpdateProfileSerializer,
     KakaoLoginInputSerializer,
     CompleteProfileSerializer,
+    AdminLoginSerializer,
 )
 from .throttles import AuthThrottle
 from .utils import (
@@ -35,6 +37,24 @@ def health_check(request):
     프론트에서 백엔드 서버 살아있는지 확인할 때 사용.
     """
     return JsonResponse({"status": "ok"})
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def admin_info(request):
+    """
+    GET /api/users/admin-info/
+    첫 번째 staff 유저의 id·name·nickname 반환.
+    일반 사용자가 관리자에게 쪽지를 보낼 때 사용.
+    """
+    admin_user = User.objects.filter(is_staff=True).order_by("id").first()
+    if not admin_user:
+        return JsonResponse({"detail": "관리자가 없습니다."}, status=404)
+    return JsonResponse({
+        "id": admin_user.id,
+        "name": admin_user.name or admin_user.nickname or "관리자",
+        "nickname": admin_user.nickname or "관리자",
+    })
 
 
 class MeView(generics.RetrieveUpdateAPIView):
@@ -167,6 +187,58 @@ class MyCommentsView(generics.ListAPIView):
     def get_serializer_class(self):
         from apps.community.serializers import MyActivityCommentSerializer
         return MyActivityCommentSerializer
+
+
+# ---------------------------------------------------------------------------
+# 관리자 이메일/비밀번호 로그인 (is_staff만 허용)
+# ---------------------------------------------------------------------------
+
+class AdminLoginView(APIView):
+    """
+    POST /api/users/admin-login/
+    Body: { "email": "...", "password": "..." }
+    관리자(is_staff)만 로그인 가능. 성공 시 카카오 로그인과 동일한 토큰 응답.
+    """
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthThrottle]
+
+    def post(self, request):
+        serializer = AdminLoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
+        user = authenticate(
+            request,
+            username=email,
+            password=password,
+        )
+        if user is None:
+            return Response(
+                {"detail": "이메일 또는 비밀번호가 올바르지 않습니다."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        if not user.is_staff:
+            return Response(
+                {"detail": "관리자 계정만 로그인할 수 있습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "message": "로그인 성공",
+                "needs_profile": False,
+                "user": UserSerializer(user).data,
+                "tokens": {
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -316,10 +388,11 @@ class KakaoLoginView(APIView):
 
         create_event_log(
             event_type="login",
-            page="/api/users/kakao/login/",
+            page="/login",
             user_type=user.user_type or None,
             grade_at_event=user.grade,
             utm_source=request.query_params.get("utm_source"),
+            user=user,
         )
 
         if not user.is_profile_complete:
@@ -384,10 +457,11 @@ class CompleteProfileView(generics.GenericAPIView):
 
         create_event_log(
             event_type="signup",
-            page="/api/users/social/complete-profile/",
-            user_type=user.user_type,
+            page="/register",
+            user_type=user.user_type or None,
             grade_at_event=user.grade,
             utm_source=request.query_params.get("utm_source"),
+            user=user,
         )
 
         refresh = RefreshToken.for_user(user)

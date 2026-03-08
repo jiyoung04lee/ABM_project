@@ -7,7 +7,7 @@ export default function MainLayout({
 }) {
   return (
     <div className="min-h-screen bg-white">
-      <Header isLoggedIn={false} />
+      <Header />
       <main className="pt-20">{children}</main>
     </div>
   );

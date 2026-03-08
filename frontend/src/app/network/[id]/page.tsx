@@ -7,9 +7,13 @@ import {
   togglePostLike,
   fetchComments,
   addComment,
+  pinPost,
+  unpinPost,
   PostDetail,
   Comment,
 } from "@/shared/api/network";
+import api from "@/shared/api/axios";
+import { Pin } from "lucide-react";
 
 export default function NetworkDetailPage() {
   const params = useParams<{ id: string }>();
@@ -18,6 +22,8 @@ export default function NetworkDetailPage() {
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [content, setContent] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [pinning, setPinning] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -28,13 +34,90 @@ export default function NetworkDetailPage() {
     })();
   }, [id]);
 
+  useEffect(() => {
+    api.get("users/me/").then((r) => setIsAdmin(!!r.data?.is_staff)).catch(() => {});
+  }, []);
+
+  const handlePin = async () => {
+    if (!post || pinning) return;
+    setPinning(true);
+    try {
+      await pinPost(post.id);
+      setPost({ ...post, is_pinned: true });
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail ?? "고정에 실패했습니다.";
+      alert(msg);
+    } finally {
+      setPinning(false);
+    }
+  };
+  const handleUnpin = async () => {
+    if (!post || pinning) return;
+    setPinning(true);
+    try {
+      await unpinPost(post.id);
+      setPost({ ...post, is_pinned: false });
+    } catch {
+      alert("고정 해제에 실패했습니다.");
+    } finally {
+      setPinning(false);
+    }
+  };
+
   if (!post) return <div style={{ padding: 16 }}>로딩중…</div>;
 
   return (
     <div style={{ padding: 16 }}>
-      <a href="/network" style={{ textDecoration: "underline" }}>
-        ← 목록
-      </a>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <a href="/network" style={{ textDecoration: "underline" }}>
+          ← 목록
+        </a>
+        {isAdmin && (
+          <div style={{ display: "flex", gap: 8 }}>
+            {post.is_pinned ? (
+              <button
+                type="button"
+                onClick={handleUnpin}
+                disabled={pinning}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #f59e0b",
+                  background: "#fffbeb",
+                  color: "#b45309",
+                  fontSize: 14,
+                  fontWeight: 500,
+                }}
+              >
+                <Pin style={{ width: 16, height: 16 }} /> 고정 해제
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handlePin}
+                disabled={pinning}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #e5e7eb",
+                  background: "#f9fafb",
+                  color: "#374151",
+                  fontSize: 14,
+                  fontWeight: 500,
+                }}
+              >
+                <Pin style={{ width: 16, height: 16 }} /> 상단 고정
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       <h2 style={{ marginTop: 12 }}>{post.title}</h2>
       <div style={{ fontSize: 12, opacity: 0.8 }}>

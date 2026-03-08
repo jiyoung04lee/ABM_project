@@ -50,7 +50,7 @@ export default function HomeView() {
         // 네트워크: 최신 글 2개 (고정글 + 일반글 기준)
         const networkRes = await fetchPosts({ type: "student", page: 1 });
         const networkList: PostListItem[] = [];
-        if (networkRes.pinned) networkList.push(networkRes.pinned);
+        if (networkRes.pinned?.length) networkList.push(...networkRes.pinned);
         if (networkRes.posts) networkList.push(...networkRes.posts);
 
         setLatestNetworkPosts(
@@ -122,14 +122,14 @@ export default function HomeView() {
         {!isLoggedIn ? (
           <Link
             href="/register"
-            className="inline-block px-8 py-4 bg-[#2563EB] text-white rounded-full hover:bg-[#1d4ed8] transition-colors font-medium text-lg shadow-lg"
+            className="inline-block px-8 py-4 bg-[#2B7FFF] text-white rounded-full hover:bg-[#1d4ed8] transition-colors font-medium text-lg shadow-lg"
           >
             지금 시작하기
           </Link>
         ) : (
           <Link
             href="/department"
-            className="inline-block px-8 py-4 bg-[#2563EB] text-white rounded-full hover:bg-[#1d4ed8] transition-colors font-medium text-lg shadow-lg"
+            className="inline-block px-8 py-4 bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white rounded-full hover:shadow-lg transition-all font-medium text-lg shadow-md"
           >
             지금 시작하기
           </Link>
@@ -290,7 +290,7 @@ export default function HomeView() {
                 </>
               ) : (
                 <>
-                  <Link href="/network/create" className="px-8 py-4 bg-white text-[#2563EB] rounded-full hover:bg-gray-50 transition-colors font-bold shadow-lg">글 작성하기</Link>
+                  <Link href="/network/create" className="px-8 py-4 bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white rounded-full hover:shadow-lg transition-all font-bold shadow-md">글 작성하기</Link>
                   <Link href="/community" className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full hover:bg-white/10 transition-colors font-bold">커뮤니티 가기</Link>
                 </>
               )}

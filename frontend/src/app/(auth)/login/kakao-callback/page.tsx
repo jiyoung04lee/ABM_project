@@ -1,12 +1,13 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Logo from "@/shared/components/layout/Logo";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-export default function KakaoCallbackPage() {
+function KakaoCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "error">("loading");
@@ -94,5 +95,20 @@ export default function KakaoCallbackPage() {
       <Logo />
       <p className="text-gray-500 mt-4">로그인 처리 중...</p>
     </div>
+  );
+}
+
+export default function KakaoCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full max-w-[460px] bg-white rounded-2xl shadow-lg px-8 py-8 text-center">
+          <Logo />
+          <p className="text-gray-500 mt-4">로그인 처리 중...</p>
+        </div>
+      }
+    >
+      <KakaoCallbackContent />
+    </Suspense>
   );
 }

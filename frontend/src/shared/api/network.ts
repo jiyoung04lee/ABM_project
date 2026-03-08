@@ -29,10 +29,11 @@ export interface PostListItem {
   comment_count: number;
   created_at: string;
   thumbnail: string | null;
+  is_pinned?: boolean;
 }
 
 export interface PostListResponse {
-  pinned: PostListItem | null;
+  pinned: PostListItem[];
   posts: PostListItem[];
   count?: number;
   next?: string | null;
@@ -56,6 +57,7 @@ export interface PostDetail {
   files: { id: number; file: string; file_type: "image" | "pdf"; order: number }[];
   category: number | null;
   category_name: string | null;
+  is_pinned?: boolean;
 }
 
 export interface Comment {
@@ -96,8 +98,14 @@ export async function fetchPosts(params: {
   // 로 감싸져서 오기 때문에 results 안쪽을 꺼낸다.
   const payload = (data as any).results ?? data;
 
+  const rawPinned = payload.pinned;
+  const pinnedList = Array.isArray(rawPinned)
+    ? rawPinned
+    : rawPinned
+      ? [rawPinned]
+      : [];
   return {
-    pinned: payload.pinned ?? null,
+    pinned: pinnedList,
     posts: payload.posts ?? [],
     count: (data as any).count,
     next: (data as any).next ?? null,
@@ -135,6 +143,16 @@ export async function createPost(formData: FormData) {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data;
+}
+
+/** 게시글 상단 고정 (관리자 전용) */
+export async function pinPost(id: number) {
+  await api.post(`networks/posts/${id}/pin/`);
+}
+
+/** 게시글 고정 해제 (관리자 전용) */
+export async function unpinPost(id: number) {
+  await api.post(`networks/posts/${id}/unpin/`);
 }
 
 /* (선택) 댓글 like / delete도 네가 쓰면 추가 가능

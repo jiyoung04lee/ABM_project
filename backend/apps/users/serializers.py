@@ -24,10 +24,12 @@ class UserSerializer(serializers.ModelSerializer):
             "admission_year",
             "department",
             "bio",
+            "interests",
             "profile_image",
             "personal_info_consent",
             "is_profile_complete",
             "is_verified",
+            "is_staff",
             "created_at",
         )
 
@@ -35,6 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "email",
             "is_verified",
+            "is_staff",
             "created_at",
         )
 
@@ -65,6 +68,17 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("이미 사용 중인 닉네임입니다.")
 
         return value
+
+
+# ------------------------------------------------------------
+# 관리자 이메일/비밀번호 로그인
+# ------------------------------------------------------------
+
+class AdminLoginSerializer(serializers.Serializer):
+    """관리자 전용 이메일·비밀번호 로그인 (is_staff 사용자만 허용)."""
+
+    email = serializers.EmailField(write_only=True)
+    password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
 
 # ------------------------------------------------------------
@@ -143,6 +157,12 @@ class CompleteProfileSerializer(serializers.Serializer):
         required=False
     )
 
+    interests = serializers.ListField(
+        child=serializers.CharField(max_length=30),
+        required=False,
+        allow_empty=True,
+    )
+
     def validate(self, attrs):
 
         token = attrs["signup_token"]
@@ -168,12 +188,15 @@ class CompleteProfileSerializer(serializers.Serializer):
             })
 
         email = (attrs.get("email") or "").strip()
-        if email and User.objects.exclude(pk=user_id).filter(
-            email=email
-        ).exists():
-            raise serializers.ValidationError({
-                "email": "이미 사용 중인 이메일입니다."
-            })
+        if email:
+            if not email.endswith("@kookmin.ac.kr"):
+                raise serializers.ValidationError({
+                    "email": "국민대학교 이메일(@kookmin.ac.kr)만 사용할 수 있습니다."
+                })
+            if User.objects.exclude(pk=user_id).filter(email=email).exists():
+                raise serializers.ValidationError({
+                    "email": "이미 사용 중인 이메일입니다."
+                })
         attrs["_email"] = email or None
 
         if attrs["user_type"] == "student":
@@ -215,6 +238,10 @@ class CompleteProfileSerializer(serializers.Serializer):
                     "admission_year": "입학년도는 2013~2025 사이여야 합니다."
                 })
 
+        interests = attrs.get("interests") or []
+        allowed = {"ai", "data", "business"}
+        attrs["interests"] = [x for x in interests if x in allowed]
+
         return attrs
 
     def save(self):
@@ -229,6 +256,7 @@ class CompleteProfileSerializer(serializers.Serializer):
         user.personal_info_consent = self.validated_data[
             "personal_info_consent"
         ]
+        user.interests = self.validated_data.get("interests") or []
         user.is_verified = True
 
         if user.user_type == User.USER_TYPE_STUDENT:

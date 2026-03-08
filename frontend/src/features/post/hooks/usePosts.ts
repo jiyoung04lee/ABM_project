@@ -7,8 +7,8 @@ export const usePosts = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPosts().then((res) => {
-      setPosts(res.data.posts);
+    fetchPosts().then((list) => {
+      setPosts(list);
       setLoading(false);
     });
   }, []);

@@ -495,7 +495,7 @@ export default function NetworkPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySlug, setCategorySlug] = useState<string | undefined>(undefined);
 
-  const [pinned, setPinned] = useState<PostListItem | null>(null);
+  const [pinned, setPinned] = useState<PostListItem[]>([]);
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -517,7 +517,7 @@ export default function NetworkPage() {
           type: tab,
           category: categorySlug,
         });
-        setPinned(res.pinned ?? null);
+        setPinned(res.pinned);
         setPosts(res.posts ?? []);
       } finally {
         setLoading(false);
@@ -525,12 +525,7 @@ export default function NetworkPage() {
     })();
   }, [tab, categorySlug]);
 
-  const merged = useMemo(() => {
-    const arr: PostListItem[] = [];
-    if (pinned) arr.push(pinned);
-    arr.push(...posts);
-    return arr;
-  }, [pinned, posts]);
+  const merged = useMemo(() => [...pinned, ...posts], [pinned, posts]);
 
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -651,9 +646,28 @@ export default function NetworkPage() {
                     <a key={p.id} href={`/network/${p.id}`} style={styles.cardLink}>
                       <div style={styles.cardImage} />
                       <div style={styles.cardBody}>
-                        <div style={styles.badge}>
-                          <span style={styles.badgeDot} />
-                          <span style={styles.badgeText}>{badgeLabel}</span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                          {p.is_pinned && (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "4px 8px",
+                                borderRadius: 6,
+                                background: "#fffbeb",
+                                color: "#b45309",
+                                fontSize: 12,
+                                fontWeight: 500,
+                              }}
+                            >
+                              📌 상단 고정
+                            </span>
+                          )}
+                          <div style={styles.badge}>
+                            <span style={styles.badgeDot} />
+                            <span style={styles.badgeText}>{badgeLabel}</span>
+                          </div>
                         </div>
 
                         <h3 style={styles.cardTitle}>{p.title}</h3>

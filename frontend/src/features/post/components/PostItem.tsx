@@ -27,12 +27,10 @@ export default function PostItem({ post }: Props) {
 
   const MAX_LENGTH = 100;
 
+  const content = post.content ?? "";
   const truncatedContent =
-    post.content.length > MAX_LENGTH
-      ? post.content.slice(0, MAX_LENGTH)
-      : post.content;
-
-  const isLong = post.content.length > MAX_LENGTH;
+    content.length > MAX_LENGTH ? content.slice(0, MAX_LENGTH) : content;
+  const isLong = content.length > MAX_LENGTH;
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -70,7 +68,13 @@ export default function PostItem({ post }: Props) {
   return (
     <div onClick={handleMoveDetail} className="cursor-pointer">
       <div className="border-b border-[#E5E7EB] py-3">
-
+        <div className="flex items-center gap-2 mb-1">
+          {post.is_pinned && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-xs font-medium">
+              📌 상단 고정
+            </span>
+          )}
+        </div>
         <PostMeta
           author={post.author_name ?? null}
           profileImage={post.author_profile_image ?? null}

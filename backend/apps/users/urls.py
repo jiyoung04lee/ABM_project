@@ -11,6 +11,7 @@ urlpatterns = [
 
     # 내 정보
     path("me/", views.MeView.as_view(), name="me"),
+    path("admin-info/", views.admin_info, name="admin_info"),
     path("me/posts/", views.MyPostsView.as_view(), name="my_posts"),
     path("me/comments/", views.MyCommentsView.as_view(), name="my_comments"),
 
@@ -20,6 +21,9 @@ urlpatterns = [
     # 중복 확인
     path("check-nickname/", views.check_nickname, name="check_nickname"),
     path("check-student-id/", views.check_student_id, name="check_student_id"),
+
+    # 관리자 이메일/비밀번호 로그인
+    path("admin-login/", views.AdminLoginView.as_view(), name="admin_login"),
 
     # 카카오 소셜 로그인
     path("kakao/login/", views.KakaoLoginView.as_view(), name="kakao_login"),

@@ -1,6 +1,8 @@
 import "./globals.css";
 import Header from "@/shared/components/layout/Header";
 import { NotificationProvider } from "@/shared/contexts/NotificationContext";
+import PageViewTracker from "@/shared/components/PageViewTracker";
+import AnnouncementBanner from "@/shared/components/AnnouncementBanner";
 
 export default function RootLayout({
   children,
@@ -11,7 +13,9 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-screen">
         <NotificationProvider>
+          <PageViewTracker />
           <Header />
+          <AnnouncementBanner />
           <main className="pt-20">{children}</main>
         </NotificationProvider>
       </body>
