@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 
+import dj_database_url
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "drf_yasg",
+    "storages",
 
     # local apps
     'apps.users',
@@ -54,6 +56,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -85,14 +88,25 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# Railway Postgres 는 DATABASE_URL 환경변수를 자동 주입.
+# 로컬 개발 시 DATABASE_URL 미설정이면 SQLite 사용.
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+_database_url = os.environ.get("DATABASE_URL")
+if _database_url:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            _database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -136,10 +150,9 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# Static files
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -148,6 +161,55 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom User Model
 AUTH_USER_MODEL = "users.User"
+
+
+# Storage backends (Static: whitenoise / Media: Cloudflare R2 or local)
+
+_r2_bucket = os.environ.get("R2_BUCKET_NAME")
+
+if _r2_bucket:
+    # Cloudflare R2 (S3-compatible) — 미디어 파일 전용
+    _r2_custom_domain = os.environ.get("R2_CUSTOM_DOMAIN", "")
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "bucket_name": _r2_bucket,
+                "access_key": os.environ["R2_ACCESS_KEY_ID"],
+                "secret_key": os.environ["R2_SECRET_ACCESS_KEY"],
+                "endpoint_url": os.environ["R2_ENDPOINT_URL"],
+                # R2 는 퍼블릭 버킷 사용 시 서명 URL 불필요
+                "querystring_auth": False,
+                "default_acl": None,
+                "file_overwrite": False,
+                "custom_domain": _r2_custom_domain or None,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
+    MEDIA_URL = (
+        f"https://{_r2_custom_domain}/"
+        if _r2_custom_domain
+        else f"{os.environ['R2_ENDPOINT_URL']}/{_r2_bucket}/"
+    )
+else:
+    # 로컬 개발: 로컬 파일 시스템 사용
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
+
 
 # Throttling (rate limit)
 # - auth: register, login, verify-email → 5/min per IP
@@ -207,23 +269,22 @@ SWAGGER_SETTINGS = {
     }
 }
 
-# CORS: 로컬 개발은 아래만 사용. production 에서는 프론트 도메인만 허용하도록 변경.
-# 예: CORS_ALLOWED_ORIGINS = ["https://yourfrontend.com"] 또는 env 로 로드
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
-]
-# production 예시 (주석 해제 후 사용):
-# CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(
-#     ","
-# ) or ["https://yourfrontend.com"]
-
-# Media files (파일 업로드용)
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# CORS: 환경변수 CORS_ALLOWED_ORIGINS 에 콤마 구분 도메인 목록 설정.
+# 미설정 시 로컬 개발 도메인만 허용.
+_cors_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+if _cors_env:
+    CORS_ALLOWED_ORIGINS = [x.strip() for x in _cors_env.split(",") if x.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ]
 
 # Kakao Login (code 교환용)
 KAKAO_REST_API_KEY = os.environ.get("KAKAO_REST_API_KEY", "").strip()
 KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET", "").strip()
+
+# Railway 등 프록시 뒤에서 HTTPS 인식
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

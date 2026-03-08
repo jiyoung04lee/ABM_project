@@ -48,8 +48,8 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0)),
 ]
 
-# 개발 환경에서 media 파일 서빙
-if settings.DEBUG:
+# 개발 환경에서 로컬 media 파일 서빙 (R2 사용 시에는 불필요)
+if settings.DEBUG and hasattr(settings, "MEDIA_ROOT"):
     urlpatterns += static(
         settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
     )
