@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import api from "@/shared/api/axios";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -29,7 +29,7 @@ interface Notification {
   created_at: string;
 }
 
-export default function NotificationsPage() {
+function NotificationsPageContent() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,5 +134,13 @@ export default function NotificationsPage() {
         )}
       </div>
     </div>
+  );
+} 
+
+export default function NotificationsPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">로딩중...</div>}>
+      <NotificationsPageContent />
+    </Suspense>
   );
 }

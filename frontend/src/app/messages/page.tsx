@@ -1,7 +1,7 @@
 "use client";
 
 import { User, Headphones } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import Image from "next/image";
 import api from "@/shared/api/axios";
 import { useSearchParams } from "next/navigation";
@@ -26,7 +26,7 @@ interface Message {
   created_at: string;
 }
 
-export default function MessagesPage() {
+function MessagesPageContent(){
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
 
@@ -357,5 +357,13 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">로딩중...</div>}>
+      <MessagesPageContent />
+    </Suspense>
   );
 }
