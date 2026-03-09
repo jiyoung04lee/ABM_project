@@ -630,7 +630,7 @@ export default function NetworkPage() {
                   const badgeLabel = p.category_name ?? "전체";
                   const author = p.author_name ?? "-";
                   const date = formatDotDate((p as any).created_at);
-                  const views = (p as any).view_count ?? (p as any).views ?? 0;
+                  const views = p.view_count ?? 0;
                   const comments = (p as any).comment_count ?? 0;
 
                   const authorInitial =
@@ -644,7 +644,21 @@ export default function NetworkPage() {
 
                   return (
                     <a key={p.id} href={`/network/${p.id}`} style={styles.cardLink}>
-                      <div style={styles.cardImage} />
+                      {p.thumbnail ? (
+                        // 네트워크 API가 절대 URL을 내려주므로 그대로 사용
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={p.thumbnail}
+                          alt={p.title}
+                          style={{
+                            ...styles.cardImage,
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                        />
+                      ) : (
+                        <div style={styles.cardImage} />
+                      )}
                       <div style={styles.cardBody}>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                           {p.is_pinned && (

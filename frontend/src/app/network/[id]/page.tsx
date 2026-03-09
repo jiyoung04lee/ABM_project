@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   fetchPostDetail,
   togglePostLike,
@@ -9,6 +9,7 @@ import {
   addComment,
   pinPost,
   unpinPost,
+  deletePost,
   PostDetail,
   Comment,
 } from "@/shared/api/network";
@@ -16,6 +17,7 @@ import api from "@/shared/api/axios";
 import { Pin } from "lucide-react";
 
 export default function NetworkDetailPage() {
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -24,6 +26,7 @@ export default function NetworkDetailPage() {
   const [content, setContent] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [pinning, setPinning] = useState(false);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -61,6 +64,22 @@ export default function NetworkDetailPage() {
       alert("고정 해제에 실패했습니다.");
     } finally {
       setPinning(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!post) return;
+    if (!window.confirm("이 게시글을 삭제하시겠습니까?")) return;
+
+    try {
+      await deletePost(post.id);
+      alert("삭제되었습니다.");
+      router.push("/network");
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.detail ??
+        "삭제에 실패했습니다. 권한이 없을 수 있습니다.";
+      alert(msg);
     }
   };
 
@@ -126,7 +145,7 @@ export default function NetworkDetailPage() {
 
       <div style={{ marginTop: 12, whiteSpace: "pre-wrap" }}>{post.content}</div>
 
-      <div style={{ marginTop: 12 }}>
+      <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
         <button
           onClick={async () => {
             const res = await togglePostLike(post.id);
@@ -134,6 +153,19 @@ export default function NetworkDetailPage() {
           }}
         >
           {post.is_liked ? "❤️" : "🤍"} {post.like_count}
+        </button>
+        <button
+          onClick={handleDelete}
+          style={{
+            padding: "4px 8px",
+            borderRadius: 8,
+            border: "1px solid #fecaca",
+            background: "#fef2f2",
+            color: "#b91c1c",
+            fontSize: 12,
+          }}
+        >
+          삭제
         </button>
       </div>
 
@@ -149,16 +181,24 @@ export default function NetworkDetailPage() {
           style={{ flex: 1, padding: 8, border: "1px solid #ddd", borderRadius: 8 }}
         />
         <button
+          disabled={commentSubmitting}
           onClick={async () => {
-            if (!content.trim()) return;
-            await addComment(id, { content });
-            setContent("");
-            const cs = await fetchComments(id);
-            setComments(cs);
-            // comment_count는 백엔드에서 증가하니까 상세도 다시 받아오고 싶으면 fetchPostDetail 재호출도 가능
+            if (commentSubmitting || !content.trim()) return;
+            setCommentSubmitting(true);
+            try {
+              await addComment(id, { content });
+              setContent("");
+              const cs = await fetchComments(id);
+              setComments(cs);
+            } catch {
+              alert("댓글 작성 실패");
+            } finally {
+              setCommentSubmitting(false);
+            }
           }}
+          style={{ opacity: commentSubmitting ? 0.5 : 1, cursor: commentSubmitting ? "not-allowed" : "pointer" }}
         >
-          등록
+          {commentSubmitting ? "작성 중..." : "등록"}
         </button>
       </div>
 

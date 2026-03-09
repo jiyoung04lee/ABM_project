@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   BookOpen,
   Users,
-  Award,
+  MessageCircle,
   GraduationCap,
   TrendingUp,
 } from "lucide-react";
@@ -70,9 +70,19 @@ export default function HomeView() {
         // 커뮤니티: 최신 글 2개
         const { data } = await getCommunityPosts({ ordering: "latest" });
         const payload = (data as any).results ?? data;
-        const list = [];
-        if (payload.pinned) list.push(payload.pinned);
-        if (payload.posts) list.push(...payload.posts);
+
+        const list: any[] = [];
+        const rawPinned = payload.pinned;
+
+        if (Array.isArray(rawPinned)) {
+          list.push(...rawPinned);
+        } else if (rawPinned) {
+          list.push(rawPinned);
+        }
+
+        if (Array.isArray(payload.posts)) {
+          list.push(...payload.posts);
+        }
 
         setLatestCommunityPosts(
           list.slice(0, 2).map((p: any) => ({
@@ -121,15 +131,15 @@ export default function HomeView() {
 
         {!isLoggedIn ? (
           <Link
-            href="/register"
+            href="/login"
             className="inline-block px-8 py-4 bg-[#2B7FFF] text-white rounded-full hover:bg-[#1d4ed8] transition-colors font-medium text-lg shadow-lg"
           >
-            지금 시작하기
+            로그인하고 시작하기
           </Link>
         ) : (
           <Link
             href="/department"
-            className="inline-block px-8 py-4 bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white rounded-full hover:shadow-lg transition-all font-medium text-lg shadow-md"
+            className="inline-block px-8 py-4 bg-[#2B7FFF] text-white rounded-full hover:bg-[#1d4ed8] transition-colors font-medium text-lg shadow-lg"
           >
             지금 시작하기
           </Link>
@@ -144,7 +154,7 @@ export default function HomeView() {
             <GraduationCap className="w-8 h-8 text-indigo-900" />
           </div>
           <div className="w-16 h-16 bg-blue-400 rounded-2xl flex items-center justify-center shadow-md">
-            <Award className="w-8 h-8 text-blue-900" />
+            <MessageCircle className="w-8 h-8 text-blue-900" />
           </div>
         </div>
       </div>
@@ -242,10 +252,21 @@ export default function HomeView() {
             ✨ 핵심 기능
           </div>
           <h2 className="text-3xl font-bold mb-3 text-gray-900">이런 정보를 찾을 수 있어요</h2>
-          <p className="text-gray-600">학과 경험을 체계화 하여 성공적인 길을 찾아요</p>
+          <p className="text-gray-600">
+            세 가지 핵심 영역(학과정보 · 네트워크 · 커뮤니티)에서 필요한 정보를 찾아보세요
+          </p>
         </div>
 
         <div className="grid grid-cols-3 gap-6 mb-20">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 shadow-sm hover:shadow-lg transition-all">
+            <div className="w-14 h-14 bg-blue-700 rounded-2xl flex items-center justify-center mb-5">
+              <BookOpen className="w-7 h-7 text-white" />
+            </div>
+            <h3 className="text-xl font-bold mb-3 text-gray-900">학과 정보 모음</h3>
+            <p className="text-gray-700 text-sm mb-5 leading-relaxed">우리 학과에 대한 모든 정보를 한곳에서 확인하세요</p>
+            <Link href="/department" className="text-[#2563EB] text-sm font-medium">자세히 보기 →</Link>
+          </div>
+
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 shadow-sm hover:shadow-lg transition-all">
             <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-5">
               <Users className="w-7 h-7 text-white" />
@@ -257,20 +278,11 @@ export default function HomeView() {
 
           <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-3xl p-8 shadow-sm hover:shadow-lg transition-all">
             <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mb-5">
-              <Award className="w-7 h-7 text-white" />
+              <MessageCircle className="w-7 h-7 text-white" />
             </div>
             <h3 className="text-xl font-bold mb-3 text-gray-900">커뮤니티</h3>
             <p className="text-gray-700 text-sm mb-5 leading-relaxed">일상 이야기, 학습 팁, 프로젝트 아이디어를 자유롭게 공유하는 소통 공간</p>
             <Link href="/community" className="text-[#2563EB] text-sm font-medium">자세히 보기 →</Link>
-          </div>
-
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 shadow-sm hover:shadow-lg transition-all">
-            <div className="w-14 h-14 bg-blue-700 rounded-2xl flex items-center justify-center mb-5">
-              <BookOpen className="w-7 h-7 text-white" />
-            </div>
-            <h3 className="text-xl font-bold mb-3 text-gray-900">학과 정보 모음</h3>
-            <p className="text-gray-700 text-sm mb-5 leading-relaxed">우리 학과에 대한 모든 정보를 한곳에서 확인하세요</p>
-            <Link href="/about" className="text-[#2563EB] text-sm font-medium">자세히 보기 →</Link>
           </div>
         </div>
 
@@ -285,13 +297,33 @@ export default function HomeView() {
             <div className="flex gap-4 justify-center">
               {!isLoggedIn ? (
                 <>
-                  <Link href="/register" className="px-8 py-4 bg-white text-[#2563EB] rounded-full hover:bg-gray-50 transition-colors font-bold shadow-lg">회원가입</Link>
-                  <Link href="/network" className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full hover:bg-white/10 transition-colors font-bold">둘러보기</Link>
+                  <Link
+                    href="/register"
+                    className="px-8 py-4 bg-white text-[#2563EB] rounded-full hover:bg-gray-50 transition-colors font-bold shadow-lg"
+                  >
+                    회원가입
+                  </Link>
+                  <Link
+                    href="/network"
+                    className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full hover:bg-white/10 transition-colors font-bold"
+                  >
+                    둘러보기
+                  </Link>
                 </>
               ) : (
                 <>
-                  <Link href="/network/create" className="px-8 py-4 bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white rounded-full hover:shadow-lg transition-all font-bold shadow-md">글 작성하기</Link>
-                  <Link href="/community" className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full hover:bg-white/10 transition-colors font-bold">커뮤니티 가기</Link>
+                  <Link
+                    href="/network/create"
+                    className="px-8 py-4 bg-[#2B7FFF] text-white rounded-full hover:bg-[#1d4ed8] transition-colors font-bold shadow-lg"
+                  >
+                    글 작성하기
+                  </Link>
+                  <Link
+                    href="/community"
+                    className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full hover:bg-white/10 transition-colors font-bold"
+                  >
+                    커뮤니티 가기
+                  </Link>
                 </>
               )}
             </div>

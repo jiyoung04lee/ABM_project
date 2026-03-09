@@ -54,6 +54,9 @@ export default function LoginPage() {
       if (data.tokens?.access) {
         localStorage.setItem("access_token", data.tokens.access);
         if (data.tokens.refresh) localStorage.setItem("refresh_token", data.tokens.refresh);
+        if (data.user?.id) {
+          localStorage.setItem("user_id", String(data.user.id));
+        }
         window.location.href = "/admin";
         return;
       }

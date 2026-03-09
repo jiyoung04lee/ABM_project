@@ -25,6 +25,7 @@ export default function WritePage() {
   const [files, setFiles] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // 카테고리 불러오기
   useEffect(() => {
@@ -59,6 +60,8 @@ export default function WritePage() {
   };
 
   const handleSubmit = async () => {
+    if (submitting) return;
+
     if (!title.trim() || !content.trim()) {
       alert("제목과 내용을 입력해주세요.");
       return;
@@ -69,6 +72,7 @@ export default function WritePage() {
       return;
     }
 
+    setSubmitting(true);
     try {
       const formData = new FormData();
 
@@ -98,6 +102,8 @@ export default function WritePage() {
         console.error(err);
       }
       alert("작성 실패");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -234,9 +240,10 @@ export default function WritePage() {
         </button>
         <button
           onClick={handleSubmit}
-          className="flex-1 py-3 bg-[#2B7FFF] text-white rounded-xl font-semibold hover:bg-[#1a66e6] transition shadow-md"
+          disabled={submitting}
+          className="flex-1 py-3 bg-[#2B7FFF] text-white rounded-xl font-semibold hover:bg-[#1a66e6] transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          게시하기
+          {submitting ? "작성 중..." : "게시하기"}
         </button>
       </div>
     </div>

@@ -23,6 +23,7 @@ export interface PostListItem {
   category_name: string | null;
   title: string;
   author_name: string;
+  view_count: number;
   like_count: number;
   is_liked: boolean;
   comment_count: number;
@@ -114,6 +115,10 @@ export async function togglePostLike(id: number) {
     `networks/posts/${id}/like/`
   );
   return data;
+}
+
+export async function deletePost(id: number) {
+  await api.delete(`networks/posts/${id}/`);
 }
 
 export async function fetchComments(postId: number) {
