@@ -115,7 +115,7 @@ class PostViewSet(ModelViewSet):
         return PostDetailSerializer
 
     def perform_create(self, serializer):
-        post = serializer.save(author=self.request.user)
+        post = serializer.save()
         viewer = get_viewer_grade_info(self.request.user)
         create_event_log(
             event_type="post_create",
