@@ -52,6 +52,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "category_name",
             "title",
             "author_name",
+            "view_count",
             "like_count",
             "is_liked",
             "comment_count",
@@ -250,7 +251,9 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
             for index, file in enumerate(new_files):
                 content_type = getattr(file, "content_type", "")
-                file_type = "image" if content_type.startswith("image/") else "pdf"
+                file_type = (
+                    "image" if content_type.startswith("image/") else "pdf"
+                )
 
                 PostFile.objects.create(
                     post=instance,

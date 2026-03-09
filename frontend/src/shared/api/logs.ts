@@ -25,6 +25,7 @@ export interface DashboardKpi {
   today_posts: number;
   today_comments: number;
   today_searches: number;
+  unique_visitors: number;
   days?: number;
 }
 export const getDashboardKpi = (params?: { days?: number }) =>

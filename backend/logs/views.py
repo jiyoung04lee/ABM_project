@@ -108,12 +108,24 @@ class DashboardKpiView(APIView):
             since = timezone.now() - timedelta(days=days)
             qs = EventLog.objects.filter(created_at__gte=since)
 
+        unique_visitors = (
+            qs.filter(
+                event_type="page_view",
+                session_id__isnull=False,
+            )
+            .exclude(session_id="")
+            .values("session_id")
+            .distinct()
+            .count()
+        )
+
         return Response({
             "today_logins": qs.filter(event_type="login").count(),
             "today_signups": qs.filter(event_type="signup").count(),
             "today_posts": qs.filter(event_type="post_create").count(),
             "today_comments": qs.filter(event_type="comment").count(),
             "today_searches": qs.filter(event_type="search").count(),
+            "unique_visitors": unique_visitors,
             "days": days,
         })
 
@@ -651,7 +663,15 @@ class SessionAnalyticsView(APIView):
             last_at = events[-1][0]
             dur = (last_at - first_at).total_seconds()
             _, g, ut = events[0]
-            gk = "graduate" if ut == "graduate" else (g if g in (1, 2, 3, 4) else "graduate")
+            # 졸업생: user_type 이 graduate 인 경우만 집계
+            if ut == "graduate":
+                gk: int | str = "graduate"
+            # 재학생: 학년 정보(1~4)가 있을 때만 집계
+            elif g in (1, 2, 3, 4):
+                gk = g  # type: ignore[assignment]
+            # 그 외(비회원 / 학년 정보 없음)는 세션 분석에서 제외
+            else:
+                continue
             session_durations.append((dur, gk))
 
         # 학년별 평균 (분)
@@ -895,8 +915,8 @@ class UserManagementView(APIView):
                 distinct=True,
             ),
             comment_count=Count(
-                "comment_set",
-                filter=Q(comment_set__is_deleted=False),
+                "comment",
+                filter=Q(comment__is_deleted=False),
                 distinct=True,
             ),
         )

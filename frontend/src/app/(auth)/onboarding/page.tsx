@@ -34,8 +34,16 @@ function OnboardingContent() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      router.replace("/");
+      return;
+    }
+
     if (!signupToken) {
-      window.location.href = "/login";
+      router.replace("/login");
     }
   }, [signupToken, router]);
 
@@ -89,6 +97,9 @@ function OnboardingContent() {
         localStorage.setItem("access_token", data.tokens.access);
         if (data.tokens.refresh) {
           localStorage.setItem("refresh_token", data.tokens.refresh);
+        }
+        if (data.user?.id) {
+          localStorage.setItem("user_id", String(data.user.id));
         }
         window.location.href = "/";
       }
@@ -197,7 +208,7 @@ function OnboardingContent() {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              관심분야 (선택)
+              관심분야
             </label>
             <div className="overflow-x-auto pb-2 -mx-1">
               <div className="flex gap-2 min-w-0">

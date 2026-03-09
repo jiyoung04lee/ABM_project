@@ -33,6 +33,7 @@ export default function PostDetailPage() {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [pinning, setPinning] = useState(false);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
 
   useEffect(() => {
     fetchDetail();
@@ -86,6 +87,8 @@ export default function PostDetailPage() {
   const handleCreateComment = async (
     parent: number | null = null
   ) => {
+    if (commentSubmitting) return;
+
     const content =
       parent === null
         ? commentInput.trim()
@@ -93,6 +96,7 @@ export default function PostDetailPage() {
 
     if (!content) return;
 
+    setCommentSubmitting(true);
     try {
       const payload: { content: string; parent?: number; is_anonymous?: boolean} = {
         content, is_anonymous: isAnonymous,
@@ -124,6 +128,8 @@ export default function PostDetailPage() {
     } catch (err) {
       console.log("에러전체: ", err)
       alert("댓글 작성 실패");
+    } finally {
+      setCommentSubmitting(false);
     }
   };
 
@@ -332,9 +338,10 @@ export default function PostDetailPage() {
                     />
                     <button
                       onClick={() => handleCreateComment(comment.id)}
-                      className="mt-2 px-3 py-1 bg-[#2B7FFF] text-sm text-white rounded"
+                      disabled={commentSubmitting}
+                      className="mt-2 px-3 py-1 bg-[#2B7FFF] text-sm text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      답글 작성
+                      {commentSubmitting ? "작성 중..." : "답글 작성"}
                     </button>
                   </div>
                 )}
@@ -388,9 +395,10 @@ export default function PostDetailPage() {
 
             <button
               onClick={() => handleCreateComment(null)}
-              className="px-4 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm"
+              disabled={commentSubmitting}
+              className="px-4 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              댓글 작성
+              {commentSubmitting ? "작성 중..." : "댓글 작성"}
             </button>
           </div>
         </div>
