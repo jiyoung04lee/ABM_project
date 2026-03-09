@@ -7,6 +7,7 @@ import Image from "next/image";
 import PostMeta from "./PostMeta";
 import { togglePostLike } from "@/shared/api/community";
 import { AxiosError } from "axios";
+import { API_BASE } from "@/shared/api/api";
 
 interface Props {
   post: Post;
@@ -62,9 +63,6 @@ export default function PostItem({ post }: Props) {
     setLikeCount(post.like_count);
   }, [post.is_liked, post.like_count]);
 
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
   return (
     <div onClick={handleMoveDetail} className="cursor-pointer">
       <div className="border-b border-[#E5E7EB] py-3">
@@ -86,7 +84,7 @@ export default function PostItem({ post }: Props) {
         {post.thumbnail && (
           <div className="mb-4 rounded-lg overflow-hidden">
             <img
-              src={`${BASE_URL}${post.thumbnail}`}
+              src={`${API_BASE}${post.thumbnail}`}
               alt={post.title}
               width={800}
               height={200}

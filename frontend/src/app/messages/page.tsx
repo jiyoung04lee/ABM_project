@@ -57,7 +57,7 @@ function MessagesPageContent(){
   // 대화 목록 조회
   const fetchConversations = async (): Promise<Conversation[]> => {
     try {
-      const res = await api.get("/messages/conversations/");
+      const res = await api.get("messages/conversations/");
       const data = res.data.results || res.data;
 
       const formatted = data.map((c: any) => ({
@@ -84,7 +84,7 @@ function MessagesPageContent(){
   const fetchMessages = async (conversationId: number) => {
     try {
       const res = await api.get(
-        `/messages/conversations/${conversationId}/messages/`
+        `messages/conversations/${conversationId}/messages/`
       );
 
       const formatted = res.data.map((m: any) => ({
@@ -113,7 +113,7 @@ function MessagesPageContent(){
     if (!replyText.trim() || !selectedConversation) return;
 
     try {
-      await api.post("/messages/messages/", {
+      await api.post("messages/messages/", {
         conversation: selectedConversation.id,
         content: replyText,
       });
@@ -138,7 +138,7 @@ function MessagesPageContent(){
   // 새 대화 생성
   const createConversation = async (userId: number) => {
     try {
-      await api.post("/messages/conversations/", {
+      await api.post("messages/conversations/", {
         user_id: userId,
       });
     } catch (err) {
@@ -150,9 +150,9 @@ function MessagesPageContent(){
   const handleContactAdmin = async () => {
     setContactingAdmin(true);
     try {
-      const adminRes = await api.get("/users/admin-info/");
+      const adminRes = await api.get("users/admin-info/");
       const adminId = adminRes.data.id;
-      const convRes = await api.post("/messages/start/", { user_id: adminId });
+      const convRes = await api.post("messages/start/", { user_id: adminId });
       const conv: Conversation = {
         id: convRes.data.id,
         other_user: {
@@ -208,7 +208,7 @@ function MessagesPageContent(){
   }, [targetUserId, conversations]);
 
   useEffect(() => {
-    api.get("/users/me/").then((res) => setIsAdmin(!!res.data?.is_staff)).catch(() => {});
+    api.get("users/me/").then((res) => setIsAdmin(!!res.data?.is_staff)).catch(() => {});
   }, []);
 
   return (

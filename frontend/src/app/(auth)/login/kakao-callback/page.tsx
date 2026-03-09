@@ -4,8 +4,8 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Logo from "@/shared/components/layout/Logo";
+import{ API_BASE } from "@/shared/api/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 function KakaoCallbackContent() {
   const router = useRouter();
