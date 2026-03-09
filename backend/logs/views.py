@@ -914,9 +914,14 @@ class UserManagementView(APIView):
                 filter=Q(posts__is_deleted=False),
                 distinct=True,
             ),
-            comment_count=Count(
+            community_comment_count=Count(
                 "comment",
                 filter=Q(comment__is_deleted=False),
+                distinct=True,
+            ),
+            network_comment_count=Count(
+                "network_comments",
+                filter=Q(network_comments__is_deleted=False),
                 distinct=True,
             ),
         )
@@ -945,7 +950,8 @@ class UserManagementView(APIView):
 
         users = qs.order_by("nickname").values(
             "id", "nickname", "grade",
-            "interests", "post_count", "comment_count"
+            "interests", "post_count",
+            "community_comment_count", "network_comment_count",
         )
 
         result = [
@@ -955,7 +961,10 @@ class UserManagementView(APIView):
                 "grade": u["grade"],
                 "interests": u["interests"] or [],
                 "post_count": u["post_count"] or 0,
-                "comment_count": u["comment_count"] or 0,
+                "comment_count": (
+                    (u["community_comment_count"] or 0)
+                    + (u["network_comment_count"] or 0)
+                ),
             }
             for u in users
         ]
