@@ -27,7 +27,7 @@ export interface SiteNoticePayload {
   order?: number;
 }
 
-/** 활성 공지/배너 목록 (비인증 가능, 기간·활성 필터 적용) */
+/* 활성 공지/배너 목록 (비인증 가능, 기간·활성 필터 적용) */
 export const getSiteNotices = () =>
   api.get<SiteNoticeItem[]>("announcements/");
 

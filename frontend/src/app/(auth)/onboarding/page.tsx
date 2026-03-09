@@ -4,8 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/shared/components/layout/Logo";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import{ API_BASE } from "@/shared/api/api";
 
 type UserType = "student" | "graduate";
 
