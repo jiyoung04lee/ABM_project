@@ -231,43 +231,42 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
         return files
 
-    # 트랜잭션 처리 추가 (안전성 강화)
     @transaction.atomic
     def create(self, validated_data):
+        # 1. 파일 및 썸네일 데이터 분리
         new_files = validated_data.pop("new_files", [])
         thumbnail_index = validated_data.pop("thumbnail_index", None)
 
+        # 2. views.py의 serializer.save(author=user)에서 넘어온 값 처리
+        # validated_data에 author가 있으면 꺼내고, 없으면 context의 user 사용
         user = self.context["request"].user
-        post = Post.objects.create(author=user, **validated_data)  # type: ignore[reportAttributeAccessIssue]
+        author = validated_data.pop("author", user)
+
+        # 3. 게시글 생성 (author 중복 에러 해결 핵심)
+        post = Post.objects.create(author=author, **validated_data)
 
         created_files = []
 
+        # 4. 첨부 파일 생성
         for index, file in enumerate(new_files):
             content_type = getattr(file, "content_type", "")
+            file_type = "image" if content_type.startswith("image/") else "pdf"
 
-            if content_type.startswith("image/"):
-                file_type = "image"
-            else:
-                file_type = "pdf"
-
-            post_file = PostFile.objects.create(  # type: ignore[reportAttributeAccessIssue]
+            post_file = PostFile.objects.create(
                 post=post,
                 file=file,
                 file_type=file_type,
                 order=index,
             )
-
             created_files.append(post_file)
 
-        # 대표 이미지 설정
+        # 5. 대표 이미지(썸네일) 설정
         if thumbnail_index is not None:
             try:
                 selected_file = created_files[int(thumbnail_index)]
-
                 if selected_file.file_type == "image":
                     post.thumbnail = selected_file.file
                     post.save(update_fields=["thumbnail"])
-
             except (IndexError, ValueError):
                 pass
 
