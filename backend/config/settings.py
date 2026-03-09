@@ -160,7 +160,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom User Model
-AUTH_USER_MODEL = "apps.users.User"
+AUTH_USER_MODEL = "users.User"
 
 
 # Storage backends (Static: whitenoise / Media: Cloudflare R2 or local)
