@@ -15,12 +15,9 @@ export default function Header() {
   // 클라이언트 마운트 후에만 실제 로그인 여부를 반영한다.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-
-  const [notificationCount, setNotificationCount] = useState(0);
   const { unreadCount, setUnreadCount } = useNotification();
   const [messageCount, setMessageCount] = useState(0);
   
-
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     setIsLoggedIn(!!token);
@@ -31,18 +28,6 @@ export default function Header() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!isLoggedIn) return;
-
-    (async () => {
-      try {
-        const res = await api.get("notifications/unread_count/");
-        setNotificationCount(res.data.unread_count);
-      } catch (err) {
-        console.error("알림 개수 불러오기 실패", err);
-      }
-    })();
-  }, [isLoggedIn]);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -50,7 +35,21 @@ export default function Header() {
 
     (async () => {
       try {
-        const res = await api.get("/messages/messages/unread_count/");
+        const res = await api.get("notifications/unread_count/");
+        setUnreadCount(res.data.unread_count);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) return;
+
+    (async () => {
+      try {
+        const res = await api.get("messages/messages/unread_count/");
         setMessageCount(res.data.unread_count);
       } catch (err) {
         console.error("쪽지 개수 불러오기 실패", err);
@@ -71,20 +70,6 @@ export default function Header() {
     { name: "네트워크", path: "/network" },
     { name: "커뮤니티", path: "/community" },
   ];
-
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
-
-    (async () => {
-      try {
-        const res = await api.get("/notifications/unread_count/");
-        setUnreadCount(res.data.unread_count);
-      } catch (err) {
-        console.error(err);
-      }
-    })();
-  }, []);
 
   return (
     <header className="fixed top-0 left-0 w-full bg-white border-b border-[#E5E7EB] z-50 min-w-[1024px]">
@@ -129,9 +114,9 @@ export default function Header() {
                 onClick={() => router.push("/notifications")}
               >
                 <Bell className="w-6 h-6 text-gray-600" />
-                {notificationCount > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-[#FB2C36] text-white text-xs px-1.5 rounded-full">
-                    {notificationCount > 99 ? "99+" : notificationCount}
+                    {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
               </div>

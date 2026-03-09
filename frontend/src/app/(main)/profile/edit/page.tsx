@@ -3,8 +3,7 @@
  import { Save, X, Upload } from "lucide-react";
  import { useRouter } from "next/navigation";
  import { useEffect, useState } from "react";
-
- const API_BASE = "http://localhost:8000";
+import{ API_BASE } from "@/shared/api/api";
 
  type UserType = "student" | "graduate";
 

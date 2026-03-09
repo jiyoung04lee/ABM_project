@@ -40,7 +40,7 @@ function NotificationsPageContent() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await api.get("/notifications/");
+      const res = await api.get("notifications/");
       setNotifications(res.data.results);
     } catch (err) {
       console.error("알림 불러오기 실패", err);
@@ -52,7 +52,7 @@ function NotificationsPageContent() {
   const handleClick = async (notification: Notification) => {
     try {
       if (!notification.is_read) {
-        await api.patch(`/notifications/${notification.id}/read/`);
+        await api.patch(`notifications/${notification.id}/read/`);
       }
       if (notification.redirect_url) {
         router.push(notification.redirect_url);
@@ -64,7 +64,7 @@ function NotificationsPageContent() {
 
   const handleReadAll = async () => {
     try {
-      await api.patch("/notifications/read_all/");
+      await api.patch("notifications/read_all/");
       fetchNotifications();
     } catch (err) {
       console.error("전체 읽음 실패", err);
