@@ -284,7 +284,7 @@ else:
 
 # Kakao Login (code 교환용)
 KAKAO_REST_API_KEY = os.environ.get("KAKAO_REST_API_KEY", "").strip()
-KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET", "").strip()
+KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET", "").strip() 
 
 # Railway 등 프록시 뒤에서 HTTPS 인식
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
