@@ -117,7 +117,14 @@ export default function NetworkDetailPage() {
   const handleDeleteComment = async (commentId: number) => {
     await deleteComment(commentId);
 
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    setComments((prev) =>
+      prev
+        .filter((c) => c.id !== commentId)
+        .map((c) => ({
+          ...c,
+          replies: c.replies?.filter((r) => r.id !== commentId) ?? [],
+        }))
+    );
   };
 
   const handlePin = async () => {

@@ -71,6 +71,7 @@ export interface Comment {
   replies: Comment[];
   is_liked: boolean;
   like_count: number;
+  is_anonymous?: boolean;
 }
 
 export async function fetchCategories(type: NetworkType) {

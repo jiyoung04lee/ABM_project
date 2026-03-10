@@ -157,7 +157,7 @@ class Comment(models.Model):
     )
 
     content = models.TextField()
-
+    is_anonymous = models.BooleanField(default=False) 
     parent = models.ForeignKey(
         "self",
         null=True,

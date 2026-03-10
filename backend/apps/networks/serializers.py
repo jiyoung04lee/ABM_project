@@ -287,6 +287,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "author_name",
             "content",
             "parent",
+            "is_anonymous", 
             "is_deleted",
             "created_at",
             "replies",
@@ -298,6 +299,10 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_author_name(self, obj):
         if obj.is_deleted:
             return None
+
+        if obj.is_anonymous:
+            return "익명"
+
         return obj.author.nickname if obj.author else None
 
     def get_replies(self, obj):
@@ -310,7 +315,7 @@ class CommentSerializer(serializers.ModelSerializer):
         if instance.is_deleted:
             data["content"] = "삭제된 댓글입니다."
 
-        if instance.post.is_anonymous:
+        if instance.is_anonymous:
             data["author"] = None
 
         return data

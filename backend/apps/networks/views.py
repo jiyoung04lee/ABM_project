@@ -203,7 +203,12 @@ class PostViewSet(ModelViewSet):
     @action(detail=True, methods=["get"])
     def comments(self, request, pk=None):
         post = self.get_object()
-        comments = post.comments.filter(parent__isnull=True, is_deleted=False)
+        comments = (
+            post.comments
+            .filter(parent__isnull=True, is_deleted=False)
+            .select_related("author")
+            .prefetch_related("replies__author")
+        )
         serializer = CommentSerializer(comments, many=True, context={"request": request})
         return Response(serializer.data)
 
@@ -214,7 +219,11 @@ class PostViewSet(ModelViewSet):
         serializer = CommentSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
-        comment = serializer.save(author=request.user, post=post)
+        comment = serializer.save(
+            author=request.user,
+            post=post,
+            is_anonymous=request.data.get("is_anonymous", False)
+        )
 
         Post.objects.filter(pk=post.pk).update(comment_count=F("comment_count") + 1)
         post.refresh_from_db(fields=["comment_count"])
