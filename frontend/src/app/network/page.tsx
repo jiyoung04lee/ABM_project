@@ -9,6 +9,7 @@ import {
   PostListItem,
 } from "@/shared/api/network";
 import { useRequireAuth } from "@/shared/hooks/useRequireAuth";
+import Image from "next/image";
 
 const TABS: { key: NetworkType; label: string }[] = [
   { key: "student", label: "재학생" },
@@ -709,11 +710,11 @@ export default function NetworkPage() {
 
                           <div style={styles.stats}>
                             <div style={styles.stat}>
-                              <span style={styles.statIcon}>👁️</span>
+                              <Image src="/icons/eye.svg" alt="views" width={14} height={14} />
                               <span>{views}</span>
                             </div>
                             <div style={styles.stat}>
-                              <span style={styles.statIcon}>💬</span>
+                              <Image src="/icons/comment.svg" alt="comments" width={14} height={14} />
                               <span>{comments}</span>
                             </div>
                           </div>
