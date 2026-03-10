@@ -41,8 +41,7 @@ export default function NetworkDetailPage() {
   }, []);
 
   useEffect(() => {
-    api
-      .get("users/me/")
+    api.get("users/me/")
       .then((r) => setIsAdmin(!!r.data?.is_staff))
       .catch(() => {});
   }, []);
@@ -80,18 +79,27 @@ export default function NetworkDetailPage() {
     setCommentSubmitting(true);
 
     try {
-      await addComment(Number(id), {
+      const res = await addComment(Number(id), {
         content,
         parent,
         is_anonymous: isAnonymous,
       });
 
-      const cs = await fetchComments(Number(id));
-      setComments(cs);
-
       if (parent === null) {
+        setComments((prev) => [...prev, res]);
         setCommentInput("");
       } else {
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === parent
+              ? {
+                  ...comment,
+                  replies: [...(comment.replies || []), res],
+                }
+              : comment
+          )
+        );
+
         setReplyInput((prev) => ({ ...prev, [parent]: "" }));
         setReplyOpen(null);
       }
@@ -106,11 +114,24 @@ export default function NetworkDetailPage() {
     const res = await toggleCommentLike(commentId);
 
     setComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId
-          ? { ...c, is_liked: res.liked, like_count: res.like_count }
-          : c
-      )
+      prev.map((comment) => {
+        if (comment.id === commentId) {
+          return {
+            ...comment,
+            is_liked: res.liked,
+            like_count: res.like_count,
+          };
+        }
+
+        return {
+          ...comment,
+          replies: comment.replies?.map((reply) =>
+            reply.id === commentId
+              ? { ...reply, is_liked: res.liked, like_count: res.like_count }
+              : reply
+          ),
+        };
+      })
     );
   };
 
@@ -166,7 +187,6 @@ export default function NetworkDetailPage() {
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
 
-      {/* 상단 */}
       <div className="flex items-center justify-between mb-6">
         <button onClick={() => router.back()}>
           <Image src="/icons/back.svg" alt="back" width={24} height={24} />
@@ -197,7 +217,6 @@ export default function NetworkDetailPage() {
         )}
       </div>
 
-      {/* 작성자 */}
       <PostMeta
         author={post.author_name}
         profileImage={"/icons/userbaseimage.svg"}
@@ -208,14 +227,6 @@ export default function NetworkDetailPage() {
 
       <div className="border-b border-[#E5E7EB] mb-10" />
 
-      {post.category_name && (
-        <div className="mt-2 mb-6">
-          <span className="inline-flex px-3 py-[6px] rounded-full text-[14px] bg-[#EFF6FF] text-[#155DFC]">
-            {post.category_name}
-          </span>
-        </div>
-      )}
-
       <h1 className="text-[30px] font-semibold text-[#0A0A0A] mb-6">
         {post.title}
       </h1>
@@ -224,7 +235,6 @@ export default function NetworkDetailPage() {
         {post.content}
       </div>
 
-      {/* 좋아요 */}
       <div className="flex justify-end mt-8">
         <button
           onClick={handleLike}
@@ -240,26 +250,23 @@ export default function NetworkDetailPage() {
         </button>
       </div>
 
-      {/* 댓글 */}
       <div className="mt-1 border-t border-[#E5E7EB] pt-5">
         <h3 className="text-[20px] font-semibold mb-5 mt-1">댓글</h3>
 
         {comments.map((comment) => (
           <div key={comment.id} className="mb-12">
+
             <div className="flex items-start gap-3">
 
               <div className="w-10 h-10 rounded-full overflow-hidden">
-                <img
-                  src={"/icons/userbaseimage.svg"}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                <img src="/icons/userbaseimage.svg" className="w-10 h-10 rounded-full" />
               </div>
 
               <div className="flex-1">
 
                 <div className="flex items-center gap-2">
                   <span className="text-[16px] text-[#0A0A0A]">
-                    {comment.author_name ?? "익명"}
+                    {comment.is_anonymous ? "익명" : comment.author_name}
                   </span>
 
                   <span className="text-[14px] text-[#6A7282]">
@@ -270,59 +277,16 @@ export default function NetworkDetailPage() {
                 <p className="mt-2 text-[16px] text-[#364153]">
                   {comment.content}
                 </p>
-                {/* 답글 리스트 */}
-                {comment.replies?.length > 0 && (
-                  <div className="mt-4 ml-10 space-y-6">
-                    {comment.replies.map((reply) => (
-                      <div key={reply.id} className="flex items-start gap-3">
 
-                        <div className="w-8 h-8 rounded-full overflow-hidden">
-                          <img
-                            src="/icons/userbaseimage.svg"
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        </div>
-
-                        <div className="flex-1">
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-[15px] text-[#0A0A0A]">
-                              {reply.author_name ?? "익명"}
-                            </span>
-
-                            <span className="text-[13px] text-[#6A7282]">
-                              {reply.created_at?.slice(0, 10)}
-                            </span>
-                          </div>
-
-                          <p className="mt-1 text-[15px] text-[#364153]">
-                            {reply.content}
-                          </p>
-
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
                 <div className="mt-3 flex items-center gap-3 text-sm text-[#6A7282]">
-
-                  <button
-                    onClick={() => handleCommentLike(comment.id)}
-                    className="flex items-center gap-1"
-                  >
+                  <button onClick={() => handleCommentLike(comment.id)} className="flex items-center gap-1">
                     <Image src="/icons/good.svg" alt="like" width={16} height={16} />
                     <span>{comment.like_count}</span>
                   </button>
 
-                  <button onClick={() => setReplyOpen(comment.id)}>
-                    답글
-                  </button>
+                  <button onClick={() => setReplyOpen(comment.id)}>답글</button>
 
-                  <button onClick={() => handleDeleteComment(comment.id)}>
-                    삭제
-                  </button>
-
+                  <button onClick={() => handleDeleteComment(comment.id)}>삭제</button>
                 </div>
 
                 {replyOpen === comment.id && (
@@ -347,12 +311,39 @@ export default function NetworkDetailPage() {
                   </div>
                 )}
 
+                {comment.replies?.map((reply) => (
+                  <div key={reply.id} className="mt-6 ml-10">
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[14px] text-[#0A0A0A]">
+                        {reply.is_anonymous ? "익명" : reply.author_name}
+                      </span>
+
+                      <span className="text-[12px] text-[#6A7282]">
+                        {reply.created_at?.slice(0, 10)}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 text-[14px] text-[#364153]">
+                      {reply.content}
+                    </p>
+
+                    <div className="mt-2 flex gap-3 text-xs text-[#6A7282]">
+                      <button onClick={() => handleDeleteComment(reply.id)}>
+                        삭제
+                      </button>
+                    </div>
+
+                  </div>
+                ))}
+
               </div>
+
             </div>
+
           </div>
         ))}
 
-        {/* 댓글 입력 */}
         <div className="pt-5 border-t border-[#E5E7EB]">
 
           <textarea
@@ -387,6 +378,7 @@ export default function NetworkDetailPage() {
         </div>
 
       </div>
+
     </div>
   );
 }
