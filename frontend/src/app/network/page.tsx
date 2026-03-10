@@ -690,7 +690,17 @@ export default function NetworkPage() {
 
                         <div style={styles.cardFooter}>
                           <div style={styles.authorLeft}>
-                            <div style={styles.avatar}>{authorInitial}</div>
+                            <img
+                              src="/icons/userbaseimage.svg"
+                              alt="profile"
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "999999px",
+                                objectFit: "cover",
+                              }}
+                            />
+
                             <div style={styles.authorText}>
                               {author}
                               {date ? `·${date}` : ""}
