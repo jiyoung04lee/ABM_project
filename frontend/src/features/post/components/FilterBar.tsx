@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { COMMUNITY_CATEGORIES } from "@/constants/communityCategories";
+import { COMMUNITY_CATEGORIES } from "@/features/post/components/communityCategories";
 
 const categories = COMMUNITY_CATEGORIES;
 
@@ -24,7 +24,7 @@ export default function FilterBar({
   onSearchChange,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   return (
     <div className="mb-1">
       <div className="flex justify-between items-center">
@@ -33,19 +33,19 @@ export default function FilterBar({
         <div className="flex gap-1">
           {categories.map((category) => (
             <button
-              key={category}
-              onClick={() => onFilterChange(category)}
+              key={category.value}
+              onClick={() => onFilterChange(category.value)}
               className={`
                 px-3 py-1 rounded-full text-[13px] leading-[20px]
                 transition
                 ${
-                  selectedFilter === category
+                  selectedFilter === category.value
                     ? "bg-[#2B7FFF] text-white"
                     : "bg-[#F3F4F6] text-[#050000]"
                 }
               `}
             >
-              {category}
+              {category.label}
             </button>
           ))}
         </div>
@@ -78,7 +78,7 @@ export default function FilterBar({
             />
           </div>
 
-          {/* 최신순 */}
+          {/* 정렬 */}
           <div className="relative text-[13px]">
             <button
               onClick={() => setIsOpen((prev) => !prev)}
@@ -104,6 +104,7 @@ export default function FilterBar({
                 >
                   최신순
                 </button>
+
                 <button
                   onClick={() => {
                     onSortChange("popular");
