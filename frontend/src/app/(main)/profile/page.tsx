@@ -1,19 +1,21 @@
  "use client";
 
- import {
-   Mail,
-   Calendar,
-   BookOpen,
-   MessageCircle,
-   Users,
-   Edit,
-   FileText,
-   GraduationCap,
- } from "lucide-react";
- import Link from "next/link";
+import {
+  Mail,
+  Calendar,
+  BookOpen,
+  MessageCircle,
+  Users,
+  Edit,
+  FileText,
+  GraduationCap,
+  Trash2,
+} from "lucide-react";
+import Link from "next/link";
  import { useRouter } from "next/navigation";
  import { useEffect, useState } from "react";
- import{ API_BASE } from "@/shared/api/api";
+import{ API_BASE } from "@/shared/api/api";
+import { deletePost as deleteCommunityPost, deleteComment as deleteCommunityComment } from "@/shared/api/community";
 
  type UserType = "student" | "graduate";
 
@@ -92,6 +94,7 @@ type Tab = "profile" | "activity";
    const [comments, setComments] = useState<MyComment[]>([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
    useEffect(() => {
      const token =
@@ -175,8 +178,66 @@ type Tab = "profile" | "activity";
      fetchAll();
    }, [router]);
 
+  const handleProfileImageChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const token =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("access_token")
+        : null;
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      const formData = new FormData();
+      formData.append("profile_image", file);
+
+      const res = await fetch(`${API_BASE}/api/users/me/`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) return;
+
+      const data: UserMeResponse = await res.json();
+      setUser(data);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
    const postsCount = posts.length;
   const commentsCount = comments.length;
+
+  const handleDeleteMyPost = async (id: number) => {
+    if (!confirm("이 글을 삭제할까요?")) return;
+    try {
+      await deleteCommunityPost(id);
+      setPosts((prev) => prev.filter((p) => p.id !== id));
+    } catch {
+      alert("글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    }
+  };
+
+  const handleDeleteMyComment = async (id: number) => {
+    if (!confirm("이 댓글을 삭제할까요?")) return;
+    try {
+      await deleteCommunityComment(id);
+      setComments((prev) => prev.filter((c) => c.id !== id));
+    } catch {
+      alert("댓글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    }
+  };
 
    if (loading) {
      return (
@@ -259,7 +320,7 @@ type Tab = "profile" | "activity";
                </Link>
 
                <div className="flex items-start gap-6">
-                 <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                 <label className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer relative">
                   {user.profile_image ? (
                     <img
                       src={`${user.profile_image}?t=${Date.now()}`}
@@ -269,7 +330,18 @@ type Tab = "profile" | "activity";
                   ) : (
                     <span className="text-4xl">👤</span>
                   )}
-                 </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleProfileImageChange}
+                  />
+                  {uploadingImage && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-xs font-semibold">
+                      변경 중...
+                    </div>
+                  )}
+                 </label>
                  <div className="flex-1">
                    <h2 className="text-3xl font-bold mb-2">{user.name}</h2>
                    {summaryText && (
@@ -367,33 +439,41 @@ type Tab = "profile" | "activity";
                      const category = post.category_name ?? "커뮤니티";
                      const views = post.view_count ?? 0;
 
-                     return (
-                       <Link
+                      return (
+                        <div
                           key={post.id}
-                          href={`/community/${post.id}`}
-                          className="block p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
+                          className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
                         >
-                         <div className="flex items-start justify-between mb-3">
-                           <div>
-                             <div className="inline-block px-4 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-3">
-                               {category}
-                             </div>
-                             <h3 className="text-lg font-bold mb-2">
-                               {post.title}
-                             </h3>
-                             <div className="text-sm font-semibold text-gray-500">
-                               {created}
-                             </div>
-                           </div>
-                           <FileText className="w-6 h-6 text-gray-400" />
-                         </div>
-                         <div className="flex items-center gap-6 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
-                           <span>조회 {views}</span>
-                           <span>좋아요 {post.like_count}</span>
-                           <span>댓글 {post.comment_count}</span>
-                         </div>
-                       </Link>
-                     );
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <div className="inline-block px-4 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-3">
+                                {category}
+                              </div>
+                              <Link href={`/community/${post.id}`}>
+                                <h3 className="text-lg font-bold mb-2 hover:underline">
+                                  {post.title}
+                                </h3>
+                              </Link>
+                              <div className="text-sm font-semibold text-gray-500">
+                                {created}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMyPost(post.id)}
+                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              삭제
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-6 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
+                            <span>조회 {views}</span>
+                            <span>좋아요 {post.like_count}</span>
+                            <span>댓글 {post.comment_count}</span>
+                          </div>
+                        </div>
+                      );
                    })}
                  </div>
                )}
@@ -411,31 +491,38 @@ type Tab = "profile" | "activity";
                    {comments.map((comment) => {
                      const created = formatDate(comment.created_at);
                      return (
-                       <div
-                         key={comment.id}
-                         className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
-                       >
-                         <div className="flex items-start justify-between mb-3">
-                           <div className="flex-1">
-                             <div className="flex items-center gap-2 mb-2">
-                               <MessageCircle className="w-4 h-4 text-indigo-600" />
-                               <span className="text-sm font-semibold text-gray-600">
-                                 "{comment.post_title}" 글에 댓글
-                               </span>
-                             </div>
-                             <p className="text-base text-gray-800 leading-relaxed mb-2">
-                               {comment.content}
-                             </p>
-                             <div className="text-sm font-semibold text-gray-500">
-                               {created}
-                             </div>
-                           </div>
-                           <MessageCircle className="w-6 h-6 text-gray-400 flex-shrink-0" />
-                         </div>
-                         <div className="flex items-center gap-4 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
-                           <span>좋아요 {comment.like_count}</span>
-                         </div>
-                       </div>
+                        <div
+                          key={comment.id}
+                          className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <MessageCircle className="w-4 h-4 text-indigo-600" />
+                                <span className="text-sm font-semibold text-gray-600">
+                                  "{comment.post_title}" 글에 댓글
+                                </span>
+                              </div>
+                              <p className="text-base text-gray-800 leading-relaxed mb-2">
+                                {comment.content}
+                              </p>
+                              <div className="text-sm font-semibold text-gray-500">
+                                {created}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMyComment(comment.id)}
+                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              삭제
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
+                            <span>좋아요 {comment.like_count}</span>
+                          </div>
+                        </div>
                      );
                    })}
                  </div>

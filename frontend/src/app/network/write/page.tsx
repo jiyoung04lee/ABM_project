@@ -34,6 +34,24 @@ function WriteContent() {
   const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const handleFiles = (fileList: FileList | File[]) => {
+    const newFiles = Array.from(fileList);
+
+    if (!newFiles.length) return;
+
+    setFiles((prev) => [...prev, ...newFiles]);
+
+    const previews = newFiles
+      .filter((file) => file.type.startsWith("image/"))
+      .map((file) => URL.createObjectURL(file));
+
+    setPreviewImages((prev) => [...prev, ...previews]);
+
+    if (mainImageIndex === null && previews.length > 0) {
+      setMainImageIndex(0);
+    }
+  };
+
   // ✅ 카테고리 불러오기 (네트워크는 type 기준)
   useEffect(() => {
     (async () => {
@@ -52,24 +70,11 @@ function WriteContent() {
     })();
   }, [type]);
 
-  // 파일 업로드 처리
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files;
     if (!fileList) return;
 
-    const newFiles = Array.from(fileList);
-
-    setFiles((prev) => [...prev, ...newFiles]);
-
-    const previews = newFiles
-      .filter((file) => file.type.startsWith("image/"))
-      .map((file) => URL.createObjectURL(file));
-
-    setPreviewImages((prev) => [...prev, ...previews]);
-
-    if (mainImageIndex === null && previews.length > 0) {
-      setMainImageIndex(0);
-    }
+    handleFiles(fileList);
   };
 
   const handleSubmit = async () => {
@@ -180,6 +185,16 @@ function WriteContent() {
         <label
           htmlFor="fileUpload"
           className="border-2 border-dashed border-[#E5E7EB] rounded-xl py-12 flex flex-col items-center justify-center text-[#6A7282] cursor-pointer"
+          onDragOver={(e) => {
+            e.preventDefault();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              handleFiles(e.dataTransfer.files);
+              e.dataTransfer.clearData();
+            }
+          }}
         >
           <input
             type="file"

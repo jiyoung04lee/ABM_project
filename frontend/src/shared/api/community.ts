@@ -14,6 +14,11 @@ export const getPostDetail = (id: number) => {
   return api.get(`community/posts/${id}/`);
 };
 
+// 게시글 삭제
+export const deletePost = (id: number) => {
+  return api.delete(`community/posts/${id}/`);
+};
+
 // 게시글 생성
 export const createPost = (data: FormData) => {
   return api.post("community/posts/", data);

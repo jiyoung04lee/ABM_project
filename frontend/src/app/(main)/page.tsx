@@ -134,7 +134,7 @@ export default function HomeView() {
             href="/login"
             className="inline-block px-8 py-4 bg-[#2B7FFF] text-white rounded-full hover:bg-[#1d4ed8] transition-colors font-medium text-lg shadow-lg"
           >
-            로그인하고 시작하기
+            시작하기
           </Link>
         ) : (
           <Link
@@ -151,7 +151,7 @@ export default function HomeView() {
             <BookOpen className="w-8 h-8 text-blue-900" />
           </div>
           <div className="w-16 h-16 bg-indigo-300 rounded-2xl flex items-center justify-center shadow-md">
-            <GraduationCap className="w-8 h-8 text-indigo-900" />
+            <Users className="w-8 h-8 text-indigo-900" />
           </div>
           <div className="w-16 h-16 bg-blue-400 rounded-2xl flex items-center justify-center shadow-md">
             <MessageCircle className="w-8 h-8 text-blue-900" />
@@ -304,7 +304,7 @@ export default function HomeView() {
                     회원가입
                   </Link>
                   <Link
-                    href="/network"
+                    href="/department"
                     className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full hover:bg-white/10 transition-colors font-bold"
                   >
                     둘러보기
@@ -313,10 +313,10 @@ export default function HomeView() {
               ) : (
                 <>
                   <Link
-                    href="/network/create"
-                    className="px-8 py-4 bg-[#2B7FFF] text-white rounded-full hover:bg-[#1d4ed8] transition-colors font-bold shadow-lg"
+                    href="/network"
+                    className="px-8 py-4 bg-white text-[#2563EB] rounded-full hover:bg-gray-50 transition-colors font-bold shadow-lg"
                   >
-                    글 작성하기
+                    네트워크 가기
                   </Link>
                   <Link
                     href="/community"

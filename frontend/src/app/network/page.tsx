@@ -222,6 +222,7 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
+    whiteSpace: "nowrap",
   } as React.CSSProperties,
 
   chipActive: {
@@ -715,7 +716,7 @@ export default function NetworkPage() {
                         <div style={styles.cardFooter}>
                           <div style={styles.authorLeft}>
                             <img
-                              src="/icons/userbaseimage.svg"
+                              src={(p as any).author_profile_image || "/icons/userbaseimage.svg"}
                               alt="profile"
                               style={{
                                 width: 24,

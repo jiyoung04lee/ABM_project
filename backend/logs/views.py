@@ -239,22 +239,39 @@ class HeatmapView(APIView):
                 continue
             matrix[ag][vg] += row.get("weight") or 0
 
+        # 졸업생 가입자가 아직 없다면, 히트맵에서 졸업생 축은 숨긴다.
+        from apps.users.models import User
+
+        has_graduate_users = User.objects.filter(user_type="graduate").exists()
+        author_groups = (
+            HEATMAP_GROUPS
+            if has_graduate_users
+            else [(g, label) for (g, label) in HEATMAP_GROUPS if g != "graduate"]
+        )
+        viewer_keys = (
+            HEATMAP_GROUP_KEYS
+            if has_graduate_users
+            else [g for g in HEATMAP_GROUP_KEYS if g != "graduate"]
+        )
+
         result = []
-        for ag, ag_label in HEATMAP_GROUPS:
-            result.append({
-                "author_grade": ag,
-                "author_grade_label": ag_label,
-                "cols": [
-                    {
-                        "viewer_grade": vg,
-                        "viewer_grade_label": next(
-                            lbl for g, lbl in HEATMAP_GROUPS if g == vg
-                        ),
-                        "score": matrix[ag][vg],
-                    }
-                    for vg in HEATMAP_GROUP_KEYS
-                ],
-            })
+        for ag, ag_label in author_groups:
+            result.append(
+                {
+                    "author_grade": ag,
+                    "author_grade_label": ag_label,
+                    "cols": [
+                        {
+                            "viewer_grade": vg,
+                            "viewer_grade_label": next(
+                                lbl for g, lbl in HEATMAP_GROUPS if g == vg
+                            ),
+                            "score": matrix[ag][vg],
+                        }
+                        for vg in viewer_keys
+                    ],
+                }
+            )
         return Response({"rows": result})
 
 
@@ -744,17 +761,23 @@ class KnowledgeDeliveryScoreView(APIView):
             except (ValueError, TypeError):
                 pass
 
+        # 졸업생 가입자가 실제로 존재하는지 확인
+        has_graduate_users = User.objects.filter(user_type="graduate").exists()
+
         # user_id -> grade_group (1, 2, 34, "graduate")
         user_groups: dict[int, int | str] = {}
         for u in User.objects.values("id", "grade", "user_type"):
-            if u["user_type"] != "student":
+            # 명시적으로 graduate 인 경우만 졸업생 그룹으로 분류
+            if u["user_type"] == "graduate":
                 user_groups[u["id"]] = "graduate"
-            elif u["grade"] in (3, 4):
+            elif u["user_type"] == "student" and u["grade"] in (3, 4):
                 user_groups[u["id"]] = 34
-            elif u["grade"] in (1, 2):
+            elif u["user_type"] == "student" and u["grade"] in (1, 2):
                 user_groups[u["id"]] = u["grade"]
 
-        groups = [1, 2, 34, "graduate"]
+        groups: list[int | str] = [1, 2, 34]
+        if has_graduate_users:
+            groups.append("graduate")
         agg = {
             g: {
                 "post_count": 0,
@@ -856,15 +879,25 @@ class KnowledgeDeliveryScoreView(APIView):
                 agg[g]["like_score"] = (
                     agg[g]["received_likes"] * KNOWLEDGE_SCORE_RECEIVED_LIKE
                 )
-        agg["graduate"]["comment_score"] = (
-            agg["graduate"]["comment_count"] * KNOWLEDGE_SCORE_COMMENT
-        )
-        agg["graduate"]["like_score"] = (
-            agg["graduate"]["received_likes"] * KNOWLEDGE_SCORE_RECEIVED_LIKE
-        )
+        if has_graduate_users:
+            agg["graduate"]["comment_score"] = (
+                agg["graduate"]["comment_count"] * KNOWLEDGE_SCORE_COMMENT
+            )
+            agg["graduate"]["like_score"] = (
+                agg["graduate"]["received_likes"] * KNOWLEDGE_SCORE_RECEIVED_LIKE
+            )
 
         result = []
-        for grade_key, grade_label in KNOWLEDGE_GRADE_GROUPS:
+        grade_groups = (
+            KNOWLEDGE_GRADE_GROUPS
+            if has_graduate_users
+            else [
+                (k, label)
+                for (k, label) in KNOWLEDGE_GRADE_GROUPS
+                if k != "graduate"
+            ]
+        )
+        for grade_key, grade_label in grade_groups:
             a = agg.get(grade_key, {})
             post_count = a.get("post_count", 0)
             comment_count = a.get("comment_count", 0)

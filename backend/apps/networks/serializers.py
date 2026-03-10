@@ -34,6 +34,7 @@ class PostFileSerializer(serializers.ModelSerializer):
 
 class PostListSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
+    author_profile_image = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
     is_liked = serializers.BooleanField(read_only=True)
 
@@ -52,6 +53,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "category_name",
             "title",
             "author_name",
+            "author_profile_image",
             "view_count",
             "like_count",
             "is_liked",
@@ -66,12 +68,38 @@ class PostListSerializer(serializers.ModelSerializer):
             return "익명"
         return obj.author.nickname
 
+    def get_author_profile_image(self, obj):
+        request = self.context.get("request")
+
+        if obj.is_anonymous or not obj.author:
+            return None
+
+        if not obj.author.profile_image:
+            return None
+
+        url = obj.author.profile_image.url
+        if str(url).startswith(("http://", "https://")):
+            return url
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
+
     def get_thumbnail(self, obj):
         request = self.context.get("request")
         first_image = obj.files.filter(file_type="image").first()
-        if first_image and request:
-            return request.build_absolute_uri(first_image.file.url)
-        return None
+        if not first_image:
+            return None
+
+        url = first_image.file.url
+        if str(url).startswith(("http://", "https://")):
+            return url
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -131,9 +159,17 @@ class PostDetailSerializer(serializers.ModelSerializer):
 
     def get_thumbnail(self, obj):
         request = self.context.get("request")
-        if obj.thumbnail and request:
-            return request.build_absolute_uri(obj.thumbnail.url)
-        return None
+        if not obj.thumbnail:
+            return None
+
+        url = obj.thumbnail.url
+        if str(url).startswith(("http://", "https://")):
+            return url
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -287,7 +323,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "author_name",
             "content",
             "parent",
-            "is_anonymous", 
+            "is_anonymous",
             "is_deleted",
             "created_at",
             "replies",

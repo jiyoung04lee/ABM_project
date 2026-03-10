@@ -107,7 +107,21 @@ export interface UserManagementUser {
 export const getUsers = (params?: { grade?: number[]; interest?: string[] }) =>
   api.get<{ users: UserManagementUser[]; count: number }>(
     "logs/analytics/user-management/",
-    { params }
+    {
+      params,
+      // 기본 axios 배열 직렬화(foo[]=1&foo[]=2)가 아니라
+      // DRF getlist("grade")가 읽을 수 있게 grade=1&grade=2 형태로 보냄
+      paramsSerializer: (p) => {
+        const search = new URLSearchParams();
+        const grade = (p as any)?.grade as number[] | undefined;
+        const interest = (p as any)?.interest as string[] | undefined;
+
+        grade?.forEach((g) => search.append("grade", String(g)));
+        interest?.forEach((i) => search.append("interest", i));
+
+        return search.toString();
+      },
+    }
   );
 
 // ─── Error logs ───
