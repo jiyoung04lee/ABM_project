@@ -26,6 +26,7 @@ function OnboardingContent() {
   const [interests, setInterests] = useState<string[]>([]);
   const [email, setEmail] = useState("");
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
+  const [showPrivacyDetail, setShowPrivacyDetail] = useState(false);
   const [studentId, setStudentId] = useState("");
   const [grade, setGrade] = useState<number | "">("");
   const [admissionYear, setAdmissionYear] = useState<number | "">("");
@@ -175,7 +176,7 @@ function OnboardingContent() {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              닉네임 <span className="text-red-500">*</span>
+              커뮤니티에서 사용할 닉네임을 입력해주세요. <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -213,16 +214,14 @@ function OnboardingContent() {
             <div className="overflow-x-auto pb-2 -mx-1">
               <div className="flex gap-2 min-w-0">
                 {INTEREST_OPTIONS.map((opt) => {
-                  const selected = interests.includes(opt.value);
+                  const selected = interests[0] === opt.value;
                   return (
                     <button
                       key={opt.value}
                       type="button"
                       onClick={() =>
                         setInterests((prev) =>
-                          prev.includes(opt.value)
-                            ? prev.filter((x) => x !== opt.value)
-                            : [...prev, opt.value]
+                          prev[0] === opt.value ? [] : [opt.value]
                         )
                       }
                       className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition border ${
@@ -253,11 +252,11 @@ function OnboardingContent() {
                 onChange={(e) =>
                   setEmail(e.target.value.replace(/@.*/, "") + "@kookmin.ac.kr")
                 }
-                placeholder="학번 또는 아이디"
+                placeholder="example123"
                 className="flex-1 px-4 py-3 outline-none bg-white text-sm"
                 required
               />
-              <span className="px-3 py-3 bg-gray-50 text-gray-500 text-sm font-medium border-l border-gray-200 whitespace-nowrap">
+              <span className="flex-shrink-0 px-3 py-3 bg-gray-50 text-gray-500 text-sm font-medium border-l border-gray-200 whitespace-nowrap">
                 @kookmin.ac.kr
               </span>
             </div>
@@ -309,7 +308,7 @@ function OnboardingContent() {
           {userType === "graduate" && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                입학년도(기수) <span className="text-red-500">*</span>
+                입학년도 <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -338,6 +337,13 @@ function OnboardingContent() {
                 개인정보 수집·이용에 동의합니다 <span className="text-red-500">*</span>
               </span>
             </label>
+            <button
+              type="button"
+              onClick={() => setShowPrivacyDetail(true)}
+              className="mt-1 text-xs text-gray-500 underline underline-offset-2 hover:text-[#4F6EF7]"
+            >
+              자세히 보기
+            </button>
             {fieldErrors.personal_info_consent && (
               <p className="text-red-500 text-xs mt-1">{fieldErrors.personal_info_consent}</p>
             )}
@@ -360,6 +366,88 @@ function OnboardingContent() {
           </Link>
         </p>
       </div>
+
+      {showPrivacyDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-lg max-h-[80vh] rounded-2xl bg-white shadow-xl p-6 overflow-y-auto">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900">
+                개인정보 수집·이용 안내
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyDetail(false)}
+                className="text-sm text-gray-400 hover:text-gray-600"
+              >
+                닫기
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm text-gray-700">
+              <section>
+                <h3 className="font-semibold mb-1">1. 수집하는 개인정보 항목</h3>
+                <p className="mb-1">① 필수 항목</p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>닉네임</li>
+                  <li>학과</li>
+                  <li>관심분야</li>
+                  <li>(재학생) 학번, 학년</li>
+                  <li>(졸업생) 입학년도</li>
+                  <li>학교 이메일(@kookmin.ac.kr)</li>
+                </ul>
+                <p className="mt-2 mb-1">② 서비스 이용 과정에서 자동으로 생성·수집되는 정보</p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>접속 일시, 접속 IP</li>
+                  <li>이용한 메뉴·페이지, 버튼 클릭 등 서비스 이용 기록</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold mb-1">2. 개인정보의 수집·이용 목적</h3>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>회원 식별 및 본인 여부 확인</li>
+                  <li>커뮤니티 서비스 제공 및 운영 (프로필 표시, 글/댓글 작성 시 작성자 정보 표기 등)</li>
+                  <li>서비스 품질 개선 및 통계 분석 (이용 현황 분석, 기능 개선 및 오류 대응 등)</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold mb-1">3. 개인정보의 보유·이용 기간</h3>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>회원 탈퇴 시까지 보관 후 지체 없이 파기합니다.</li>
+                  <li>관련 법령에 따라 일정 기간 보관이 필요한 경우, 해당 법령에서 정한 기간 동안만 별도 보관 후 파기합니다.</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold mb-1">4. 제3자 제공 및 처리 위탁</h3>
+                <p>
+                  서비스는 회원님의 개인정보를 외부 광고사, 로그 분석 도구 등 제3자에게 제공하거나 처리 위탁하지 않습니다.
+                  향후 제3자 제공 또는 처리 위탁이 필요한 경우, 사전에 별도 동의를 받고 관련 내용을 안내하겠습니다.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold mb-1">5. 동의를 거부할 권리</h3>
+                <p>
+                  회원님은 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다. 다만 필수 항목에 대한 동의를
+                  거부하는 경우 회원 가입 및 서비스 이용이 제한될 수 있습니다.
+                </p>
+              </section>
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPrivacyDetail(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-[#4F6EF7] hover:bg-[#3D5CE8]"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
