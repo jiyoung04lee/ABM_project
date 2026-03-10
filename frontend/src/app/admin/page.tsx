@@ -95,7 +95,8 @@ type ViewType =
   | "eventConfig"
   | "userManagement"
   | "searchAnalytics"
-  | "sessions";
+  | "sessions"
+  | "announcements";
 
 // 이벤트 상세 패널용 타입 (EventDetailPanel에서 사용)
 interface OperationalLog {
