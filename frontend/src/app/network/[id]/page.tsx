@@ -12,7 +12,6 @@ import {
   addComment,
   pinPost,
   unpinPost,
-  deletePost,
   toggleCommentLike,
   deleteComment,
   PostDetail,
@@ -29,6 +28,10 @@ export default function NetworkDetailPage() {
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentInput, setCommentInput] = useState("");
+  const [replyInput, setReplyInput] = useState<{ [key: number]: string }>({});
+  const [replyOpen, setReplyOpen] = useState<number | null>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [pinning, setPinning] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
@@ -38,7 +41,10 @@ export default function NetworkDetailPage() {
   }, []);
 
   useEffect(() => {
-    api.get("users/me/").then((r) => setIsAdmin(!!r.data?.is_staff)).catch(() => {});
+    api
+      .get("users/me/")
+      .then((r) => setIsAdmin(!!r.data?.is_staff))
+      .catch(() => {});
   }, []);
 
   const loadData = async () => {
@@ -61,18 +67,34 @@ export default function NetworkDetailPage() {
     });
   };
 
-  const handleCreateComment = async () => {
-    if (!commentInput.trim() || commentSubmitting) return;
+  const handleCreateComment = async (parent: number | null = null) => {
+    if (commentSubmitting) return;
+
+    const content =
+      parent === null
+        ? commentInput.trim()
+        : replyInput[parent]?.trim();
+
+    if (!content) return;
 
     setCommentSubmitting(true);
 
     try {
-      await addComment(Number(id), { content: commentInput });
-
-      setCommentInput("");
+      await addComment(Number(id), {
+        content,
+        parent,
+        is_anonymous: isAnonymous,
+      });
 
       const cs = await fetchComments(Number(id));
       setComments(cs);
+
+      if (parent === null) {
+        setCommentInput("");
+      } else {
+        setReplyInput((prev) => ({ ...prev, [parent]: "" }));
+        setReplyOpen(null);
+      }
     } catch {
       alert("댓글 작성 실패");
     } finally {
@@ -132,20 +154,6 @@ export default function NetworkDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!post) return;
-
-    if (!confirm("이 게시글을 삭제하시겠습니까?")) return;
-
-    try {
-      await deletePost(post.id);
-
-      router.push("/network");
-    } catch {
-      alert("삭제 실패");
-    }
-  };
-
   if (!post) return <div className="p-10">로딩중...</div>;
 
   return (
@@ -193,7 +201,6 @@ export default function NetworkDetailPage() {
 
       <div className="border-b border-[#E5E7EB] mb-10" />
 
-      {/* 카테고리 */}
       {post.category_name && (
         <div className="mt-2 mb-6">
           <span className="inline-flex px-3 py-[6px] rounded-full text-[14px] bg-[#EFF6FF] text-[#155DFC]">
@@ -202,12 +209,10 @@ export default function NetworkDetailPage() {
         </div>
       )}
 
-      {/* 제목 */}
       <h1 className="text-[30px] font-semibold text-[#0A0A0A] mb-6">
         {post.title}
       </h1>
 
-      {/* 내용 */}
       <div className="whitespace-pre-line text-[15px] text-[#364153] mb-6">
         {post.content}
       </div>
@@ -226,77 +231,85 @@ export default function NetworkDetailPage() {
           />
           <span className="text-[14px]">{post.like_count}</span>
         </button>
-
-        <button
-          onClick={handleDelete}
-          className="ml-3 px-4 py-2 text-sm border rounded-lg bg-red-50 border-red-200 text-red-600"
-        >
-          삭제
-        </button>
       </div>
 
       {/* 댓글 */}
       <div className="mt-1 border-t border-[#E5E7EB] pt-5">
         <h3 className="text-[20px] font-semibold mb-5 mt-1">댓글</h3>
 
-        {comments.length === 0 ? (
-          <div className="py-20 text-center text-[#9CA3AF] text-[14px]">
-            아직 작성된 댓글이 없습니다.
-          </div>
-        ) : (
-          comments.map((comment) => (
-            <div key={comment.id} className="mb-12">
-              <div className="flex items-start gap-3">
+        {comments.map((comment) => (
+          <div key={comment.id} className="mb-12">
+            <div className="flex items-start gap-3">
 
-                <div className="w-10 h-10 rounded-full overflow-hidden">
-                  <img
-                    src={"/icons/userbaseimage.svg"}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
+              <div className="w-10 h-10 rounded-full overflow-hidden">
+                <img
+                  src={"/icons/userbaseimage.svg"}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              </div>
+
+              <div className="flex-1">
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[16px] text-[#0A0A0A]">
+                    {comment.author_name ?? "익명"}
+                  </span>
+
+                  <span className="text-[14px] text-[#6A7282]">
+                    {comment.created_at?.slice(0, 10)}
+                  </span>
                 </div>
 
-                <div className="flex-1">
+                <p className="mt-2 text-[16px] text-[#364153]">
+                  {comment.content}
+                </p>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-[16px] text-[#0A0A0A]">
-                      {comment.author_name ?? "익명"}
-                    </span>
+                <div className="mt-3 flex items-center gap-3 text-sm text-[#6A7282]">
 
-                    <span className="text-[14px] text-[#6A7282]">
-                      {comment.created_at?.slice(0, 10)}
-                    </span>
-                  </div>
+                  <button
+                    onClick={() => handleCommentLike(comment.id)}
+                    className="flex items-center gap-1"
+                  >
+                    <Image src="/icons/good.svg" alt="like" width={16} height={16} />
+                    <span>{comment.like_count}</span>
+                  </button>
 
-                  <p className="mt-2 text-[16px] text-[#364153]">
-                    {comment.content}
-                  </p>
+                  <button onClick={() => setReplyOpen(comment.id)}>
+                    답글
+                  </button>
 
-                  <div className="mt-3 flex items-center gap-3 text-sm text-[#6A7282]">
+                  <button onClick={() => handleDeleteComment(comment.id)}>
+                    삭제
+                  </button>
+
+                </div>
+
+                {replyOpen === comment.id && (
+                  <div className="mt-4">
+                    <textarea
+                      value={replyInput[comment.id] || ""}
+                      onChange={(e) =>
+                        setReplyInput((prev) => ({
+                          ...prev,
+                          [comment.id]: e.target.value,
+                        }))
+                      }
+                      className="w-full border border-[#E5E7EB] rounded-xl p-3"
+                    />
 
                     <button
-                      onClick={() => handleCommentLike(comment.id)}
-                      className="flex items-center gap-1"
+                      onClick={() => handleCreateComment(comment.id)}
+                      className="mt-2 px-3 py-1 bg-[#2B7FFF] text-sm text-white rounded"
                     >
-                      <Image
-                        src="/icons/good.svg"
-                        alt="like"
-                        width={16}
-                        height={16}
-                      />
-                      <span>{comment.like_count}</span>
+                      답글 작성
                     </button>
-
-                    <button onClick={() => handleDeleteComment(comment.id)}>
-                      삭제
-                    </button>
-
                   </div>
+                )}
 
-                </div>
               </div>
             </div>
-          ))
-        )}
+          </div>
+        ))}
 
         {/* 댓글 입력 */}
         <div className="pt-5 border-t border-[#E5E7EB]">
@@ -308,14 +321,26 @@ export default function NetworkDetailPage() {
             className="w-full min-h-[160px] border border-[#E5E7EB] rounded-xl p-5 text-[15px]"
           />
 
-          <div className="flex justify-end mt-5">
+          <div className="flex justify-between items-center mt-5">
+
+            <label className="text-sm text-[#6A7282]">
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+              />
+              익명으로 작성
+            </label>
+
             <button
-              onClick={handleCreateComment}
+              onClick={() => handleCreateComment(null)}
               disabled={commentSubmitting}
               className="px-4 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm"
             >
               {commentSubmitting ? "작성 중..." : "댓글 작성"}
             </button>
+
           </div>
 
         </div>

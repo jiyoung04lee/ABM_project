@@ -128,7 +128,7 @@ export async function fetchComments(postId: number) {
 
 export async function addComment(
   postId: number,
-  payload: { content: string; parent?: number | null }
+  payload: { content: string; parent?: number | null; is_anonymous?: boolean }
 ) {
   const { data } = await api.post<Comment>(`networks/posts/${postId}/add_comment/`, payload);
   return data;
