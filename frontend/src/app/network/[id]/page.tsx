@@ -270,7 +270,41 @@ export default function NetworkDetailPage() {
                 <p className="mt-2 text-[16px] text-[#364153]">
                   {comment.content}
                 </p>
+                {/* 답글 리스트 */}
+                {comment.replies?.length > 0 && (
+                  <div className="mt-4 ml-10 space-y-6">
+                    {comment.replies.map((reply) => (
+                      <div key={reply.id} className="flex items-start gap-3">
 
+                        <div className="w-8 h-8 rounded-full overflow-hidden">
+                          <img
+                            src="/icons/userbaseimage.svg"
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        </div>
+
+                        <div className="flex-1">
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-[15px] text-[#0A0A0A]">
+                              {reply.author_name ?? "익명"}
+                            </span>
+
+                            <span className="text-[13px] text-[#6A7282]">
+                              {reply.created_at?.slice(0, 10)}
+                            </span>
+                          </div>
+
+                          <p className="mt-1 text-[15px] text-[#364153]">
+                            {reply.content}
+                          </p>
+
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 <div className="mt-3 flex items-center gap-3 text-sm text-[#6A7282]">
 
                   <button
