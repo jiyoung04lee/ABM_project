@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { use, useEffect, useState } from "react";
 import { Mail, Bell, LayoutDashboard } from "lucide-react";
 import api from "@/shared/api/axios";
 import { useNotification } from "@/shared/contexts/NotificationContext";
@@ -10,6 +10,7 @@ import Logo from "@/shared/components/layout/Logo";
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
 
   // SSR 단계에서는 항상 로그아웃 상태로 렌더링하고,
   // 클라이언트 마운트 후에만 실제 로그인 여부를 반영한다.
@@ -81,15 +82,25 @@ export default function Header() {
           </Link>
 
           <nav className="flex items-center gap-8 text-[18px] font-semibold">
-            {menus.map((menu) => (
-              <Link
-                key={menu.path}
-                href={menu.path}
-                className="text-gray-700 hover:text-[#2B7FFF] transition"
-              >
-                {menu.name}
-              </Link>
-            ))}
+            {menus.map((menu) => {
+              const isActive =
+                pathname === menu.path ||
+                (menu.path !== "/" && pathname.startsWith(menu.path));
+
+              return (
+                <Link
+                  key={menu.path}
+                  href={menu.path}
+                  className={`transition ${
+                    isActive
+                      ? "text-[#2B7FFF]"
+                      : "text-gray-700 hover:text-[#2B7FFF]"
+                  }`}
+                >
+                  {menu.name}
+                </Link>
+              );
+            })}
           </nav>
         </div>
 

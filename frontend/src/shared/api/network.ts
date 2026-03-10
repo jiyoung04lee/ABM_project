@@ -45,6 +45,7 @@ export interface PostDetail {
   type: NetworkType;
   title: string;
   content: string;
+  author_id: number;
   author_name: string;
   is_anonymous: boolean;
   view_count: number;

@@ -222,7 +222,7 @@ export default function NetworkDetailPage() {
         profileImage={"/icons/userbaseimage.svg"}
         createdAt={post.created_at}
         isAnonymous={post.is_anonymous}
-        authorId={0}
+        authorId={post.author_id}
       />
 
       <div className="border-b border-[#E5E7EB] mb-10" />
