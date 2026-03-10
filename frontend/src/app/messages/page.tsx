@@ -37,14 +37,12 @@ function MessagesPageContent(){
   const [messages, setMessages] = useState<Message[]>([]);
   const [replyText, setReplyText] = useState("");
   const [contactingAdmin, setContactingAdmin] = useState(false);
+  const [sending, setSending] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [myId, setMyId] = useState<number | null>(null);
 
+  const sendingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-  const myId =
-    typeof window !== "undefined"
-      ? Number(localStorage.getItem("user_id"))
-      : null;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -68,7 +66,7 @@ function MessagesPageContent(){
           info: c.other_user?.info || "",
         },
         last_message: c.last_message || "",
-        last_date: c.last_date || "",
+        last_date: c.last_message_time || c.last_date || "",
         unread_count: c.unread_count || 0,
       }));
 
@@ -110,8 +108,11 @@ function MessagesPageContent(){
 
   // 메시지 전송
   const handleSendMessage = async () => {
+    if (sendingRef.current) return;
     if (!replyText.trim() || !selectedConversation) return;
 
+    sendingRef.current = true;
+    setSending(true);
     try {
       await api.post("messages/messages/", {
         conversation: selectedConversation.id,
@@ -124,6 +125,9 @@ function MessagesPageContent(){
       await fetchConversations();
     } catch (err) {
       console.error("메시지 전송 실패", err);
+    } finally {
+      sendingRef.current = false;
+      setSending(false);
     }
   };
 
@@ -135,19 +139,47 @@ function MessagesPageContent(){
     }
   };
 
-  // 새 대화 생성
-  const createConversation = async (userId: number) => {
+  // 새 대화 생성 (또는 기존 대화 찾기)
+  const createConversation = async (
+    userId: number
+  ): Promise<Conversation | null> => {
     try {
-      await api.post("messages/conversations/", {
+      const res = await api.post("messages/start/", {
         user_id: userId,
       });
+
+      const c = res.data;
+
+      const conv: Conversation = {
+        id: c.id,
+        other_user: {
+          id: c.other_user?.id,
+          name: c.other_user?.name,
+          info: c.other_user?.info || "",
+        },
+        last_message: c.last_message || "",
+        last_date: c.last_message_time || "",
+        unread_count: c.unread_count || 0,
+      };
+
+      setConversations((prev) => {
+        const exists = prev.find((p) => p.id === conv.id);
+        if (exists) {
+          return prev.map((p) => (p.id === conv.id ? conv : p));
+        }
+        return [conv, ...prev];
+      });
+
+      return conv;
     } catch (err) {
       console.error("대화 생성 실패", err);
+      return null;
     }
   };
 
   // 관리자에게 문의: 대화 시작 후 선택
   const handleContactAdmin = async () => {
+    if (contactingAdmin) return;
     setContactingAdmin(true);
     try {
       const adminRes = await api.get("users/admin-info/");
@@ -194,13 +226,7 @@ function MessagesPageContent(){
       return;
     }
 
-    createConversation(userId).then(async () => {
-      const updated = await fetchConversations();
-
-      const created = updated.find(
-        (c) => c.other_user && c.other_user.id === userId
-      );
-
+    createConversation(userId).then((created) => {
       if (created) {
         handleSelectConversation(created);
       }
@@ -208,7 +234,14 @@ function MessagesPageContent(){
   }, [targetUserId, conversations]);
 
   useEffect(() => {
-    api.get("users/me/").then((res) => setIsAdmin(!!res.data?.is_staff)).catch(() => {});
+    api.get("users/me/").then((res) => {
+      setIsAdmin(!!res.data?.is_staff);
+      if (res.data?.id) {
+        const id = Number(res.data.id);
+        localStorage.setItem("user_id", String(id));
+        setMyId(id);
+      }
+    }).catch(() => {});
   }, []);
 
   return (
@@ -337,7 +370,8 @@ function MessagesPageContent(){
 
                   <button
                     onClick={handleSendMessage}
-                    className="w-14 h-14 bg-[#2B7FFF] rounded-full flex items-center justify-center"
+                    disabled={sending}
+                    className="w-14 h-14 bg-[#2B7FFF] rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Image
                       src="/icons/send.svg"

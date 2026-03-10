@@ -61,6 +61,9 @@ function KakaoCallbackContent() {
           if (data.tokens.refresh) {
             localStorage.setItem("refresh_token", data.tokens.refresh);
           }
+          if (data.user?.id) {
+            localStorage.setItem("user_id", String(data.user.id));
+          }
           window.location.href = "/";
           return;
         }

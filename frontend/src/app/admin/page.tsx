@@ -95,8 +95,7 @@ type ViewType =
   | "eventConfig"
   | "userManagement"
   | "searchAnalytics"
-  | "sessions"
-  | "announcements";
+  | "sessions";
 
 // 이벤트 상세 패널용 타입 (EventDetailPanel에서 사용)
 interface OperationalLog {
@@ -695,6 +694,7 @@ export default function AdminPage() {
       ["내보낸 시각", new Date().toLocaleString("ko-KR")],
       [],
       ["KPI", ""],
+      ["순 방문자", String(dashboardKpi?.unique_visitors ?? 0)],
       ["로그인", String(dashboardKpi?.today_logins ?? 0)],
       ["가입", String(dashboardKpi?.today_signups ?? 0)],
       ["작성된 글", String(dashboardKpi?.today_posts ?? 0)],
@@ -854,7 +854,6 @@ export default function AdminPage() {
               { view: "userManagement", label: "유저 관리", icon: Users },
               { view: "searchAnalytics", label: "검색 분석", icon: Search },
               { view: "sessions", label: "세션 분석", icon: Clock },
-              { view: "announcements", label: "공지/배너", icon: Megaphone },
             ] as { view: ViewType; label: string; icon: React.ElementType }[]
           ).map(({ view, label, icon: Icon }) => (
             <button
@@ -919,13 +918,14 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
                 {loadingDashboardKpi ? (
                   <div className="col-span-full flex justify-center py-8">
                     <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : (
                   [
+                    { label: dashboardDays === 1 ? "순 방문자" : "순 방문자", value: dashboardKpi?.unique_visitors ?? 0, icon: Eye, color: "bg-cyan-100", iconColor: "text-cyan-600" },
                     { label: dashboardDays === 1 ? "오늘 로그인" : "로그인", value: dashboardKpi?.today_logins ?? 0, icon: LogIn, color: "bg-blue-100", iconColor: "text-blue-600" },
                     { label: dashboardDays === 1 ? "신규 가입" : "가입", value: dashboardKpi?.today_signups ?? 0, icon: UserPlus, color: "bg-green-100", iconColor: "text-green-600" },
                     { label: "작성된 글", value: dashboardKpi?.today_posts ?? 0, icon: FileText, color: "bg-purple-100", iconColor: "text-purple-600" },
@@ -1685,91 +1685,7 @@ export default function AdminPage() {
             </>
           )}
 
-          {/* ── 공지/배너 ── */}
-          {currentView === "announcements" && (
-            <>
-              <div className="mb-8 flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">공지/배너</h1>
-                  <p className="text-gray-600">메인에 노출할 공지·배너를 등록·수정합니다.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={openNoticeCreate}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-xl hover:bg-[#1d4ed8] transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                  추가
-                </button>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                {loadingSiteNotices ? (
-                  <div className="flex justify-center py-12">
-                    <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : (
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">제목</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">유형</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">상태</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">노출 기간</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">순서</th>
-                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">관리</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {siteNotices.map((n) => (
-                        <tr key={n.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 font-medium text-gray-900">{n.title}</td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium ${
-                              n.notice_type === "banner" ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800"
-                            }`}>
-                              {n.notice_type === "banner" ? "배너" : "공지"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium ${
-                              n.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
-                            }`}>
-                              {n.is_active ? "활성" : "비활성"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {n.starts_at ? new Date(n.starts_at).toLocaleDateString("ko-KR") : "-"} ~ {n.ends_at ? new Date(n.ends_at).toLocaleDateString("ko-KR") : "-"}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{n.order}</td>
-                          <td className="px-6 py-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => openNoticeEdit(n)}
-                              className="p-2 text-gray-500 hover:text-[#2563EB] hover:bg-blue-50 rounded-lg"
-                              title="수정"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleNoticeDelete(n.id)}
-                              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg ml-1"
-                              title="삭제"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-                {!loadingSiteNotices && siteNotices.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">등록된 공지/배너가 없습니다.</div>
-                )}
-              </div>
-            </>
-          )}
+          {/* 공지/배너 섹션은 현재 사용하지 않음 */}
 
         </div>
       </main>

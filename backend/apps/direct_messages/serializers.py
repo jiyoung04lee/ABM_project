@@ -47,9 +47,14 @@ class ConversationSerializer(serializers.ModelSerializer):
         other = obj.participants.exclude(id=user.id).first()
 
         if other:
+            if getattr(other, "is_staff", False):
+                name = "관리자"
+            else:
+                name = other.name or getattr(other, "nickname", None) or "사용자"
+
             return {
                 "id": other.id,
-                "name": other.name
+                "name": name,
             }
         return None
 
