@@ -606,14 +606,37 @@ export default function NetworkPage() {
                 ))}
               </div>
 
-              <div style={styles.searchWrap}>
-                <span style={styles.searchIcon}>🔍</span>
-                <input
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  placeholder="제목, 내용, 태그로 검색..."
-                  style={styles.searchInput}
-                />
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={styles.searchWrap}>
+                  <span style={styles.searchIcon}>🔍</span>
+                  <input
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    placeholder="제목, 내용, 태그로 검색..."
+                    style={styles.searchInput}
+                  />
+                </div>
+                <a
+                  href={`/network/write?type=${tab}`}
+                  style={{
+                    height: 40,
+                    padding: "0 18px",
+                    borderRadius: 999999,
+                    background: "#2563EB",
+                    color: "#FFFFFF",
+                    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+                    fontWeight: 600,
+                    fontSize: 14,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  + 글쓰기
+                </a>
               </div>
             </div>
           </div>
@@ -728,12 +751,6 @@ export default function NetworkPage() {
           </div>
         </div>
 
-        <a href={`/network/write?type=${tab}`} style={styles.fab} aria-label="글쓰기">
-          <span style={styles.plus}>
-            <span style={styles.plusH} />
-            <span style={styles.plusV} />
-          </span>
-        </a>
       </div>
     </div>
   );
