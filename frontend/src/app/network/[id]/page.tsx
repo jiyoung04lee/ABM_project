@@ -80,18 +80,27 @@ export default function NetworkDetailPage() {
     setCommentSubmitting(true);
 
     try {
-      await addComment(Number(id), {
+      const res = await addComment(Number(id), {
         content,
         parent,
         is_anonymous: isAnonymous,
       });
 
-      const cs = await fetchComments(Number(id));
-      setComments(cs);
-
       if (parent === null) {
+        setComments((prev) => [...prev, res]);
         setCommentInput("");
       } else {
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === parent
+              ? {
+                  ...comment,
+                  replies: [...(comment.replies || []), res],
+                }
+              : comment
+          )
+        );
+
         setReplyInput((prev) => ({ ...prev, [parent]: "" }));
         setReplyOpen(null);
       }
@@ -106,11 +115,24 @@ export default function NetworkDetailPage() {
     const res = await toggleCommentLike(commentId);
 
     setComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId
-          ? { ...c, is_liked: res.liked, like_count: res.like_count }
-          : c
-      )
+      prev.map((comment) => {
+        if (comment.id === commentId) {
+          return {
+            ...comment,
+            is_liked: res.liked,
+            like_count: res.like_count,
+          };
+        }
+
+        return {
+          ...comment,
+          replies: comment.replies?.map((reply) =>
+            reply.id === commentId
+              ? { ...reply, is_liked: res.liked, like_count: res.like_count }
+              : reply
+          ),
+        };
+      })
     );
   };
 
@@ -259,7 +281,7 @@ export default function NetworkDetailPage() {
 
                 <div className="flex items-center gap-2">
                   <span className="text-[16px] text-[#0A0A0A]">
-                    {comment.author_name ?? "익명"}
+                    {comment.is_anonymous ? "익명" : comment.author_name}
                   </span>
 
                   <span className="text-[14px] text-[#6A7282]">
@@ -287,7 +309,7 @@ export default function NetworkDetailPage() {
 
                           <div className="flex items-center gap-2">
                             <span className="text-[15px] text-[#0A0A0A]">
-                              {reply.author_name ?? "익명"}
+                              {reply.is_anonymous ? "익명" : reply.author_name}
                             </span>
 
                             <span className="text-[13px] text-[#6A7282]">
