@@ -1,6 +1,6 @@
  "use client";
 
- import { Save, X, Upload } from "lucide-react";
+import { Save, X, Upload } from "lucide-react";
  import { useRouter } from "next/navigation";
  import { useEffect, useState } from "react";
 import{ API_BASE } from "@/shared/api/api";
@@ -113,7 +113,7 @@ import{ API_BASE } from "@/shared/api/api";
      fetchMe();
    }, [router]);
 
-   const handleChange = (
+  const handleChange = (
      e:
        | React.ChangeEvent<HTMLInputElement>
        | React.ChangeEvent<HTMLSelectElement>
@@ -125,17 +125,20 @@ import{ API_BASE } from "@/shared/api/api";
      setError("");
    };
 
+  const applyImageFile = (file: File) => {
+    setImageFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    applyImageFile(file);
   };
 
    const handleSubmit = async (e: React.FormEvent) => {
@@ -257,7 +260,20 @@ import{ API_BASE } from "@/shared/api/api";
            {/* Profile Image */}
            <div className="mb-8 text-center">
              <div className="inline-block relative">
-               <div className="w-32 h-32 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-2xl flex items-center justify-center mx-auto mb-4 overflow-hidden">
+               <div
+                 className="w-32 h-32 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-2xl flex items-center justify-center mx-auto mb-4 overflow-hidden"
+                 onDragOver={(e) => {
+                   e.preventDefault();
+                 }}
+                 onDrop={(e) => {
+                   e.preventDefault();
+                   const file = e.dataTransfer.files?.[0];
+                   if (file) {
+                     applyImageFile(file);
+                     e.dataTransfer.clearData();
+                   }
+                 }}
+               >
                  {profileImage ? (
                   <img
                     src={

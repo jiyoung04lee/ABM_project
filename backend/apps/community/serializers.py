@@ -54,18 +54,34 @@ class PostListSerializer(serializers.ModelSerializer):
         if obj.is_anonymous or not obj.author:
             return None
 
-        if obj.author.profile_image:
-            if request:
-                return request.build_absolute_uri(obj.author.profile_image.url)
-            return obj.author.profile_image.url
+        if not obj.author.profile_image:
+            return None
 
-        return None
+        url = obj.author.profile_image.url
+        # S3/R2 스토리지의 url 은 이미 절대 주소이므로 그대로 반환
+        if str(url).startswith(("http://", "https://")):
+            return url
+
+        # 로컬 스토리지 등 상대 경로인 경우 절대 URL 로 변환
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
 
     def get_thumbnail(self, obj):
+        request = self.context.get("request")
         first_image = obj.files.filter(file_type="image").first()
-        if first_image:
-            return first_image.file.url
-        return None
+        if not first_image:
+            return None
+
+        url = first_image.file.url
+        if str(url).startswith(("http://", "https://")):
+            return url
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -130,12 +146,17 @@ class PostDetailSerializer(serializers.ModelSerializer):
         if obj.is_anonymous or not obj.author:
             return None
 
-        if obj.author.profile_image:
-            if request:
-                return request.build_absolute_uri(obj.author.profile_image.url)
-            return obj.author.profile_image.url
+        if not obj.author.profile_image:
+            return None
 
-        return None
+        url = obj.author.profile_image.url
+        if str(url).startswith(("http://", "https://")):
+            return url
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
 
     def get_is_liked(self, obj):
         request = self.context.get("request")
@@ -151,9 +172,17 @@ class PostDetailSerializer(serializers.ModelSerializer):
 
     def get_thumbnail(self, obj):
         request = self.context.get("request")
-        if obj.thumbnail and request:
-            return request.build_absolute_uri(obj.thumbnail.url)
-        return None
+        if not obj.thumbnail:
+            return None
+
+        url = obj.thumbnail.url
+        if str(url).startswith(("http://", "https://")):
+            return url
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
 
     def get_comments(self, obj):
         request = self.context.get("request")
@@ -351,12 +380,17 @@ class CommentSerializer(serializers.ModelSerializer):
         if obj.is_anonymous or not obj.author:
             return None
 
-        if obj.author.profile_image:
-            if request:
-                return request.build_absolute_uri(obj.author.profile_image.url)
-            return obj.author.profile_image.url
+        if not obj.author.profile_image:
+            return None
 
-        return None
+        url = obj.author.profile_image.url
+        if str(url).startswith(("http://", "https://")):
+            return url
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
 
     def get_replies(self, obj):
         if self.context.get("request") is None:

@@ -160,6 +160,8 @@ export default function NetworkDetailPage() {
         ...post,
         is_pinned: true,
       });
+      alert("상단에 고정되었습니다.");
+      router.push("/network");
     } finally {
       setPinning(false);
     }
@@ -177,6 +179,8 @@ export default function NetworkDetailPage() {
         ...post,
         is_pinned: false,
       });
+      alert("상단 고정이 해제되었습니다.");
+      router.push("/network");
     } finally {
       setPinning(false);
     }

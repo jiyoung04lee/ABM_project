@@ -27,24 +27,10 @@ export default function WritePage() {
   const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // 카테고리 불러오기
-  useEffect(() => {
-    getCategories("community").then((res) => {
-      const results = res.data.results;
-      setCategories(results);
-
-      if (results.length > 0) {
-        setCategory(String(results[0].id)); // 기본값 자동 선택
-      }
-    });
-  }, []);
-
-  // 파일 업로드 처리
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = e.target.files;
-    if (!fileList) return;
-
+  const handleFiles = (fileList: FileList | File[]) => {
     const newFiles = Array.from(fileList);
+
+    if (!newFiles.length) return;
 
     setFiles((prev) => [...prev, ...newFiles]);
 
@@ -57,6 +43,25 @@ export default function WritePage() {
     if (mainImageIndex === null && previews.length > 0) {
       setMainImageIndex(0);
     }
+  };
+
+  // 카테고리 불러오기
+  useEffect(() => {
+    getCategories("community").then((res) => {
+      const results = res.data.results;
+      setCategories(results);
+
+      if (results.length > 0) {
+        setCategory(String(results[0].id)); // 기본값 자동 선택
+      }
+    });
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+
+    handleFiles(fileList);
   };
 
   const handleSubmit = async () => {
@@ -170,6 +175,16 @@ export default function WritePage() {
         <label
           htmlFor="fileUpload"
           className="border-2 border-dashed border-[#E5E7EB] rounded-xl py-12 flex flex-col items-center justify-center text-[#6A7282] cursor-pointer"
+          onDragOver={(e) => {
+            e.preventDefault();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              handleFiles(e.dataTransfer.files);
+              e.dataTransfer.clearData();
+            }
+          }}
         >
           <input
             type="file"

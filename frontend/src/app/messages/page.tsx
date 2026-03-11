@@ -245,10 +245,11 @@ function MessagesPageContent(){
   }, []);
 
   return (
-    <div className="max-w-6xl w-full px-4 text-left">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800 ml-2">메시지</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-12">
+      <div className="max-w-6xl mx-auto w-full px-4 text-left">
+        <h1 className="text-2xl font-bold mb-6 text-gray-800 ml-2">메시지</h1>
 
-      <div className="grid grid-cols-12 gap-6 h-[750px]">
+        <div className="grid grid-cols-12 gap-6 h-[750px]">
 
         {/* 대화 목록 */}
         <div className="col-span-4 bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm">
@@ -391,8 +392,9 @@ function MessagesPageContent(){
         </div>
       </div>
     </div>
+    </div>
   );
-}
+} 
 
 export default function MessagesPage() {
   return (
