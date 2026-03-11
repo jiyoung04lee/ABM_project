@@ -64,6 +64,7 @@ export interface PostDetail {
 export interface Comment {
   id: number;
   author: number | null;
+  author_id: number | null;
   author_name: string | null;
   content: string;
   parent: number | null;

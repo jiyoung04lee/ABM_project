@@ -40,6 +40,7 @@ export interface PostDetail {
 
 export interface Comment {
   id: number;
+  author_id: number | null;
   author_name: string;
   author_profile_image?: string | null; 
   content: string;
