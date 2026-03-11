@@ -239,9 +239,10 @@ export default function NetworkDetailPage() {
         {post.title}
       </h1>
 
-      <div className="whitespace-pre-line text-[15px] text-[#364153] mb-6">
-        {post.content}
-      </div>
+      <div
+        className="text-[15px] text-[#364153] mb-6 prose max-w-none"
+        dangerouslySetInnerHTML={{ __html: post.content }}
+      />
 
       <div className="flex justify-end mt-8">
         <button
