@@ -32,6 +32,7 @@ export default function PostDetailPage() {
   const [replyOpen, setReplyOpen] = useState<number | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [pinning, setPinning] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
 
@@ -40,7 +41,13 @@ export default function PostDetailPage() {
   }, []);
 
   useEffect(() => {
-    api.get("users/me/").then((r) => setIsAdmin(!!r.data?.is_staff)).catch(() => {});
+    api
+      .get("users/me/")
+      .then((r) => {
+        setIsAdmin(!!r.data?.is_staff);
+        setCurrentUserId(r.data?.id);
+      })
+      .catch(() => {});
   }, []);
 
   const fetchDetail = async () => {
@@ -318,9 +325,11 @@ export default function PostDetailPage() {
                     답글
                   </button>
 
-                  <button onClick={() => handleDeleteComment(comment.id)}>
-                    삭제
-                  </button>
+                  {comment.author_id === currentUserId && (
+                    <button onClick={() => handleDeleteComment(comment.id)}>
+                      삭제
+                    </button>
+                  )}
                 </div>
 
                 {/* 대댓글 입력 */}
@@ -363,9 +372,11 @@ export default function PostDetailPage() {
                     </p>
 
                     <div className="mt-2 flex gap-3 text-xs text-[#6A7282]">
-                      <button onClick={() => handleDeleteComment(reply.id)}>
-                        삭제
-                      </button>
+                      {reply.author_id === currentUserId && (
+                        <button onClick={() => handleDeleteComment(reply.id)}>
+                          삭제
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
