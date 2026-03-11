@@ -542,6 +542,9 @@ export default function NetworkPage() {
         } else {
           setTotalPages(Math.max(1, Math.ceil(apiCount / PAGE_SIZE)));
         }
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [tab, categorySlug, page]);
 
@@ -559,7 +562,7 @@ export default function NetworkPage() {
       const c = (p.category_name ?? "").toLowerCase();
       return t.includes(q) || a.includes(q) || c.includes(q);
     });
-  }, [merged, keyword]);
+  }, [pinned, posts, page, keyword]);
 
   const isQnaTab = tab === "qa";
 
