@@ -23,6 +23,8 @@ export interface PostListItem {
   category_name: string | null;
   title: string;
   author_name: string;
+  author_profile_image?: string | null;
+  use_real_name?: boolean;
   view_count: number;
   like_count: number;
   is_liked: boolean;
@@ -36,6 +38,7 @@ export interface PostListResponse {
   pinned: PostListItem[];
   posts: PostListItem[];
   count?: number;
+  total_pages?: number;
   next?: string | null;
   previous?: string | null;
 }
@@ -58,6 +61,8 @@ export interface PostDetail {
   files: { id: number; file: string; file_type: "image" | "pdf"; order: number }[];
   category: number | null;
   category_name: string | null;
+  author_profile_image?: string | null;
+  use_real_name?: boolean;
   is_pinned?: boolean;
 }
 
@@ -103,6 +108,7 @@ export async function fetchPosts(params: {
     pinned: pinnedList,
     posts: payload.posts ?? [],
     count: (data as any).count,
+    total_pages: (data as any).total_pages,
     next: (data as any).next ?? null,
     previous: (data as any).previous ?? null,
   };

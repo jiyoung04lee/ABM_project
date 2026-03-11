@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/shared/api/axios";
 
 interface Props {
   name: string;
@@ -11,20 +13,31 @@ interface Props {
 
 export default function HoverProfileCard({ name, grade, profileImage, userId }: Props) {
   const router = useRouter();
-  console.log("hover userId:", userId);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    api
+      .get("users/me/")
+      .then((r) => {
+        setCurrentUserId(r.data?.id ?? null);
+      })
+      .catch(() => {
+        setCurrentUserId(null);
+      });
+  }, []);
 
   const handleMessage = () => {
-    if (!userId) {
-      console.log("userId 없음");
+    if (!userId || userId === currentUserId) {
       return;
     }
 
     router.push(`/messages?userId=${userId}`);
   };
 
+  const canSendMessage = !!userId && userId !== currentUserId;
+
   return (
     <div className="absolute top-full left-0 mt-2 w-52 bg-white border border-[#E5E7EB] rounded-lg shadow-lg p-3 z-50">
-      
       <div className="flex items-center gap-3 mb-3">
         <div className="w-9 h-9 rounded-full overflow-hidden">
           <img
@@ -47,12 +60,14 @@ export default function HoverProfileCard({ name, grade, profileImage, userId }: 
         </div>
       </div>
 
-      <button
-        onClick={handleMessage}
-        className="w-full py-2 text-[13px] bg-[#2B7FFF] text-white rounded-md hover:bg-[#1f6ae0]"
-      >
-        메시지 보내기
-      </button>
+      {canSendMessage && (
+        <button
+          onClick={handleMessage}
+          className="w-full py-2 text-[13px] bg-[#2B7FFF] text-white rounded-md hover:bg-[#1f6ae0]"
+        >
+          메시지 보내기
+        </button>
+      )}
     </div>
   );
 }

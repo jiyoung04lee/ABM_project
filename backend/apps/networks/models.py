@@ -59,6 +59,7 @@ class Post(models.Model):
     content = models.TextField()
 
     is_anonymous = models.BooleanField(default=False)
+    use_real_name = models.BooleanField(default=False)
 
     view_count = models.PositiveIntegerField(default=0)
     like_count = models.PositiveIntegerField(default=0)

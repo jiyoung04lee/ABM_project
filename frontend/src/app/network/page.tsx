@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import {
   fetchCategories,
   fetchPosts,
+  togglePostLike,
   NetworkType,
   Category,
   PostListItem,
 } from "@/shared/api/network";
-import { Eye, Heart, MessageCircle, Tag } from "lucide-react";
+import Image from "next/image";
+import { Eye, MessageCircle, Tag } from "lucide-react";
 
 const TABS: { key: NetworkType; label: string }[] = [
   { key: "student", label: "재학생" },
@@ -534,7 +536,7 @@ export default function NetworkPage() {
         setPinned(res.pinned);
         setPosts(res.posts ?? []);
 
-        const apiTotalPages = (res as any).total_pages as number | undefined;
+        const apiTotalPages = res.total_pages;
         const apiCount = res.count ?? 0;
         const PAGE_SIZE = 9;
         if (apiTotalPages && apiTotalPages > 0) {
@@ -585,6 +587,25 @@ export default function NetworkPage() {
       return;
     }
     router.push(`/network/${id}`);
+  };
+
+  const handleLikeClick = async (e: React.MouseEvent, postId: number) => {
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      router.push("/login?from=network&reason=like");
+      return;
+    }
+    try {
+      const res = await togglePostLike(postId);
+      const updateItem = (p: PostListItem) =>
+        p.id === postId
+          ? { ...p, like_count: res.like_count, is_liked: res.liked }
+          : p;
+      setPosts((prev) => prev.map(updateItem));
+      setPinned((prev) => prev.map(updateItem));
+    } catch {
+      // 좋아요 실패 시 무시
+    }
   };
 
   const handleChangeTab = (nextTab: NetworkType) => {
@@ -762,7 +783,7 @@ export default function NetworkPage() {
             ) : filtered.length === 0 ? (
               <div style={{ padding: "24px 0", color: "#4A5565" }}>게시글이 없습니다.</div>
             ) : isQnaTab ? (
-              <div className="space-y-3">
+              <div className="space-y-4 max-w-4xl mx-auto">
                 {filtered.map((p) => {
                   const badgeLabel = p.category_name ?? "전체";
                   const author = p.author_name ?? "-";
@@ -776,6 +797,7 @@ export default function NetworkPage() {
                     (p as any).excerpt ??
                     (p as any).summary ??
                     (p as any).content_preview ??
+                    (p as any).content ??
                     "";
 
                   return (
@@ -783,7 +805,7 @@ export default function NetworkPage() {
                       key={p.id}
                       type="button"
                       onClick={() => handleCardClick(p.id)}
-                      className="w-full bg-white rounded-xl border border-gray-200 px-6 py-5 text-left shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:border-[#2563EB] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all cursor-pointer"
+                      className="w-full bg-white rounded-xl border border-gray-200 px-7 py-6 text-left shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:border-[#2563EB] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all cursor-pointer"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
@@ -802,7 +824,7 @@ export default function NetworkPage() {
                           <h3 className="text-[17px] font-semibold text-gray-900 mb-1 line-clamp-1">
                             {p.title}
                           </h3>
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">
+                        <p className="text-[15px] text-[#4A5565] mb-3 leading-relaxed line-clamp-3">
                             {desc}
                           </p>
                           <div className="flex items-center gap-4 text-xs text-gray-500">
@@ -810,10 +832,19 @@ export default function NetworkPage() {
                               <Eye className="w-3.5 h-3.5" />
                               {views}
                             </span>
-                            <span className="flex items-center gap-1">
-                              <Heart className="w-3.5 h-3.5" />
+                            <button
+                              type="button"
+                              onClick={(e) => handleLikeClick(e, p.id)}
+                              className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                            >
+                              <Image
+                                src={p.is_liked ? "/icons/like-filled.svg" : "/icons/like.svg"}
+                                alt="like"
+                                width={14}
+                                height={14}
+                              />
                               {likes}
-                            </span>
+                            </button>
                             <span className="flex items-center gap-1">
                               <MessageCircle className="w-3.5 h-3.5" />
                               {comments}
@@ -855,6 +886,7 @@ export default function NetworkPage() {
                     (p as any).excerpt ??
                     (p as any).summary ??
                     (p as any).content_preview ??
+                    (p as any).content ??
                     "";
 
                   return (
@@ -900,7 +932,7 @@ export default function NetworkPage() {
                         </h3>
 
                         {/* 본문 요약 */}
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-4 leading-relaxed">
+                        <p className="text-[15px] text-[#4A5565] line-clamp-3 mb-4 leading-relaxed">
                           {desc}
                         </p>
 
@@ -930,10 +962,19 @@ export default function NetworkPage() {
                             <Eye className="w-3.5 h-3.5" />
                             {views}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Heart className="w-3.5 h-3.5" />
+                          <button
+                            type="button"
+                            onClick={(e) => handleLikeClick(e, p.id)}
+                            className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                          >
+                            <Image
+                              src={p.is_liked ? "/icons/like-filled.svg" : "/icons/like.svg"}
+                              alt="like"
+                              width={14}
+                              height={14}
+                            />
                             {likes}
-                          </span>
+                          </button>
                           <span className="flex items-center gap-1">
                             <MessageCircle className="w-3.5 h-3.5" />
                             {comments}
