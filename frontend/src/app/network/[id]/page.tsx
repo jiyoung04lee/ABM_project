@@ -33,6 +33,7 @@ export default function NetworkDetailPage() {
   const [isAnonymous, setIsAnonymous] = useState(false);
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [pinning, setPinning] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
 
@@ -42,7 +43,10 @@ export default function NetworkDetailPage() {
 
   useEffect(() => {
     api.get("users/me/")
-      .then((r) => setIsAdmin(!!r.data?.is_staff))
+      .then((r) => {
+        setIsAdmin(!!r.data?.is_staff);
+        setCurrentUserId(r.data?.id);
+      })
       .catch(() => {});
   }, []);
 
@@ -290,7 +294,9 @@ export default function NetworkDetailPage() {
 
                   <button onClick={() => setReplyOpen(comment.id)}>답글</button>
 
-                  <button onClick={() => handleDeleteComment(comment.id)}>삭제</button>
+                  {(comment.author_id === currentUserId || isAdmin) && (
+                    <button onClick={() => handleDeleteComment(comment.id)}>삭제</button>
+                  )}
                 </div>
 
                 {replyOpen === comment.id && (
@@ -333,9 +339,11 @@ export default function NetworkDetailPage() {
                     </p>
 
                     <div className="mt-2 flex gap-3 text-xs text-[#6A7282]">
-                      <button onClick={() => handleDeleteComment(reply.id)}>
-                        삭제
-                      </button>
+                      {(reply.author_id === currentUserId || isAdmin) && (
+                        <button onClick={() => handleDeleteComment(reply.id)}>
+                          삭제
+                        </button>
+                      )}
                     </div>
 
                   </div>

@@ -552,7 +552,12 @@ export default function NetworkPage() {
       router.push("/login?from=network&reason=write");
       return;
     }
-    router.push(`/network/write?type=${tab}`);
+
+    if (tab === "qa") {
+      router.push(`/network/write?type=${tab}`);
+    } else {
+      router.push(`/network/write_net?type=${tab}`);
+    }
   };
 
   const handleCardClick = (id: number) => {

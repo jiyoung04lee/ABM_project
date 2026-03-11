@@ -226,3 +226,40 @@ html {
 textarea {
   max-height: none !important;
 }
+
+.ProseMirror {
+  outline: none;
+  position: relative;
+}
+
+.ProseMirror p {
+  margin: 8px 0;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
+/* 가운데 정렬 */
+.ProseMirror p[style*="text-align: center"] img {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 오른쪽 정렬 */
+.ProseMirror p[style*="text-align: right"] img {
+  margin-left: auto;
+}
+
+.editor-image {
+  cursor: pointer;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  position: absolute;
+}
