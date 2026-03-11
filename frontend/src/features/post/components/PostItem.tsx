@@ -7,7 +7,6 @@ import Image from "next/image";
 import PostMeta from "./PostMeta";
 import { togglePostLike } from "@/shared/api/community";
 import { AxiosError } from "axios";
-import { API_BASE } from "@/shared/api/api";
 
 interface Props {
   post: Post;
@@ -84,10 +83,11 @@ export default function PostItem({ post }: Props) {
         {post.thumbnail && (
           <div className="mb-4 rounded-lg overflow-hidden">
             <img
-              src={`${API_BASE}${post.thumbnail}`}
+              src={post.thumbnail}
               alt={post.title}
               width={800}
               height={200}
+              loading="lazy"
               className="w-full object-cover rounded-lg"
             />
           </div>
