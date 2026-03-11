@@ -3,6 +3,7 @@ from django.db.models import Q, Exists, OuterRef, F
 from django.utils import timezone
 from django.http import Http404
 from django.core.cache import cache
+from math import ceil
 
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -145,11 +146,15 @@ class PostViewSet(ModelViewSet):
             cache_key = f"network_post_view_{instance.id}_{ip}"
 
         if not cache.get(cache_key):
-            Post.objects.filter(pk=instance.pk).update(view_count=F("view_count") + 1)
+            Post.objects.filter(pk=instance.pk).update(
+                view_count=F("view_count") + 1
+            )
             cache.set(cache_key, True, timeout=60 * 60 * 24)
             instance.refresh_from_db(fields=["view_count"])
 
-            viewer = get_viewer_grade_info(user if user.is_authenticated else None)
+            viewer = get_viewer_grade_info(
+                user if user.is_authenticated else None
+            )
             author = get_author_grade_info(getattr(instance, "author", None))
             create_event_log(
                 event_type="post_view",
@@ -204,12 +209,13 @@ class PostViewSet(ModelViewSet):
     def comments(self, request, pk=None):
         post = self.get_object()
         comments = (
-            post.comments
-            .filter(parent__isnull=True, is_deleted=False)
+            post.comments.filter(parent__isnull=True, is_deleted=False)
             .select_related("author")
             .prefetch_related("replies__author")
         )
-        serializer = CommentSerializer(comments, many=True, context={"request": request})
+        serializer = CommentSerializer(
+            comments, many=True, context={"request": request}
+        )
         return Response(serializer.data)
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
@@ -222,10 +228,12 @@ class PostViewSet(ModelViewSet):
         comment = serializer.save(
             author=request.user,
             post=post,
-            is_anonymous=request.data.get("is_anonymous", False)
+            is_anonymous=request.data.get("is_anonymous", False),
         )
 
-        Post.objects.filter(pk=post.pk).update(comment_count=F("comment_count") + 1)
+        Post.objects.filter(pk=post.pk).update(
+            comment_count=F("comment_count") + 1
+        )
         post.refresh_from_db(fields=["comment_count"])
 
         viewer = get_viewer_grade_info(request.user)
@@ -238,7 +246,9 @@ class PostViewSet(ModelViewSet):
             **author,
         )
 
-        return Response(CommentSerializer(comment, context={"request": request}).data)
+        return Response(
+            CommentSerializer(comment, context={"request": request}).data
+        )
 
     MAX_PINNED = 3
 
@@ -250,7 +260,11 @@ class PostViewSet(ModelViewSet):
             return Response({"detail": "이미 고정된 게시글입니다."}, status=400)
         if Post.objects.filter(is_pinned=True).count() >= self.MAX_PINNED:
             return Response(
-                {"detail": f"고정 글은 최대 {self.MAX_PINNED}개까지 가능합니다."},
+                {
+                    "detail": (
+                        f"고정 글은 최대 {self.MAX_PINNED}개까지 가능합니다."
+                    )
+                },
                 status=400,
             )
 
@@ -294,22 +308,81 @@ class PostViewSet(ModelViewSet):
 
         queryset = self.filter_queryset(self.get_queryset())
 
-        pinned_qs = queryset.filter(is_pinned=True).order_by("-pinned_at")[: self.MAX_PINNED]
+        # 상단 고정 글 (페이지네이션 대상 제외)
+        pinned_qs = queryset.filter(is_pinned=True).order_by("-pinned_at")[
+            : self.MAX_PINNED
+        ]
         normal_posts = queryset.filter(is_pinned=False)
 
-        page = self.paginate_queryset(normal_posts)
+        pinned_count = pinned_qs.count()
+        PAGE_SIZE = 9
+
+        try:
+            page = int(request.query_params.get("page", "1"))
+        except ValueError:
+            page = 1
+
+        if page < 1:
+            page = 1
+
+        # 첫 페이지에서 일반 글이 차지할 수 있는 칸 수
+        first_page_slots_for_normal = max(PAGE_SIZE - pinned_count, 0)
+
+        total_normal = normal_posts.count()
+
+        if total_normal == 0 and pinned_count == 0:
+            total_pages = 0
+        else:
+            if total_normal <= first_page_slots_for_normal:
+                # 고정글이 있든 없든, 남은 일반 글이 첫 페이지에 모두 들어가는 경우
+                total_pages = 1
+            else:
+                remaining = max(total_normal - first_page_slots_for_normal, 0)
+                additional_pages = ceil(remaining / PAGE_SIZE)
+                total_pages = 1 + additional_pages
+
+        # 페이지 범위를 벗어나면 빈 결과 반환
+        if total_pages == 0 or page > total_pages:
+            page_posts = normal_posts.none()
+        else:
+            if page == 1:
+                offset = 0
+                limit = (
+                    first_page_slots_for_normal
+                    if first_page_slots_for_normal > 0
+                    else PAGE_SIZE
+                )
+            else:
+                offset = first_page_slots_for_normal + (page - 2) * PAGE_SIZE
+                limit = PAGE_SIZE
+
+            if offset >= total_normal:
+                page_posts = normal_posts.none()
+            else:
+                page_posts = normal_posts[offset : offset + limit]
+
         serializer_context = {"request": request}
 
         pinned_data = PostListSerializer(
             pinned_qs, many=True, context=serializer_context
         ).data
+        posts_data = PostListSerializer(
+            page_posts, many=True, context=serializer_context
+        ).data
 
-        if page is not None:
-            serializer = PostListSerializer(page, many=True, context=serializer_context)
-            return self.get_paginated_response({"pinned": pinned_data, "posts": serializer.data})
-
-        serializer = PostListSerializer(normal_posts, many=True, context=serializer_context)
-        return Response({"pinned": pinned_data, "posts": serializer.data})
+        return Response(
+            {
+                "count": total_normal,
+                "next": None,
+                "previous": None,
+                "page": page,
+                "total_pages": total_pages,
+                "results": {
+                    "pinned": pinned_data,
+                    "posts": posts_data,
+                },
+            }
+        )
 
 
 class CommentViewSet(ModelViewSet):
