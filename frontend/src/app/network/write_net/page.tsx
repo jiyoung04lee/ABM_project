@@ -39,7 +39,7 @@ function WriteContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [category, setCategory] = useState<string | null>(null);
   const [content, setContent] = useState("");
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [useRealName, setUseRealName] = useState(false);
 
   const [files, setFiles] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
@@ -155,7 +155,8 @@ function WriteContent() {
     formData.append("type", type);
     formData.append("title", title);
     formData.append("content", content);
-    formData.append("is_anonymous", String(isAnonymous));
+    formData.append("is_anonymous", "false");
+    formData.append("use_real_name", String(useRealName));
     formData.append("category", category);
 
     files.forEach((file) => {
@@ -196,7 +197,7 @@ function WriteContent() {
 
   return (
 
-    <div className="max-w-4xl mx-auto px-6 py-6">
+    <div className="max-w-4xl mx-auto px-6 py-6 flex flex-col min-h-screen">
 
       {/* 상단 헤더 */}
 
@@ -346,26 +347,24 @@ function WriteContent() {
       {/* 에디터 */}
 
       <div className="min-h-[350px] mb-10">
-
         <EditorContent
           editor={editor}
           className="outline-none w-full prose max-w-none"
         />
-
       </div>
 
-      {/* 익명 */}
-
-      <div className="flex items-center gap-2 mt-6">
-
+      {/* 실명 */}
+      <div className="flex items-center gap-2 mt-auto pt-4 pb-6 border-t border-gray-200">
         <input
           type="checkbox"
-          checked={isAnonymous}
-          onChange={() => setIsAnonymous(!isAnonymous)}
+          id="use-real-name"
+          checked={useRealName}
+          onChange={() => setUseRealName((prev) => !prev)}
+          className="w-4 h-4 accent-[#2B7FFF]"
         />
-
-        <span className="text-sm text-gray-500">익명으로 작성</span>
-
+        <label htmlFor="use-real-name" className="text-sm text-gray-500 cursor-pointer">
+          실명으로 작성
+        </label>
       </div>
 
     </div>

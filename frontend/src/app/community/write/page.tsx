@@ -240,9 +240,7 @@ export default function WritePage() {
           onChange={() => setIsAnonymous(!isAnonymous)}
           className="w-4 h-4 accent-[#2B7FFF]"
         />
-        <span className="text-sm text-[#6A7282]">
-          익명으로 작성
-        </span>
+        <span className="text-sm text-[#6A7282]">익명으로 작성</span>
       </div>
 
       {/* 버튼 */}
