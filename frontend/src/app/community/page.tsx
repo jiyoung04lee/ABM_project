@@ -48,8 +48,6 @@ export default function CommunityPage() {
     }
   };
 
-  if (!isReady) return null;
-
   return (
     <div className="max-w-3xl mx-auto px-6 pb-10">
       <FilterBar
@@ -64,12 +62,27 @@ export default function CommunityPage() {
       <WriteBox />
 
       <div className="mt-1">
-        {loading ? (
-          <div>로딩중...</div>
+        {!isReady || loading ? (
+          <div className="space-y-4 mt-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                // eslint-disable-next-line react/no-array-index-key
+                key={i}
+                className="animate-pulse rounded-xl border border-gray-100 bg-white p-4"
+              >
+                <div className="h-40 w-full rounded-lg bg-gray-200 mb-4" />
+                <div className="h-4 w-32 bg-gray-200 mb-2 rounded" />
+                <div className="h-5 w-3/4 bg-gray-200 mb-2 rounded" />
+                <div className="h-4 w-1/2 bg-gray-100 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="py-6 text-sm text-gray-500 text-center">
+            아직 작성된 글이 없습니다.
+          </div>
         ) : (
-          posts.map((post) => (
-            <PostItem key={post.id} post={post} />
-          ))
+          posts.map((post) => <PostItem key={post.id} post={post} />)
         )}
       </div>
     </div>

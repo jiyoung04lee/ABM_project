@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from "@/shared/components/layout/Logo";
 import{ API_BASE } from "@/shared/api/api";
 
@@ -10,6 +10,13 @@ const KAKAO_REST_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY ?? "";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [reason, setReason] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setReason(params.get("reason"));
+  }, []);
   const [showAdmin, setShowAdmin] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
@@ -73,6 +80,11 @@ export default function LoginPage() {
       <div className="mb-5">
         <Logo />
       </div>
+      {reason && (
+        <div className="mb-4 w-full max-w-[460px] bg-blue-50 border border-blue-100 text-sm text-blue-900 px-4 py-3 rounded-xl">
+          더 많은 글을 보고 싶다면 로그인을 해주세요.
+        </div>
+      )}
 
       <h1 className="text-[2rem] font-bold text-gray-900 mb-1.5">로그인</h1>
       <p className="text-gray-500 text-sm mb-8">
