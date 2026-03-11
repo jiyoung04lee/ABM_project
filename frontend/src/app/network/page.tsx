@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   fetchCategories,
   fetchPosts,
@@ -8,8 +9,7 @@ import {
   Category,
   PostListItem,
 } from "@/shared/api/network";
-import { useRequireAuth } from "@/shared/hooks/useRequireAuth";
-import Image from "next/image";
+import { Eye, Heart, MessageCircle, Tag } from "lucide-react";
 
 const TABS: { key: NetworkType; label: string }[] = [
   { key: "student", label: "재학생" },
@@ -492,7 +492,8 @@ function formatDotDate(iso?: string) {
 }
 
 export default function NetworkPage() {
-  const { isReady } = useRequireAuth();
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [tab, setTab] = useState<NetworkType>("student");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySlug, setCategorySlug] = useState<string | undefined>(undefined);
@@ -502,6 +503,12 @@ export default function NetworkPage() {
   const [loading, setLoading] = useState(false);
 
   const [keyword, setKeyword] = useState("");
+
+  useEffect(() => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    setIsLoggedIn(!!token);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -540,7 +547,21 @@ export default function NetworkPage() {
     });
   }, [merged, keyword]);
 
-  if (!isReady) return null;
+  const handleWriteClick = () => {
+    if (!isLoggedIn) {
+      router.push("/login?from=network&reason=write");
+      return;
+    }
+    router.push(`/network/write?type=${tab}`);
+  };
+
+  const handleCardClick = (id: number) => {
+    if (!isLoggedIn) {
+      router.push("/login?from=network&reason=detail");
+      return;
+    }
+    router.push(`/network/${id}`);
+  };
 
   return (
     <div style={{ ...styles.page, marginTop: "-80px" }}>
@@ -617,15 +638,17 @@ export default function NetworkPage() {
                     style={styles.searchInput}
                   />
                 </div>
-                <a
-                  href={`/network/write?type=${tab}`}
+                <button
+                  type="button"
+                  onClick={handleWriteClick}
                   style={{
                     height: 40,
                     padding: "0 18px",
                     borderRadius: 999999,
                     background: "#2563EB",
                     color: "#FFFFFF",
-                    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+                    fontFamily:
+                      "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
                     fontWeight: 600,
                     fontSize: 14,
                     display: "inline-flex",
@@ -634,10 +657,12 @@ export default function NetworkPage() {
                     textDecoration: "none",
                     whiteSpace: "nowrap",
                     boxSizing: "border-box",
+                    border: 0,
+                    cursor: "pointer",
                   }}
                 >
                   + 글쓰기
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -646,20 +671,65 @@ export default function NetworkPage() {
         <div style={styles.sectionInner}>
           <div style={styles.gridWrap}>
             {loading ? (
-              <div style={{ padding: "24px 0", color: "#4A5565" }}>로딩중...</div>
+              <div style={styles.grid}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <div key={i} style={styles.cardLink}>
+                    <div
+                      style={{
+                        ...styles.cardImage,
+                        background: "#E5E7EB",
+                      }}
+                    />
+                    <div style={styles.cardBody}>
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 20,
+                          top: 60,
+                          width: 220,
+                          height: 20,
+                          borderRadius: 6,
+                          background: "#E5E7EB",
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 20,
+                          top: 90,
+                          width: 260,
+                          height: 16,
+                          borderRadius: 6,
+                          background: "#F3F4F6",
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 20,
+                          top: 150,
+                          width: 180,
+                          height: 14,
+                          borderRadius: 6,
+                          background: "#E5E7EB",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : filtered.length === 0 ? (
               <div style={{ padding: "24px 0", color: "#4A5565" }}>게시글이 없습니다.</div>
             ) : (
-              <div style={styles.grid}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filtered.map((p) => {
                   const badgeLabel = p.category_name ?? "전체";
                   const author = p.author_name ?? "-";
                   const date = formatDotDate((p as any).created_at);
                   const views = p.view_count ?? 0;
-                  const comments = (p as any).comment_count ?? 0;
-
-                  const authorInitial =
-                    author && author !== "-" ? author.trim().slice(0, 1) : "?";
+                  const likes = p.like_count ?? 0;
+                  const comments = p.comment_count ?? 0;
 
                   const desc =
                     (p as any).excerpt ??
@@ -668,80 +738,86 @@ export default function NetworkPage() {
                     "";
 
                   return (
-                    <a key={p.id} href={`/network/${p.id}`} style={styles.cardLink}>
-                      {p.thumbnail ? (
-                        // 네트워크 API가 절대 URL을 내려주므로 그대로 사용
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={p.thumbnail}
-                          alt={p.title}
-                          style={{
-                            ...styles.cardImage,
-                            objectFit: "cover",
-                            display: "block",
-                          }}
-                        />
-                      ) : (
-                        <div style={styles.cardImage} />
-                      )}
-                      <div style={styles.cardBody}>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handleCardClick(p.id)}
+                      className="group block bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
+                    >
+                      {/* 썸네일 */}
+                      <div className="relative w-full h-48 overflow-hidden">
+                        {p.thumbnail ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.thumbnail}
+                            alt={p.title}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-[#D6E4F7] to-[#C5D9F2]" />
+                        )}
+                      </div>
+
+                      {/* 내용 */}
+                      <div className="p-5">
+                        {/* 뱃지 */}
+                        <div className="flex items-center gap-2 mb-3">
                           {p.is_pinned && (
-                            <span
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                                padding: "4px 8px",
-                                borderRadius: 6,
-                                background: "#fffbeb",
-                                color: "#b45309",
-                                fontSize: 12,
-                                fontWeight: 500,
-                              }}
-                            >
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-xs font-medium">
                               📌 상단 고정
                             </span>
                           )}
-                          <div style={styles.badge}>
-                            <span style={styles.badgeDot} />
-                            <span style={styles.badgeText}>{badgeLabel}</span>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-[#2563EB] rounded-md text-xs font-semibold">
+                            <Tag className="w-3 h-3" />
+                            {badgeLabel}
+                          </span>
+                        </div>
+
+                        {/* 제목 */}
+                        <h3 className="text-lg font-bold mb-2 text-gray-900 line-clamp-2 group-hover:text-[#2563EB] transition-colors">
+                          {p.title}
+                        </h3>
+
+                        {/* 본문 요약 */}
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-4 leading-relaxed">
+                          {desc}
+                        </p>
+
+                        {/* 작성자 / 날짜 */}
+                        <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={(p as any).author_profile_image || "/icons/userbaseimage.svg"}
+                            alt="profile"
+                            loading="lazy"
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                          <div className="text-xs text-gray-600">
+                            <span className="font-medium">{author}</span>
+                            {date && (
+                              <>
+                                <span className="mx-1">·</span>
+                                <span>{date}</span>
+                              </>
+                            )}
                           </div>
                         </div>
 
-                        <h3 style={styles.cardTitle}>{p.title}</h3>
-
-                        <p style={styles.cardDesc}>{desc}</p>
-
-                        <div style={styles.cardFooter}>
-                          <div style={styles.authorLeft}>
-                            <img
-                              src={(p as any).author_profile_image || "/icons/userbaseimage.svg"}
-                              alt="profile"
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: "999999px",
-                                objectFit: "cover",
-                              }}
-                            />
-
-                            <div style={styles.authorText}>
-                              {author}
-                              {date ? `·${date}` : ""}
-                            </div>
-                          </div>
-
-                          <div style={styles.stats}>
-                            <div style={styles.stat}>
-                              <Image src="/icons/eye.svg" alt="views" width={14} height={14} />
-                              <span>{views}</span>
-                            </div>
-                            <div style={styles.stat}>
-                              <Image src="/icons/comment.svg" alt="comments" width={14} height={14} />
-                              <span>{comments}</span>
-                            </div>
-                          </div>
+                        {/* 통계 */}
+                        <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Eye className="w-3.5 h-3.5" />
+                            {views}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-3.5 h-3.5" />
+                            {likes}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            {comments}
+                          </span>
                         </div>
                       </div>
                     </a>
