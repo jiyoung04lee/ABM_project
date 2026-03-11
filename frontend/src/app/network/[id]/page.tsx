@@ -192,74 +192,88 @@ export default function NetworkDetailPage() {
 
   if (!post) return <div className="p-10">로딩중...</div>;
 
+  const isAnswered = post.comment_count > 0;
+
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50">
+      <div className="max-w-3xl mx-auto px-6 py-10">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-6">
 
-      <div className="flex items-center justify-between mb-6">
-        <button onClick={() => router.back()}>
-          <Image src="/icons/back.svg" alt="back" width={24} height={24} />
-        </button>
+          <div className="flex items-center justify-between mb-6">
+            <button onClick={() => router.back()}>
+              <Image src="/icons/back.svg" alt="back" width={24} height={24} />
+            </button>
 
-        {isAdmin && (
-          <div className="flex items-center gap-2">
-            {post.is_pinned ? (
-              <button
-                onClick={handleUnpin}
-                disabled={pinning}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm font-medium"
-              >
-                <Pin className="w-4 h-4 fill-current" />
-                고정 해제
-              </button>
-            ) : (
-              <button
-                onClick={handlePin}
-                disabled={pinning}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium"
-              >
-                <Pin className="w-4 h-4" />
-                상단 고정
-              </button>
+            {isAdmin && (
+              <div className="flex items-center gap-2">
+                {post.is_pinned ? (
+                  <button
+                    onClick={handleUnpin}
+                    disabled={pinning}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm font-medium"
+                  >
+                    <Pin className="w-4 h-4 fill-current" />
+                    고정 해제
+                  </button>
+                ) : (
+                  <button
+                    onClick={handlePin}
+                    disabled={pinning}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium"
+                  >
+                    <Pin className="w-4 h-4" />
+                    상단 고정
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      <PostMeta
-        author={post.author_name}
-        profileImage={"/icons/userbaseimage.svg"}
-        createdAt={post.created_at}
-        isAnonymous={post.is_anonymous}
-        authorId={post.author_id}
-      />
-
-      <div className="border-b border-[#E5E7EB] mb-10" />
-
-      <h1 className="text-[30px] font-semibold text-[#0A0A0A] mb-6">
-        {post.title}
-      </h1>
-
-      <div className="whitespace-pre-line text-[15px] text-[#364153] mb-6">
-        {post.content}
-      </div>
-
-      <div className="flex justify-end mt-8">
-        <button
-          onClick={handleLike}
-          className="flex items-center gap-2 px-4 py-2 bg-[#F3F4F6] rounded-lg mb-5"
-        >
-          <Image
-            src={post.is_liked ? "/icons/like-filled.svg" : "/icons/like.svg"}
-            alt="like"
-            width={18}
-            height={18}
+          <PostMeta
+            author={post.author_name}
+            profileImage={"/icons/userbaseimage.svg"}
+            createdAt={post.created_at}
+            isAnonymous={post.is_anonymous}
+            authorId={post.author_id}
           />
-          <span className="text-[14px]">{post.like_count}</span>
-        </button>
-      </div>
 
-      <div className="mt-1 border-t border-[#E5E7EB] pt-5">
-        <h3 className="text-[20px] font-semibold mb-5 mt-1">댓글</h3>
+          <div className="mt-4 flex justify-between items-center">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                isAnswered ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {isAnswered ? "답변완료" : "답변대기"}
+            </span>
+          </div>
+
+          <div className="border-b border-[#E5E7EB] mb-10 mt-4" />
+
+          <h1 className="text-[30px] font-semibold text-[#0A0A0A] mb-6">
+            {post.title}
+          </h1>
+
+          <div className="whitespace-pre-line text-[15px] text-[#364153] mb-6">
+            {post.content}
+          </div>
+
+          <div className="flex justify-end mt-8">
+            <button
+              onClick={handleLike}
+              className="flex items-center gap-2 px-4 py-2 bg-[#F3F4F6] rounded-lg mb-5"
+            >
+              <Image
+                src={post.is_liked ? "/icons/like-filled.svg" : "/icons/like.svg"}
+                alt="like"
+                width={18}
+                height={18}
+              />
+              <span className="text-[14px]">{post.like_count}</span>
+            </button>
+          </div>
+
+          <div className="mt-1 border-t border-[#E5E7EB] pt-5">
+            <h3 className="text-[20px] font-semibold mb-5 mt-1">댓글</h3>
 
         {comments.map((comment) => (
           <div key={comment.id} className="mb-12">
@@ -356,7 +370,7 @@ export default function NetworkDetailPage() {
           </div>
         ))}
 
-        <div className="pt-5 border-t border-[#E5E7EB]">
+          <div className="pt-5 border-t border-[#E5E7EB]">
 
           <textarea
             value={commentInput}
@@ -387,10 +401,10 @@ export default function NetworkDetailPage() {
 
           </div>
 
+          </div>
+
         </div>
-
       </div>
-
     </div>
   );
 }
