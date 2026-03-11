@@ -231,21 +231,11 @@ export default function NetworkDetailPage() {
 
           <PostMeta
             author={post.author_name}
-            profileImage={"/icons/userbaseimage.svg"}
+            profileImage={post.author_profile_image ?? "/icons/userbaseimage.svg"}
             createdAt={post.created_at}
             isAnonymous={post.is_anonymous}
             authorId={post.author_id}
           />
-
-          <div className="mt-4 flex justify-between items-center">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-bold ${
-                isAnswered ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              {isAnswered ? "답변완료" : "답변대기"}
-            </span>
-          </div>
 
           <div className="border-b border-[#E5E7EB] mb-10 mt-4" />
 

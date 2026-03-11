@@ -54,6 +54,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "title",
             "author_name",
             "author_profile_image",
+            "use_real_name",
             "view_count",
             "like_count",
             "is_liked",
@@ -66,7 +67,9 @@ class PostListSerializer(serializers.ModelSerializer):
     def get_author_name(self, obj):
         if obj.is_anonymous:
             return "익명"
-        return obj.author.nickname
+        if obj.use_real_name and obj.author:
+            return obj.author.name or obj.author.nickname
+        return obj.author.nickname if obj.author else "알 수 없음"
 
     def get_author_profile_image(self, obj):
         request = self.context.get("request")
@@ -114,6 +117,8 @@ class PostListSerializer(serializers.ModelSerializer):
 
 class PostDetailSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
+    author_id = serializers.SerializerMethodField()
+    author_profile_image = serializers.SerializerMethodField()
     files = PostFileSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
     category_name = serializers.CharField(
@@ -131,7 +136,10 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "title",
             "content",
             "author_name",
+            "author_id",
+            "author_profile_image",
             "is_anonymous",
+            "use_real_name",
             "view_count",
             "like_count",
             "is_liked",
@@ -149,7 +157,27 @@ class PostDetailSerializer(serializers.ModelSerializer):
     def get_author_name(self, obj):
         if obj.is_anonymous:
             return "익명"
-        return obj.author.nickname
+        if obj.use_real_name and obj.author:
+            return obj.author.name or obj.author.nickname
+        return obj.author.nickname if obj.author else "알 수 없음"
+
+    def get_author_id(self, obj):
+        if obj.is_anonymous:
+            return None
+        return obj.author_id
+
+    def get_author_profile_image(self, obj):
+        request = self.context.get("request")
+        if obj.is_anonymous or not obj.author:
+            return None
+        if not obj.author.profile_image:
+            return None
+        url = obj.author.profile_image.url
+        if str(url).startswith(("http://", "https://")):
+            return url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
     def get_is_liked(self, obj):
         request = self.context.get("request")
@@ -202,6 +230,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "title",
             "content",
             "is_anonymous",
+            "use_real_name",
             "category",
             "existing_files",
             "new_files",
