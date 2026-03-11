@@ -392,8 +392,9 @@ function MessagesPageContent(){
         </div>
       </div>
     </div>
+    </div>
   );
-}
+} 
 
 export default function MessagesPage() {
   return (
