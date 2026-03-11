@@ -64,3 +64,12 @@ export const pinPost = (id: number) => {
 export const unpinPost = (id: number) => {
   return api.post(`community/posts/${id}/unpin/`);
 };
+
+// 게시글 수정
+export async function updatePost(id: number, formData: FormData) {
+  const { data } = await api.patch(`community/posts/${id}/`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return data;
+}

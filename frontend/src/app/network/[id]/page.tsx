@@ -194,10 +194,45 @@ export default function NetworkDetailPage() {
 
   const isAnswered = post.comment_count > 0;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50">
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-6">
+      <PostMeta
+        author={post.author_name}
+        profileImage={"/icons/userbaseimage.svg"}
+        createdAt={post.created_at}
+        isAnonymous={post.is_anonymous}
+        authorId={post.author_id}
+      />
+
+      <div className="border-b border-[#E5E7EB] mb-10" />
+
+      <h1 className="text-[30px] font-semibold text-[#0A0A0A] mb-6">
+        {post.title}
+      </h1>
+
+      <div
+        className="text-[15px] text-[#364153] mb-6 prose max-w-none"
+        dangerouslySetInnerHTML={{ __html: post.content }}
+      />
+
+      <div className="flex justify-end mt-8">
+        <button
+          onClick={handleLike}
+          className="flex items-center gap-2 px-4 py-2 bg-[#F3F4F6] rounded-lg mb-5"
+        >
+          <Image
+            src={post.is_liked ? "/icons/like-filled.svg" : "/icons/like.svg"}
+            alt="like"
+            width={18}
+            height={18}
+          />
+          <span className="text-[14px]">{post.like_count}</span>
+        </button>
+      </div>
+
+      <div className="mt-1 border-t border-[#E5E7EB] pt-5">
+        <h3 className="text-[20px] font-semibold mb-5 mt-1">댓글</h3>
+
+        {comments.map((comment) => (
+          <div key={comment.id} className="mb-12">
 
           <div className="flex items-center justify-between mb-6">
             <button onClick={() => router.back()}>

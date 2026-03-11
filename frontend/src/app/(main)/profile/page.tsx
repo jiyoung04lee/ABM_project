@@ -12,10 +12,11 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
- import { useRouter } from "next/navigation";
- import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import{ API_BASE } from "@/shared/api/api";
 import { deletePost as deleteCommunityPost, deleteComment as deleteCommunityComment } from "@/shared/api/community";
+import { deletePost as deleteNetworkPost, } from "@/shared/api/network";
 
  type UserType = "student" | "graduate";
 
@@ -36,15 +37,15 @@ import { deletePost as deleteCommunityPost, deleteComment as deleteCommunityComm
  }
 
  interface MyPost {
-   id: number;
-   title: string;
-   like_count: number;
-   comment_count: number;
-   created_at: string;
-   // 선택적으로 추가될 수 있는 필드들 (현재 백엔드에는 없을 수 있음)
-   view_count?: number;
-   category_name?: string;
- }
+  id: number;
+  title: string;
+  like_count: number;
+  comment_count: number;
+  created_at: string;
+  view_count?: number;
+  category_name?: string;
+  board_type?: "community" | "network" | null;
+}
 
  interface MyComment {
    id: number;
@@ -94,7 +95,8 @@ type Tab = "profile" | "activity";
    const [comments, setComments] = useState<MyComment[]>([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState("");
-  const [uploadingImage, setUploadingImage] = useState(false);
+   const [uploadingImage, setUploadingImage] = useState(false);
+   const [activityTab, setActivityTab] = useState<"posts" | "comments">("posts");
 
    useEffect(() => {
      const token =
@@ -216,16 +218,41 @@ type Tab = "profile" | "activity";
     }
   };
 
-   const postsCount = posts.length;
+  const postsCount = posts.length;
   const commentsCount = comments.length;
+  const likesCount = posts.reduce((sum, p) => sum + p.like_count, 0);
+  const score = 120; // 예시 점수 (나중에 API 연결)
+  const maxScore = 300;
+  const scorePercent = (score / maxScore) * 100;
+  const [animatedPercent, setAnimatedPercent] = useState(0);
 
-  const handleDeleteMyPost = async (id: number) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimatedPercent(scorePercent);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [scorePercent]);
+  const handleDeleteMyPost = async (post: MyPost) => {
     if (!confirm("이 글을 삭제할까요?")) return;
+
     try {
-      await deleteCommunityPost(id);
-      setPosts((prev) => prev.filter((p) => p.id !== id));
+      if (post.board_type === "network") {
+        await deleteNetworkPost(post.id);
+      } else {
+        await deleteCommunityPost(post.id);
+      }
+
+      setPosts((prev) => prev.filter((p) => p.id !== post.id));
     } catch {
-      alert("글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      alert("글 삭제에 실패했습니다.");
+    }
+  };
+  const handleEditPost = (post: MyPost) => {
+    if (post.board_type === "network") {
+      router.push(`/network/edit/${post.id}`);
+    } else {
+      router.push(`/community/edit/${post.id}`);
     }
   };
 
@@ -279,165 +306,161 @@ type Tab = "profile" | "activity";
    const summaryText = buildYearGradeStatus(user);
    const joinDate = formatDate(user.created_at);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-12 -mt-20 pt-24">
-      <div className="max-w-4xl mx-auto px-4">
-         {/* Tab Navigation */}
-         <div className="flex gap-3 justify-center mb-10 flex-wrap">
-           <button
-             onClick={() => setActiveTab("profile")}
-             className={`px-6 py-3 rounded-full text-sm font-bold transition-all ${
-               activeTab === "profile"
-                 ? "bg-gradient-to-r from-[#2563EB] to-[#4f46e5] text-white shadow-lg"
-                 : "bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
-             }`}
-           >
-             프로필
-           </button>
-           <button
-             onClick={() => setActiveTab("activity")}
-             className={`px-6 py-3 rounded-full text-sm font-bold transition-all ${
-               activeTab === "activity"
-                 ? "bg-gradient-to-r from-[#2563EB] to-[#4f46e5] text-white shadow-lg"
-                 : "bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
-             }`}
-           >
-             내 활동
-           </button>
-         </div>
+   return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-12">
+        <div className="max-w-6xl mx-auto px-4">
 
-         {/* Profile Tab */}
-         {activeTab === "profile" && (
-           <>
-             {/* Profile Card */}
-             <div className="bg-gradient-to-br from-[#2563EB] to-[#4f46e5] rounded-3xl p-8 mb-8 text-white relative shadow-lg">
-               <Link
-                 href="/profile/edit"
-                 className="absolute top-6 right-6 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl text-sm font-bold hover:bg-white/30 transition-all flex items-center gap-2"
-               >
-                 <Edit className="w-4 h-4" />
-                 프로필 수정
-               </Link>
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
 
-               <div className="flex items-start gap-6">
-                 <label className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer relative">
+            {/* 왼쪽 사용자 정보 */}
+            <div className="bg-white border border-gray-200 p-6 shadow-sm h-fit">
+
+              <div className="flex flex-col items-center text-center">
+
+                {/* 프로필 사진 */}
+                <div className="w-24 h-24 rounded-lg overflow-hidden mb-4 bg-gray-100">
                   {user.profile_image ? (
                     <img
-                      src={`${user.profile_image}?t=${Date.now()}`}
-                      alt="profile"
+                      src={user.profile_image}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-4xl">👤</span>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleProfileImageChange}
-                  />
-                  {uploadingImage && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-xs font-semibold">
-                      변경 중...
+                    <div className="w-full h-full flex items-center justify-center text-3xl">
+                      👤
                     </div>
                   )}
-                 </label>
-                 <div className="flex-1">
-                   <h2 className="text-3xl font-bold mb-2">{user.name}</h2>
-                   {summaryText && (
-                     <p className="text-white/90 text-base font-semibold mb-6">
-                       {summaryText}
-                     </p>
-                   )}
-
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                       <Mail className="w-5 h-5" />
-                       <span className="text-sm font-medium">{user.email}</span>
-                     </div>
-                     <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                       <Calendar className="w-5 h-5" />
-                       <span className="text-sm font-medium">
-                         가입일 {joinDate}
-                       </span>
-                     </div>
-                     <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                       <Users className="w-5 h-5" />
-                       <span className="text-sm font-medium">
-                         학번 {user.student_id ?? "-"}
-                       </span>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </div>
-
-             {/* 닉네임 & 학력 & 자기소개 */}
-            <div className="mt-4 space-y-4">
-              {/* 닉네임 */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100 flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <MessageCircle className="w-6 h-6 text-gray-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-500 mb-1">닉네임</p>
-                  <p className="text-base font-semibold text-gray-700 leading-relaxed">
-                    {user.nickname || "-"}
-                  </p>
-                </div>
+
+                {/* 이름 */}
+                <h2 className="text-lg font-semibold">{user.name}</h2>
+
+                {/* 학년 */}
+                {summaryText && (
+                  <p className="text-sm text-gray-500 mt-1">{summaryText}</p>
+                )}
+
+                {/* 닉네임 */}
+                <p className="text-sm text-gray-600 mt-2 mb-6">
+                  {user.nickname}
+                </p>
+
               </div>
 
-              {/* 학력 */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100 flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <GraduationCap className="w-6 h-6 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-500 mb-1">학력</p>
-                  <p className="text-base font-semibold text-gray-700 leading-relaxed">
-                    국민대학교 {user.department || "AI빅데이터융합경영학과"}
-                  </p>
-                </div>
+              {/* 프로필 수정 row */}
+              <Link
+                href="/profile/edit"
+                className="flex items-center justify-between border-t pt-4 text-sm text-gray-700 hover:text-black"
+              >
+                <span>프로필 수정</span>
+                <span className="text-lg">›</span>
+              </Link>
+
+              <div className="flex items-center justify-between border-t mt-4 pt-4 text-sm">
+                <span className="text-gray-500">포인트</span>
+                <span className="font-semibold">{score || 0}P</span>
               </div>
 
-              {/* 자기소개 */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100 flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-6 h-6 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-500 mb-1">자기소개</p>
-                  {user.bio && user.bio.trim() ? (
-                    <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">
-                      {user.bio}
-                    </p>
-                  ) : (
-                    <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line font-semibold">
-                      아직 작성된 자기소개가 없습니다.
-                    </p>
-                  )}
-                </div>
-              </div>
             </div>
-           </>
-         )}
 
-        {/* Activity Tab */}
-         {activeTab === "activity" && (
-           <div className="space-y-8">
-             {/* 내가 작성한 글 */}
-             <div className="bg-white rounded-3xl p-8 shadow-sm">
-               <h2 className="text-2xl font-bold mb-6">내가 작성한 글</h2>
-               {posts.length === 0 ? (
-                 <p className="text-sm text-gray-500">
-                   아직 작성한 글이 없습니다.
-                 </p>
-               ) : (
-                 <div className="space-y-4">
-                   {posts.map((post) => {
-                     const created = formatDate(post.created_at);
-                     const category = post.category_name ?? "커뮤니티";
-                     const views = post.view_count ?? 0;
+            {/* 오른쪽 영역 */}
+            <div className="space-y-6">
+
+              {/* 지원현황 */}
+              <div className="bg-white border border-gray-200 p-6 shadow-sm">
+
+                <h3 className="text-lg font-bold mb-4">활동현황</h3>
+
+                <div className="grid grid-cols-3 text-center">
+
+                  <div className="py-4">
+                    <p className="text-3xl font-bold">{postsCount}</p>
+                    <p className="text-sm text-gray-500">작성 글</p>
+                  </div>
+
+                  <div className="py-4 border-l border-gray-200">
+                    <p className="text-3xl font-bold">{commentsCount}</p>
+                    <p className="text-sm text-gray-500">작성 댓글</p>
+                  </div>
+
+                  <div className="py-4 border-l border-gray-200">
+                    <p className="text-3xl font-bold">{likesCount}</p>
+                    <p className="text-sm text-gray-500">누른 좋아요</p>
+                  </div>
+
+                </div>
+
+              </div>
+  
+              {/* 활동 점수 */}
+              <div className="bg-white border border-gray-200 p-6 shadow-sm">
+
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-bold mb-4">활동점수</h3>
+                </div>
+
+                <div className="w-full h-5 bg-gray-200 rounded-full overflow-hidden relative mb-3">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 transition-all duration-1000 ease-out shadow-md"
+                    style={{ width: `${animatedPercent}%` }}
+                  />
+                </div>
+
+                {/* 아이콘 라인 */}
+                <div className="flex justify-between text-xs text-gray-400">
+
+                  <div className="flex flex-col items-center">
+                    <span>Lv1</span>
+                  </div>
+
+                  <div className="flex flex-col items-center">
+                    <span>Lv5</span>
+                  </div>
+
+                  <div className="flex flex-col items-center">
+                    <span>Lv10</span>
+                  </div>
+
+                </div>
+
+              </div>
+
+
+              {/* 글 / 댓글 탭 */}
+              <div className="bg-white border border-gray-200 p-6 shadow-sm">
+
+                <div className="flex border-b mb-6">
+
+                  <button
+                    onClick={() => setActivityTab("posts")}
+                    className={`px-6 py-3 text-sm font-semibold border-b-2 ${
+                      activityTab === "posts"
+                        ? "border-[#2563EB] text-[#2563EB]"
+                        : "border-transparent text-gray-400"
+                    }`}
+                  >
+                    내가 작성한 글
+                  </button>
+
+                  <button
+                    onClick={() => setActivityTab("comments")}
+                    className={`px-6 py-3 text-sm font-semibold border-b-2 ${
+                      activityTab === "comments"
+                        ? "border-[#2563EB] text-[#2563EB]"
+                        : "border-transparent text-gray-400"
+                    }`}
+                  >
+                    내가 작성한 댓글
+                  </button>
+
+                </div>
+
+                {/* 내가 작성한 글 */}
+                {activityTab === "posts" && (
+                  <div className="space-y-4">
+                    {posts.map((post) => {
+                      const created = formatDate(post.created_at);
+                      const category = post.category_name ?? "커뮤니티";
+                      const views = post.view_count ?? 0;
 
                       return (
                         <div
@@ -445,93 +468,129 @@ type Tab = "profile" | "activity";
                           className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
                         >
                           <div className="flex items-start justify-between mb-3">
+
                             <div>
                               <div className="inline-block px-4 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-3">
                                 {category}
                               </div>
-                              <Link href={`/community/${post.id}`}>
+
+                              <Link
+                                href={
+                                  post.board_type === "network"
+                                    ? `/network/${post.id}`
+                                    : `/community/${post.id}`
+                                }
+                              >
                                 <h3 className="text-lg font-bold mb-2 hover:underline">
                                   {post.title}
                                 </h3>
                               </Link>
+
                               <div className="text-sm font-semibold text-gray-500">
                                 {created}
                               </div>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteMyPost(post.id)}
-                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              삭제
-                            </button>
+
+                            <div className="flex items-center gap-2">
+
+                              <button
+                                onClick={() => handleEditPost(post)}
+                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-500 rounded-lg hover:bg-blue-50"
+                              >
+                                <Edit className="w-4 h-4" />
+                                수정
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteMyPost(post)}
+                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                삭제
+                              </button>
+
+                            </div>
+
                           </div>
+
                           <div className="flex items-center gap-6 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
                             <span>조회 {views}</span>
                             <span>좋아요 {post.like_count}</span>
                             <span>댓글 {post.comment_count}</span>
                           </div>
+
                         </div>
                       );
-                   })}
-                 </div>
-               )}
-             </div>
+                    })}
+                  </div>
+                )}
 
-             {/* 내가 작성한 댓글 */}
-             <div className="bg-white rounded-3xl p-8 shadow-sm">
-               <h2 className="text-2xl font-bold mb-6">내가 작성한 댓글</h2>
-               {comments.length === 0 ? (
-                 <p className="text-sm text-gray-500">
-                   아직 작성한 댓글이 없습니다.
-                 </p>
-               ) : (
-                 <div className="space-y-4">
-                   {comments.map((comment) => {
-                     const created = formatDate(comment.created_at);
-                     return (
+                {/* 내가 작성한 댓글 */}
+                {activityTab === "comments" && (
+                  <div className="space-y-4">
+
+                    {comments.map((comment) => {
+                      const created = formatDate(comment.created_at);
+
+                      return (
                         <div
                           key={comment.id}
                           className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
                         >
+
                           <div className="flex items-start justify-between mb-3">
+
                             <div className="flex-1">
+
                               <div className="flex items-center gap-2 mb-2">
                                 <MessageCircle className="w-4 h-4 text-indigo-600" />
                                 <span className="text-sm font-semibold text-gray-600">
                                   "{comment.post_title}" 글에 댓글
                                 </span>
                               </div>
+
                               <p className="text-base text-gray-800 leading-relaxed mb-2">
                                 {comment.content}
                               </p>
+
                               <div className="text-sm font-semibold text-gray-500">
                                 {created}
                               </div>
+
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteMyComment(comment.id)}
-                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              삭제
-                            </button>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleDeleteMyComment(comment.id)}
+                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                삭제
+                              </button>
+
+                            </div>
+
                           </div>
+
                           <div className="flex items-center gap-4 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
                             <span>좋아요 {comment.like_count}</span>
                           </div>
+
                         </div>
-                     );
-                   })}
-                 </div>
-               )}
-             </div>
-           </div>
-        )}
-       </div>
-     </div>
-   );
+                      );
+                    })}
+
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    );
  }
 
