@@ -820,7 +820,7 @@ export default function NetworkPage() {
                           </span>
                         </div>
                       </div>
-                    </a>
+                    </button>
                   );
                 })}
               </div>
