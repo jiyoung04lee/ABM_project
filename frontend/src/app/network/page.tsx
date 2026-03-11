@@ -502,6 +502,9 @@ export default function NetworkPage() {
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [keyword, setKeyword] = useState("");
 
   useEffect(() => {
@@ -515,6 +518,7 @@ export default function NetworkPage() {
       const cats = await fetchCategories(tab);
       setCategories(cats);
       setCategorySlug(undefined);
+      setPage(1);
     })();
   }, [tab]);
 
@@ -525,27 +529,42 @@ export default function NetworkPage() {
         const res = await fetchPosts({
           type: tab,
           category: categorySlug,
+          page,
         });
         setPinned(res.pinned);
         setPosts(res.posts ?? []);
+
+        const apiTotalPages = (res as any).total_pages as number | undefined;
+        const apiCount = res.count ?? 0;
+        const PAGE_SIZE = 9;
+        if (apiTotalPages && apiTotalPages > 0) {
+          setTotalPages(apiTotalPages);
+        } else {
+          setTotalPages(Math.max(1, Math.ceil(apiCount / PAGE_SIZE)));
+        }
       } finally {
         setLoading(false);
       }
     })();
-  }, [tab, categorySlug]);
-
-  const merged = useMemo(() => [...pinned, ...posts], [pinned, posts]);
+  }, [tab, categorySlug, page]);
 
   const filtered = useMemo(() => {
+    const baseList =
+      page === 1
+        ? [...pinned, ...posts]
+        : posts;
+
     const q = keyword.trim().toLowerCase();
-    if (!q) return merged;
-    return merged.filter((p) => {
+    if (!q) return baseList;
+    return baseList.filter((p) => {
       const t = (p.title ?? "").toLowerCase();
       const a = (p.author_name ?? "").toLowerCase();
       const c = (p.category_name ?? "").toLowerCase();
       return t.includes(q) || a.includes(q) || c.includes(q);
     });
-  }, [merged, keyword]);
+  }, [pinned, posts, page, keyword]);
+
+  const isQnaTab = tab === "qa";
 
   const handleWriteClick = () => {
     if (!isLoggedIn) {
@@ -566,6 +585,22 @@ export default function NetworkPage() {
       return;
     }
     router.push(`/network/${id}`);
+  };
+
+  const handleChangeTab = (nextTab: NetworkType) => {
+    setTab(nextTab);
+    setPage(1);
+  };
+
+  const handleChangeCategory = (slug: string | undefined) => {
+    setCategorySlug(slug);
+    setPage(1);
+  };
+
+  const handleChangePage = (nextPage: number) => {
+    if (nextPage < 1 || nextPage > totalPages || nextPage === page) return;
+    setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -590,7 +625,7 @@ export default function NetworkPage() {
                   {TABS.map((t) => (
                     <button
                       key={t.key}
-                      onClick={() => setTab(t.key)}
+                      onClick={() => handleChangeTab(t.key)}
                       style={{
                         ...styles.tabBtn,
                         ...(tab === t.key ? styles.tabBtnActive : null),
@@ -610,7 +645,7 @@ export default function NetworkPage() {
             <div style={styles.filterInnerRow}>
               <div style={styles.chipRow}>
                 <button
-                  onClick={() => setCategorySlug(undefined)}
+                  onClick={() => handleChangeCategory(undefined)}
                   style={{
                     ...styles.chip,
                     ...(!categorySlug ? styles.chipActive : null),
@@ -622,7 +657,7 @@ export default function NetworkPage() {
                 {categories.map((c) => (
                   <button
                     key={c.id}
-                    onClick={() => setCategorySlug(c.slug)}
+                    onClick={() => handleChangeCategory(c.slug)}
                     style={{
                       ...styles.chip,
                       ...(categorySlug === c.slug ? styles.chipActive : null),
@@ -726,6 +761,86 @@ export default function NetworkPage() {
               </div>
             ) : filtered.length === 0 ? (
               <div style={{ padding: "24px 0", color: "#4A5565" }}>게시글이 없습니다.</div>
+            ) : isQnaTab ? (
+              <div className="space-y-3">
+                {filtered.map((p) => {
+                  const badgeLabel = p.category_name ?? "전체";
+                  const author = p.author_name ?? "-";
+                  const date = formatDotDate((p as any).created_at);
+                  const views = p.view_count ?? 0;
+                  const likes = p.like_count ?? 0;
+                  const comments = p.comment_count ?? 0;
+                  const answered = comments > 0;
+
+                  const desc =
+                    (p as any).excerpt ??
+                    (p as any).summary ??
+                    (p as any).content_preview ??
+                    "";
+
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handleCardClick(p.id)}
+                      className="w-full bg-white rounded-xl border border-gray-200 px-6 py-5 text-left shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:border-[#2563EB] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-gray-500">{date}</span>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                answered
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              {answered ? "답변완료" : "답변대기"}
+                            </span>
+                          </div>
+                          <h3 className="text-[17px] font-semibold text-gray-900 mb-1 line-clamp-1">
+                            {p.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">
+                            {desc}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <Eye className="w-3.5 h-3.5" />
+                              {views}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Heart className="w-3.5 h-3.5" />
+                              {likes}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              {comments}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="hidden sm:flex flex-col items-end gap-2">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-[#2563EB] rounded-md text-xs font-semibold">
+                            <Tag className="w-3 h-3" />
+                            {badgeLabel}
+                          </span>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={(p as any).author_profile_image || "/icons/userbaseimage.svg"}
+                            alt="profile"
+                            loading="lazy"
+                            className="mt-2 w-8 h-8 rounded-full object-cover"
+                          />
+                          <span className="mt-1 text-xs text-gray-600 max-w-[120px] text-right truncate">
+                            {author}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filtered.map((p) => {
@@ -828,6 +943,46 @@ export default function NetworkPage() {
                     </button>
                   );
                 })}
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleChangePage(page - 1)}
+                  disabled={page === 1}
+                  className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  이전
+                </button>
+                {Array.from({ length: totalPages }).map((_, idx) => {
+                  const pageNumber = idx + 1;
+                  const isActive = pageNumber === page;
+                  return (
+                    <button
+                      // eslint-disable-next-line react/no-array-index-key
+                      key={idx}
+                      type="button"
+                      onClick={() => handleChangePage(pageNumber)}
+                      className={`min-w-[32px] px-2 py-1 rounded-lg text-sm border ${
+                        isActive
+                          ? "bg-[#2563EB] text-white border-[#2563EB]"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => handleChangePage(page + 1)}
+                  disabled={page === totalPages}
+                  className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  다음
+                </button>
               </div>
             )}
           </div>

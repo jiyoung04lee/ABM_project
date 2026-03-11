@@ -279,9 +279,9 @@ type Tab = "profile" | "activity";
    const summaryText = buildYearGradeStatus(user);
    const joinDate = formatDate(user.created_at);
 
-   return (
-     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-12">
-       <div className="max-w-4xl mx-auto px-4">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-12 -mt-20 pt-24">
+      <div className="max-w-4xl mx-auto px-4">
          {/* Tab Navigation */}
          <div className="flex gap-3 justify-center mb-10 flex-wrap">
            <button
