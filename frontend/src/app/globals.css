@@ -263,3 +263,10 @@ textarea {
   pointer-events: none;
   position: absolute;
 }
+
+.editor-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 12px 0;
+}

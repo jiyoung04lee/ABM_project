@@ -169,3 +169,12 @@ export async function toggleCommentLike(commentId: number) {
 export async function deleteComment(commentId: number) {
   await api.delete(`networks/comments/${commentId}/`);
 }
+
+// 게시글 수정
+export async function updatePost(id: number, formData: FormData) {
+  const { data } = await api.patch(`networks/posts/${id}/`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return data;
+}
