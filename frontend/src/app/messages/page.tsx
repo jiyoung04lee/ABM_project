@@ -246,13 +246,13 @@ function MessagesPageContent(){
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-12 -mt-20 pt-24">
-      <div className="max-w-7xl mx-auto w-full px-4 text-left">
+      <div className="max-w-4xl mx-auto w-full px-4 text-left">
         <h1 className="text-2xl font-bold mb-6 text-gray-800 ml-2">메시지</h1>
 
-        <div className="grid grid-cols-12 gap-6 h-[750px]">
+        <div className="grid grid-cols-12 gap-4 h-[750px]">
 
         {/* 대화 목록 */}
-        <div className="col-span-4 bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm">
+        <div className="col-span-5 bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm">
           {/* 일반 사용자만: 관리자에게 문의하기 버튼 (관리자는 대화 목록만) */}
           {!isAdmin && (
             <div className="px-4 pt-4 pb-2">
@@ -278,8 +278,11 @@ function MessagesPageContent(){
                     : "hover:bg-gray-50"
                 }`}
               >
-                <div className="w-12 h-12 bg-[#2B7FFF] rounded-full flex items-center justify-center shrink-0">
-                  <User className="w-6 h-6 text-white" />
+                <div className="relative w-10 h-10 bg-[#2B7FFF] rounded-full flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-white" />
+                  {conv.unread_count > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#2B7FFF] rounded-full ring-2 ring-white" />
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -303,12 +306,12 @@ function MessagesPageContent(){
         </div>
 
         {/* 메시지 영역 */}
-        <div className="col-span-8 bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-hidden shadow-sm">
+        <div className="col-span-7 bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-hidden shadow-sm">
           {selectedConversation ? (
             <>
               <div className="p-6 border-b border-[#E5E7EB] flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#2B7FFF] rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 bg-[#2B7FFF] rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
                 </div>
 
                 <div>
