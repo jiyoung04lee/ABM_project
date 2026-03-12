@@ -346,7 +346,7 @@ function WriteContent() {
 
       {/* 에디터 */}
 
-      <div className="min-h-[350px] mb-10">
+      <div className="min-h-[350px] mb-8">
         <EditorContent
           editor={editor}
           className="outline-none w-full prose max-w-none"
@@ -354,7 +354,7 @@ function WriteContent() {
       </div>
 
       {/* 실명 */}
-      <div className="flex items-center gap-2 mt-auto pt-4 pb-6 border-t border-gray-200">
+      <div className="flex items-center gap-2 mt-6 pt-4 pb-6 border-t border-gray-200">
         <input
           type="checkbox"
           id="use-real-name"

@@ -13,6 +13,24 @@ import {
 import Image from "next/image";
 import { Eye, MessageCircle, Tag } from "lucide-react";
 
+function toPlainText(input: unknown) {
+  if (typeof input !== "string") return "";
+  // TipTap/HTML → plain text preview
+  const withoutTags = input
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]*>/g, " ");
+  return withoutTags
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const TABS: { key: NetworkType; label: string }[] = [
   { key: "student", label: "재학생" },
   { key: "graduate", label: "졸업생" },
@@ -799,6 +817,7 @@ export default function NetworkPage() {
                     (p as any).content_preview ??
                     (p as any).content ??
                     "";
+                  const descText = toPlainText(desc);
 
                   return (
                     <button
@@ -825,7 +844,7 @@ export default function NetworkPage() {
                             {p.title}
                           </h3>
                         <p className="text-[15px] text-[#4A5565] mb-3 leading-relaxed line-clamp-3">
-                            {desc}
+                            {descText}
                           </p>
                           <div className="flex items-center gap-4 text-xs text-gray-500">
                             <span className="flex items-center gap-1">
@@ -888,6 +907,7 @@ export default function NetworkPage() {
                     (p as any).content_preview ??
                     (p as any).content ??
                     "";
+                  const descText = toPlainText(desc);
 
                   return (
                     <button
@@ -897,17 +917,17 @@ export default function NetworkPage() {
                       className="group block bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
                     >
                       {/* 썸네일 */}
-                      <div className="relative w-full h-48 overflow-hidden">
+                      <div className="relative w-full aspect-video overflow-hidden">
                         {p.thumbnail ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={p.thumbnail}
                             alt={p.title}
                             loading="lazy"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-[#D6E4F7] to-[#C5D9F2]" />
+                          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#BFDBFE] to-[#93C5FD]" />
                         )}
                       </div>
 
@@ -933,7 +953,7 @@ export default function NetworkPage() {
 
                         {/* 본문 요약 */}
                         <p className="text-[15px] text-[#4A5565] line-clamp-3 mb-4 leading-relaxed">
-                          {desc}
+                          {descText}
                         </p>
 
                         {/* 작성자 / 날짜 */}
