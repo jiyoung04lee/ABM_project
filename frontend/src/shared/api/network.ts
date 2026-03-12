@@ -25,6 +25,7 @@ export interface PostListItem {
   author_name: string;
   author_profile_image?: string | null;
   use_real_name?: boolean;
+  content_preview?: string;
   view_count: number;
   like_count: number;
   is_liked: boolean;

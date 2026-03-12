@@ -843,7 +843,7 @@ export default function NetworkPage() {
                           <h3 className="text-[17px] font-semibold text-gray-900 mb-1 line-clamp-1">
                             {p.title}
                           </h3>
-                        <p className="text-[15px] text-[#4A5565] mb-3 leading-relaxed line-clamp-3">
+                        <p className="text-[15px] text-[#4A5565] mb-3 leading-relaxed line-clamp-2">
                             {descText}
                           </p>
                           <div className="flex items-center gap-4 text-xs text-gray-500">
@@ -917,8 +917,14 @@ export default function NetworkPage() {
                       className="group block bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
                     >
                       {/* 썸네일 */}
-                      <div className="relative w-full aspect-video overflow-hidden">
-                        {p.thumbnail ? (
+                      <div
+                        className={`relative w-full aspect-video overflow-hidden${
+                          !p.thumbnail
+                            ? " bg-gradient-to-br from-[#D6E4F7] to-[#C5D9F2]"
+                            : ""
+                        }`}
+                      >
+                        {p.thumbnail && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={p.thumbnail}
@@ -926,8 +932,6 @@ export default function NetworkPage() {
                             loading="lazy"
                             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
-                        ) : (
-                          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#BFDBFE] to-[#93C5FD]" />
                         )}
                       </div>
 
@@ -952,7 +956,7 @@ export default function NetworkPage() {
                         </h3>
 
                         {/* 본문 요약 */}
-                        <p className="text-[15px] text-[#4A5565] line-clamp-3 mb-4 leading-relaxed">
+                        <p className="text-[15px] text-[#4A5565] line-clamp-2 mb-4 leading-relaxed">
                           {descText}
                         </p>
 
