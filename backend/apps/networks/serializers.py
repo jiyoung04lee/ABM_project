@@ -1,9 +1,55 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
+from django.utils.html import strip_tags
+from django.core.files.base import ContentFile
+from PIL import Image, ImageOps
+from io import BytesIO
 import os
 
 from .models import Post, PostFile, Comment, Category
+
+
+def make_thumbnail(uploaded_file, size=(800, 450)):
+    """
+    주어진 이미지를 지정된 크기로 센터 크롭한 썸네일 파일(ContentFile)로 반환.
+    실패 시 None 반환.
+    """
+    if not uploaded_file:
+        return None
+
+    try:
+        # 현재 위치 보존
+        try:
+            current_pos = uploaded_file.tell()
+        except (AttributeError, OSError):
+            current_pos = None
+
+        image = Image.open(uploaded_file)
+        image = image.convert("RGB")
+
+        thumb = ImageOps.fit(image, size, Image.LANCZOS)
+
+        buffer = BytesIO()
+        thumb.save(buffer, format="JPEG", quality=85)
+        buffer.seek(0)
+
+        base_name, _ = os.path.splitext(getattr(uploaded_file, "name", "thumb"))
+        thumb_name = f"{base_name}_thumb.jpg"
+
+        file = ContentFile(buffer.read(), name=thumb_name)
+
+        # 원본 파일 포인터 복원
+        if current_pos is not None:
+            try:
+                uploaded_file.seek(current_pos)
+            except (AttributeError, OSError):
+                pass
+
+        return file
+    except Exception:
+        # 썸네일 생성에 실패해도 글 작성은 계속 진행
+        return None
 
 
 # =========================
@@ -36,6 +82,7 @@ class PostListSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     author_profile_image = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
+    content_preview = serializers.SerializerMethodField()
     is_liked = serializers.BooleanField(read_only=True)
 
     type = serializers.CharField(read_only=True)
@@ -55,6 +102,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "author_name",
             "author_profile_image",
             "use_real_name",
+            "content_preview",
             "view_count",
             "like_count",
             "is_liked",
@@ -63,6 +111,11 @@ class PostListSerializer(serializers.ModelSerializer):
             "thumbnail",
             "is_pinned",
         ]
+
+    def get_content_preview(self, obj):
+        plain = strip_tags(obj.content or "")
+        plain = " ".join(plain.split())
+        return plain[:200]
 
     def get_author_name(self, obj):
         if obj.is_anonymous:
@@ -294,8 +347,9 @@ class PostCreateSerializer(serializers.ModelSerializer):
             )
 
         if first_image:
-            post.thumbnail = first_image
-            post.save(update_fields=["thumbnail"])
+            thumb_file = make_thumbnail(first_image)
+            if thumb_file:
+                post.thumbnail.save(thumb_file.name, thumb_file, save=True)
 
         return post
 
@@ -328,7 +382,14 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 )
 
         first_image = instance.files.filter(file_type="image").first()
-        instance.thumbnail = first_image.file if first_image else None
+        if first_image and first_image.file:
+            thumb_file = make_thumbnail(first_image.file)
+            if thumb_file:
+                instance.thumbnail.save(thumb_file.name, thumb_file, save=False)
+        else:
+            # 이미지가 없다면 썸네일도 제거
+            if instance.thumbnail:
+                instance.thumbnail.delete(save=False)
         instance.save(update_fields=["thumbnail"])
 
         return instance
