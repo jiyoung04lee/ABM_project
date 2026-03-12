@@ -123,6 +123,13 @@
 }
 
 @layer base {
+  /* 추가: 브라우저 기본 여백 완전히 제거 */
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+  
   * {
     @apply border-border outline-ring/50;
   }
