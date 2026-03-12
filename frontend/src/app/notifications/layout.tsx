@@ -10,7 +10,7 @@ export default function NotificationsLayout({
     <HeroBackground variant="large">
       <div className="w-full min-h-screen">
         <Header />
-        {children}
+        <div className="pt-12">{children}</div>
       </div>
     </HeroBackground>
   );
