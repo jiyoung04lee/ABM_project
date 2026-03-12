@@ -12,12 +12,12 @@ export default function HeroBackground({
 
   const heightClass =
     variant === "large"
-      ? "min-h-[calc(100vh-64px)]"
+      ? "min-h-screen"
       : "min-h-[400px]";
 
   return (
     <section
-      className={`relative w-full ${heightClass} flex items-center justify-center overflow-hidden`}
+      className={`relative w-full ${heightClass} justify-center overflow-hidden`}
     >
       {/* 배경 그라디언트 */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#DBEAFE] via-[#EEF2FF] to-[#EFF6FF]" />

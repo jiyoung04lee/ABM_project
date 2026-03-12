@@ -16,7 +16,7 @@ export default function CommunityLayout({
     <>
       {!hideHeader && <Header />}
       {!hideHeader ? (
-        <div className="pt-20">
+        <div className="pt-12">
           {children}
         </div>
       ) : (
