@@ -245,11 +245,11 @@ function MessagesPageContent(){
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-12 -mt-20 pt-24">
-      <div className="max-w-4xl mx-auto w-full px-4 text-left">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-6 -mt-20 pt-24">
+      <div className="max-w-6xl mx-auto w-full px-4 text-left">
         <h1 className="text-2xl font-bold mb-6 text-gray-800 ml-2">메시지</h1>
 
-        <div className="grid grid-cols-12 gap-4 h-[750px]">
+        <div className="grid grid-cols-12 gap-6 h-[750px]">
 
         {/* 대화 목록 */}
         <div className="col-span-5 bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm">
@@ -306,7 +306,7 @@ function MessagesPageContent(){
         </div>
 
         {/* 메시지 영역 */}
-        <div className="col-span-7 bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-hidden shadow-sm">
+        <div className="col-span-8 bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-hidden shadow-sm">
           {selectedConversation ? (
             <>
               <div className="p-6 border-b border-[#E5E7EB] flex items-center gap-4">

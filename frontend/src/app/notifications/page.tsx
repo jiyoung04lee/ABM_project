@@ -87,8 +87,8 @@ function NotificationsPageContent() {
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-12">
-      <div className="max-w-4xl mx-auto w-full px-4 text-left">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 w-full py-6">
+      <div className="max-w-5xl mx-auto w-full px-4 text-left">
         <div className="flex justify-between items-end mb-6">
           <h1 className="text-4xl font-bold text-gray-900">알림</h1>
           <button
@@ -109,7 +109,7 @@ function NotificationsPageContent() {
               <div
                 key={notification.id}
                 onClick={() => handleClick(notification)}
-                className={`px-8 py-7 flex items-center gap-5 cursor-pointer transition relative
+                className={`px-10 py-6 flex items-center gap-5 cursor-pointer transition relative
                 ${!notification.is_read ? "bg-[#F8FAFF]" : "bg-white"} 
                 hover:bg-gray-50 border-b border-gray-100 last:border-none`}
               >
