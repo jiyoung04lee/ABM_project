@@ -8,7 +8,7 @@ export default function MainLayout({
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <main className="pt-20">{children}</main>
+      <main className="pt-12">{children}</main>
     </div>
   );
 }
