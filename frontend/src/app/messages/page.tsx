@@ -252,7 +252,7 @@ function MessagesPageContent(){
         <div className="grid grid-cols-12 gap-6 h-[750px]">
 
         {/* 대화 목록 */}
-        <div className="col-span-5 bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm">
+        <div className="col-span-4 bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm">
           {/* 일반 사용자만: 관리자에게 문의하기 버튼 (관리자는 대화 목록만) */}
           {!isAdmin && (
             <div className="px-4 pt-4 pb-2">
