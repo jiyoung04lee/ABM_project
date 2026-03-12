@@ -16,7 +16,7 @@ export default function RootLayout({
           <PageViewTracker />
           <Header />
           <AnnouncementBanner />
-          <main className="pt-20">{children}</main>
+          <main className="pt-12">{children}</main>
         </NotificationProvider>
       </body>
     </html>

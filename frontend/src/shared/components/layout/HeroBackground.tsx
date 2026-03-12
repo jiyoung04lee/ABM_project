@@ -17,7 +17,7 @@ export default function HeroBackground({
 
   return (
     <section
-      className={`relative w-full ${heightClass} justify-center overflow-hidden`}
+      className={`relative w-full ${heightClass} flex flex-col justify-center overflow-hidden`}
     >
       {/* 배경 그라디언트 */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#DBEAFE] via-[#EEF2FF] to-[#EFF6FF]" />
