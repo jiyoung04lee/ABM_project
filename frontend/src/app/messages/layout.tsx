@@ -7,7 +7,7 @@ export default function MessagesLayout({
 }) {
   return (
     <HeroBackground variant="large">
-      <div className="w-full flex justify-center pt-32 pb-20 min-h-screen">
+      <div className="w-full min-h-screen">
         {children}
       </div>
     </HeroBackground>
