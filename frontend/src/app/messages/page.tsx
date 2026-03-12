@@ -249,7 +249,7 @@ function MessagesPageContent(){
       <div className="max-w-6xl mx-auto w-full px-4 text-left">
         <h1 className="text-2xl font-bold mb-6 text-gray-800 ml-2">메시지</h1>
 
-        <div className="grid grid-cols-12 gap-6 h-[750px]">
+        <div className="grid grid-cols-12 gap-6 h-[calc(100vh-180px)] min-h-[500px]">
 
         {/* 대화 목록 */}
         <div className="col-span-4 bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm">
