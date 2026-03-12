@@ -203,7 +203,9 @@ else:
             "BACKEND": "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+            "BACKEND": (
+                "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            ),
         },
     }
 
@@ -217,7 +219,7 @@ else:
 # - health, me: throttle 없음
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.users.authentication.CookieJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -281,6 +283,9 @@ else:
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
     ]
+
+# 쿠키 기반 인증을 위해 자격 증명 허용
+CORS_ALLOW_CREDENTIALS = True
 
 # Kakao Login (code 교환용)
 KAKAO_REST_API_KEY = os.environ.get("KAKAO_REST_API_KEY", "").strip()

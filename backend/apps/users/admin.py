@@ -18,6 +18,8 @@ class UserAdmin(BaseUserAdmin):
         "student_id",
         "grade",
         "admission_year",
+        "is_multi_major",
+        "multi_major_approved",
         "social_provider",
         "kakao_id",
         "is_profile_complete",
@@ -29,6 +31,8 @@ class UserAdmin(BaseUserAdmin):
 
     list_filter = (
         "user_type",
+        "is_multi_major",
+        "multi_major_approved",
         "social_provider",
         "is_profile_complete",
         "is_verified",
@@ -77,6 +81,9 @@ class UserAdmin(BaseUserAdmin):
                     "admission_year",
                     "bio",
                     "profile_image",
+                    "is_multi_major",
+                    "multi_major_image",
+                    "multi_major_approved",
                 )
             },
         ),

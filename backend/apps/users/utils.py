@@ -1,5 +1,9 @@
-from django.utils.crypto import get_random_string
+from datetime import timedelta
+
+from django.conf import settings
 from django.core.cache import cache
+from django.utils.crypto import get_random_string
+from rest_framework.response import Response
 
 
 # ---------------------------------------------------------------------------
@@ -48,3 +52,52 @@ def get_user_from_signup_token(token: str):
 def delete_signup_token(token: str) -> None:
     """signup_token 삭제"""
     cache.delete(f"signup_token:{token}")
+
+
+# ---------------------------------------------------------------------------
+# JWT 쿠키 헬퍼
+# ---------------------------------------------------------------------------
+
+
+def _get_max_age(delta: timedelta) -> int:
+    return int(delta.total_seconds())
+
+
+def set_jwt_cookies(response: Response, access: str, refresh: str) -> None:
+    """
+    access/refresh 토큰을 HttpOnly 쿠키로 설정.
+    - 개발환경(DEBUG=True): SameSite=Lax, Secure=False
+    - 운영환경(DEBUG=False): SameSite=None, Secure=True (HTTPS 전제)
+    """
+
+    access_lifetime: timedelta = settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"]
+    refresh_lifetime: timedelta = settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"]
+
+    secure = not settings.DEBUG
+    samesite = "None" if not settings.DEBUG else "Lax"
+
+    response.set_cookie(
+        "access_token",
+        access,
+        max_age=_get_max_age(access_lifetime),
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        path="/",
+    )
+    response.set_cookie(
+        "refresh_token",
+        refresh,
+        max_age=_get_max_age(refresh_lifetime),
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        path="/",
+    )
+
+
+def clear_jwt_cookies(response: Response) -> Response:
+    """JWT 관련 쿠키 삭제"""
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("refresh_token", path="/")
+    return response

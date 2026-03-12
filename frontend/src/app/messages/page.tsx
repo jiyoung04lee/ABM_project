@@ -234,14 +234,16 @@ function MessagesPageContent(){
   }, [targetUserId, conversations]);
 
   useEffect(() => {
-    api.get("users/me/").then((res) => {
-      setIsAdmin(!!res.data?.is_staff);
-      if (res.data?.id) {
-        const id = Number(res.data.id);
-        localStorage.setItem("user_id", String(id));
-        setMyId(id);
-      }
-    }).catch(() => {});
+    api
+      .get("users/me/")
+      .then((res) => {
+        setIsAdmin(!!res.data?.is_staff);
+        if (res.data?.id) {
+          const id = Number(res.data.id);
+          setMyId(id);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   return (

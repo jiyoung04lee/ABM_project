@@ -427,11 +427,14 @@ export default function AdminPage() {
   const [errorPageSize] = useState(20);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) { setAuthLoading(false); return; }
-    api.get("users/me/")
-      .then((res) => { setIsAdmin(res.data.is_staff === true); })
-      .catch(() => {})
+    api
+      .get("users/me/")
+      .then((res) => {
+        setIsAdmin(res.data.is_staff === true);
+      })
+      .catch(() => {
+        setIsAdmin(false);
+      })
       .finally(() => setAuthLoading(false));
   }, []);
 

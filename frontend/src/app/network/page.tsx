@@ -528,9 +528,20 @@ export default function NetworkPage() {
   const [keyword, setKeyword] = useState("");
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    setIsLoggedIn(!!token);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/users/me/`, {
+          credentials: "include",
+        });
+        if (!cancelled) setIsLoggedIn(res.ok);
+      } catch {
+        if (!cancelled) setIsLoggedIn(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

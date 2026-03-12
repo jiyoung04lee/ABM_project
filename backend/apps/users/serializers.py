@@ -78,7 +78,10 @@ class AdminLoginSerializer(serializers.Serializer):
     """관리자 전용 이메일·비밀번호 로그인 (is_staff 사용자만 허용)."""
 
     email = serializers.EmailField(write_only=True)
-    password = serializers.CharField(write_only=True, style={"input_type": "password"})
+    password = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+    )
 
 
 # ------------------------------------------------------------
@@ -162,6 +165,11 @@ class CompleteProfileSerializer(serializers.Serializer):
         required=False,
         allow_empty=True,
     )
+    is_multi_major = serializers.BooleanField(required=False, default=False)
+    multi_major_image = serializers.ImageField(
+        required=False,
+        allow_null=True,
+    )
 
     def validate(self, attrs):
 
@@ -226,6 +234,13 @@ class CompleteProfileSerializer(serializers.Serializer):
                     "grade": "학년은 1~4 사이의 값이어야 합니다."
                 })
 
+            # 다부전공생인 경우 증빙 이미지 필수
+            if attrs.get("is_multi_major"):
+                if not attrs.get("multi_major_image"):
+                    raise serializers.ValidationError(
+                        {"multi_major_image": "다부전공 인증을 위한 이미지를 업로드해주세요."}
+                    )
+
         elif attrs["user_type"] == "graduate":
 
             admission_year = attrs.get("admission_year")
@@ -263,11 +278,20 @@ class CompleteProfileSerializer(serializers.Serializer):
             user.student_id = self.validated_data["student_id"]
             user.grade = self.validated_data["grade"]
             user.admission_year = None
-
         else:
             user.admission_year = self.validated_data["admission_year"]
             user.student_id = None
             user.grade = None
+
+        # 다부전공 여부 및 증빙 이미지
+        is_multi = bool(self.validated_data.get("is_multi_major"))
+        user.is_multi_major = is_multi
+        if is_multi:
+            image = self.validated_data.get("multi_major_image")
+            if image:
+                user.multi_major_image = image
+            # 새로 신청한 경우 항상 승인 플래그는 False 로 초기화
+            user.multi_major_approved = False
 
         user.is_profile_complete = user.check_profile_complete()
 

@@ -133,6 +133,22 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name="프로필 사진",
     )
 
+    # 다부전공/복수전공 인증 정보
+    is_multi_major = models.BooleanField(
+        default=False,  # type: ignore[reportArgumentType]
+        verbose_name="다부전공 여부",
+    )
+    multi_major_image = models.ImageField(
+        upload_to="users/multi_major/",
+        null=True,
+        blank=True,
+        verbose_name="다부전공 증빙 이미지",
+    )
+    multi_major_approved = models.BooleanField(
+        default=False,  # type: ignore[reportArgumentType]
+        verbose_name="다부전공 승인 여부",
+    )
+
     # 소셜 로그인
     social_provider = models.CharField(
         max_length=20,
