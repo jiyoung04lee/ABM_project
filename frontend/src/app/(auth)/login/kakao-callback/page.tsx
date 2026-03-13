@@ -56,14 +56,8 @@ function KakaoCallbackContent() {
           return;
         }
 
-        if (data.tokens?.access) {
-          localStorage.setItem("access_token", data.tokens.access);
-          if (data.tokens.refresh) {
-            localStorage.setItem("refresh_token", data.tokens.refresh);
-          }
-          if (data.user?.id) {
-            localStorage.setItem("user_id", String(data.user.id));
-          }
+        if (data.tokens?.access || data.user) {
+          // 토큰은 HttpOnly 쿠키로 관리되므로 프론트에서는 저장하지 않는다.
           window.location.href = "/";
           return;
         }

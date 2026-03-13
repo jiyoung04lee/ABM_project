@@ -57,34 +57,22 @@ import{ API_BASE } from "@/shared/api/api";
    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
    const [imageFile, setImageFile] = useState<File | null>(null);
 
-   useEffect(() => {
-     const token =
-       typeof window !== "undefined"
-         ? window.localStorage.getItem("access_token")
-         : null;
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-     if (!token) {
-       router.push("/login");
-       return;
-     }
+        const res = await fetch(`${API_BASE}/api/users/me/`, {
+          credentials: "include",
+        });
 
-     const fetchMe = async () => {
-       try {
-         setLoading(true);
-         setError("");
+        if (res.status === 401) {
+          router.push("/login");
+          return;
+        }
 
-         const res = await fetch(`${API_BASE}/api/users/me/`, {
-           headers: {
-             Authorization: `Bearer ${token}`,
-           },
-         });
-
-         if (res.status === 401) {
-           router.push("/login");
-           return;
-         }
-
-         const data: UserMeResponse = await res.json();
+        const data: UserMeResponse = await res.json();
          setUser(data);
 
          if (data.profile_image) {
@@ -145,16 +133,6 @@ import{ API_BASE } from "@/shared/api/api";
      e.preventDefault();
      if (!form || !user) return;
 
-     const token =
-       typeof window !== "undefined"
-         ? window.localStorage.getItem("access_token")
-         : null;
-
-     if (!token) {
-       router.push("/login");
-       return;
-     }
-
      try {
        setSaving(true);
        setError("");
@@ -187,9 +165,7 @@ import{ API_BASE } from "@/shared/api/api";
 
       const res = await fetch(`${API_BASE}/api/users/me/`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
         body: formData,
       });
 

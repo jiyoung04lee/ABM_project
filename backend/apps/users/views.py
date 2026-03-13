@@ -24,8 +24,10 @@ from .serializers import (
 )
 from .throttles import AuthThrottle
 from .utils import (
-    generate_and_store_signup_token,
+    clear_jwt_cookies,
     delete_signup_token,
+    generate_and_store_signup_token,
+    set_jwt_cookies,
 )
 
 
@@ -88,25 +90,34 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
-        refresh = request.data.get("refresh")
+        """
+        Body 에 refresh 토큰을 주거나, 쿠키의 refresh_token 을 사용해 로그아웃.
+        항상 JWT 관련 쿠키를 삭제한다.
+        """
+        refresh = request.data.get("refresh") or request.COOKIES.get(
+            "refresh_token"
+        )
         if not refresh:
-            return Response(
+            response = Response(
                 {"detail": "refresh 토큰이 필요합니다."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+            return clear_jwt_cookies(response)
 
         try:
             token = RefreshToken(refresh)
             token.blacklist()
-            return Response(
+            response = Response(
                 {"message": "로그아웃되었습니다."},
                 status=status.HTTP_200_OK,
             )
+            return clear_jwt_cookies(response)
         except TokenError:
-            return Response(
+            response = Response(
                 {"detail": "유효하지 않거나 이미 블랙리스트된 토큰입니다."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+            return clear_jwt_cookies(response)
 
 
 @api_view(["GET"])
@@ -227,7 +238,7 @@ class AdminLoginView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
         refresh = RefreshToken.for_user(user)
-        return Response(
+        response = Response(
             {
                 "message": "로그인 성공",
                 "needs_profile": False,
@@ -239,6 +250,12 @@ class AdminLoginView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+        set_jwt_cookies(
+            response,
+            access=str(refresh.access_token),
+            refresh=str(refresh),
+        )
+        return response
 
 
 # ---------------------------------------------------------------------------
@@ -405,6 +422,15 @@ class KakaoLoginView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        # 다부전공생은 승인 전까지 로그인 불가
+        if user.is_multi_major and not user.multi_major_approved:
+            return Response(
+                {
+                    "detail": "다부전공 인증이 승인 대기 중입니다. 승인 후 로그인할 수 있습니다.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         refresh = RefreshToken.for_user(user)
 
         return Response(
@@ -466,7 +492,7 @@ class CompleteProfileView(generics.GenericAPIView):
 
         refresh = RefreshToken.for_user(user)
 
-        return Response(
+        response = Response(
             {
                 "message": "회원가입이 완료되었습니다.",
                 "user": UserSerializer(user).data,
@@ -477,3 +503,11 @@ class CompleteProfileView(generics.GenericAPIView):
             },
             status=status.HTTP_200_OK,
         )
+        # 다부전공생은 승인 대기이므로 로그인 세션을 만들지 않는다.
+        if not user.is_multi_major:
+            set_jwt_cookies(
+                response,
+                access=str(refresh.access_token),
+                refresh=str(refresh),
+            )
+        return response

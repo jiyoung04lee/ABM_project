@@ -30,21 +30,17 @@ function OnboardingContent() {
   const [studentId, setStudentId] = useState("");
   const [grade, setGrade] = useState<number | "">("");
   const [admissionYear, setAdmissionYear] = useState<number | "">("");
+  const [isMultiMajor, setIsMultiMajor] = useState(false);
+  const [multiMajorImage, setMultiMajorImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showMultiMajorSuccess, setShowMultiMajorSuccess] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      router.replace("/");
-      return;
-    }
-
     if (!signupToken) {
       router.replace("/login");
+      return;
     }
   }, [signupToken, router]);
 
@@ -55,7 +51,7 @@ function OnboardingContent() {
     setFieldErrors({});
     setLoading(true);
 
-    const payload: Record<string, unknown> = {
+    const commonPayload: Record<string, unknown> = {
       signup_token: signupToken,
       user_type: userType,
       name: name.trim(),
@@ -64,22 +60,53 @@ function OnboardingContent() {
       interests: interests,
       email: email.trim() || undefined,
       personal_info_consent: personalInfoConsent,
+      is_multi_major: isMultiMajor,
     };
 
     if (userType === "student") {
-      payload.student_id = studentId.trim();
-      payload.grade = grade === "" ? undefined : Number(grade);
+      commonPayload.student_id = studentId.trim();
+      commonPayload.grade = grade === "" ? undefined : Number(grade);
     } else {
-      payload.admission_year = admissionYear === "" ? undefined : Number(admissionYear);
+      commonPayload.admission_year =
+        admissionYear === "" ? undefined : Number(admissionYear);
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/users/social/complete-profile/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
+      let res: Response;
+      let data: any;
+
+      // 다부전공생은 증빙 이미지 업로드가 필요하므로 multipart/form-data 사용
+      if (isMultiMajor && multiMajorImage) {
+        const formData = new FormData();
+        Object.entries(commonPayload).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+          if (Array.isArray(value)) {
+            value.forEach((v) => formData.append(key, String(v)));
+          } else {
+            formData.append(key, String(value));
+          }
+        });
+        formData.append("multi_major_image", multiMajorImage);
+
+        res = await fetch(
+          `${API_BASE}/api/users/social/complete-profile/`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+        data = await res.json();
+      } else {
+        res = await fetch(
+          `${API_BASE}/api/users/social/complete-profile/`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(commonPayload),
+          },
+        );
+        data = await res.json();
+      }
 
       if (!res.ok) {
         if (typeof data === "object" && data !== null) {
@@ -94,14 +121,14 @@ function OnboardingContent() {
         return;
       }
 
-      if (data.tokens?.access) {
-        localStorage.setItem("access_token", data.tokens.access);
-        if (data.tokens.refresh) {
-          localStorage.setItem("refresh_token", data.tokens.refresh);
-        }
-        if (data.user?.id) {
-          localStorage.setItem("user_id", String(data.user.id));
-        }
+      // 다부전공생은 승인 대기 안내 모달 띄우고 비로그인 상태로 홈으로
+      if (isMultiMajor) {
+        setShowMultiMajorSuccess(true);
+        return;
+      }
+
+      if (data.tokens?.access || data.user) {
+        // 토큰은 HttpOnly 쿠키로 관리되므로 프론트에서는 저장하지 않는다.
         window.location.href = "/";
       }
     } catch {
@@ -138,7 +165,10 @@ function OnboardingContent() {
                   type="radio"
                   name="user_type"
                   checked={userType === "student"}
-                  onChange={() => setUserType("student")}
+                  onChange={() => {
+                    setUserType("student");
+                    setIsMultiMajor(false);
+                  }}
                   className="text-[#4F6EF7]"
                 />
                 <span>재학생</span>
@@ -147,8 +177,24 @@ function OnboardingContent() {
                 <input
                   type="radio"
                   name="user_type"
+                  checked={userType === "student" && isMultiMajor}
+                  onChange={() => {
+                    setUserType("student");
+                    setIsMultiMajor(true);
+                  }}
+                  className="text-[#4F6EF7]"
+                />
+                <span>다부전공생</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="user_type"
                   checked={userType === "graduate"}
-                  onChange={() => setUserType("graduate")}
+                  onChange={() => {
+                    setUserType("graduate");
+                    setIsMultiMajor(false);
+                  }}
                   className="text-[#4F6EF7]"
                 />
                 <span>졸업생</span>
@@ -200,7 +246,7 @@ function OnboardingContent() {
               type="text"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              placeholder="학과명"
+              placeholder="본인의 1전공을 입력해주세요!"
               className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#4F6EF7]"
               maxLength={100}
               required
@@ -303,6 +349,32 @@ function OnboardingContent() {
                 )}
               </div>
             </>
+          )}
+
+          {userType === "student" && isMultiMajor && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                다부전공 증빙 이미지 업로드{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setMultiMajorImage(
+                    e.target.files && e.target.files[0]
+                      ? e.target.files[0]
+                      : null,
+                  )
+                }
+                className="w-full text-sm text-gray-700"
+              />
+              {fieldErrors.multi_major_image && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fieldErrors.multi_major_image}
+                </p>
+              )}
+            </div>
           )}
 
           {userType === "graduate" && (
@@ -445,6 +517,40 @@ function OnboardingContent() {
                 확인
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 다부전공 제출 완료 안내 모달 */}
+      {showMultiMajorSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl p-8 flex flex-col items-center text-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-[#EFF6FF] flex items-center justify-center text-3xl">
+              📋
+            </div>
+            <h2 className="text-lg font-bold text-gray-900">
+              신청이 완료되었습니다
+            </h2>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              다부전공 인증 신청을 받았습니다.
+              <br />
+              운영팀에서 제출하신 양식을 확인한 후
+              <br />
+              <span className="font-semibold text-[#4F6EF7]">승인 처리</span>
+              를 진행해드립니다.
+              <br />
+              승인이 완료되면 서비스를 이용하실 수 있습니다.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setShowMultiMajorSuccess(false);
+                window.location.href = "/";
+              }}
+              className="w-full py-3 rounded-xl bg-[#4F6EF7] text-white font-semibold text-sm hover:bg-[#3D5CE8] transition"
+            >
+              홈으로 이동
+            </button>
           </div>
         </div>
       )}

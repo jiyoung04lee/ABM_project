@@ -20,19 +20,27 @@ export default function Header() {
   const [messageCount, setMessageCount] = useState(0);
   
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    setIsLoggedIn(!!token);
-    if (token) {
-      api.get("users/me/")
-        .then((res) => setIsAdmin(res.data.is_staff === true))
-        .catch(() => setIsAdmin(false));
-    }
+    let cancelled = false;
+    api
+      .get("users/me/")
+      .then((res) => {
+        if (cancelled) return;
+        setIsLoggedIn(true);
+        setIsAdmin(res.data.is_staff === true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
+    if (!isLoggedIn) return;
 
     (async () => {
       try {
@@ -42,11 +50,10 @@ export default function Header() {
         console.error(err);
       }
     })();
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
+    if (!isLoggedIn) return;
 
     (async () => {
       try {
@@ -56,13 +63,17 @@ export default function Header() {
         console.error("쪽지 개수 불러오기 실패", err);
       }
     })();
-  }, []);
+  }, [isLoggedIn]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    setIsLoggedIn(false);
-    window.location.href = "/";
+  const handleLogout = async () => {
+    try {
+      await api.post("users/logout/", {});
+    } catch {
+      // ignore
+    } finally {
+      setIsLoggedIn(false);
+      window.location.href = "/";
+    }
   };
 
   const menus = [

@@ -98,41 +98,29 @@ type Tab = "profile" | "activity";
    const [uploadingImage, setUploadingImage] = useState(false);
    const [activityTab, setActivityTab] = useState<"posts" | "comments">("posts");
 
-   useEffect(() => {
-     const token =
-       typeof window !== "undefined"
-         ? window.localStorage.getItem("access_token")
-         : null;
+  useEffect(() => {
+    const fetchAll = async () => {
+      setLoading(true);
+      setError("");
 
-     if (!token) {
-       router.push("/login");
-       return;
-     }
+      try {
+        const meRes = await fetch(`${API_BASE}/api/users/me/`, {
+          credentials: "include",
+        });
 
-     const fetchAll = async () => {
-       setLoading(true);
-       setError("");
+        if (meRes.status === 401) {
+          router.push("/login");
+          return;
+        }
 
-       const headers = {
-         Authorization: `Bearer ${token}`,
-       };
+        if (!meRes.ok) {
+          setError(
+            "내 정보를 불러오지 못했습니다. 백엔드 서버(http://localhost:8000)가 실행 중인지 확인해주세요.",
+          );
+          return;
+        }
 
-       try {
-         const meRes = await fetch(`${API_BASE}/api/users/me/`, { headers });
-
-         if (meRes.status === 401) {
-           router.push("/login");
-           return;
-         }
-
-         if (!meRes.ok) {
-           setError(
-             "내 정보를 불러오지 못했습니다. 백엔드 서버(http://localhost:8000)가 실행 중인지 확인해주세요.",
-           );
-           return;
-         }
-
-         const contentType = meRes.headers.get("content-type");
+        const contentType = meRes.headers.get("content-type");
          if (!contentType || !contentType.includes("application/json")) {
            setError(
              "서버 응답 형식 오류입니다. 백엔드 서버가 정상 동작 중인지 확인해주세요.",
@@ -153,8 +141,8 @@ type Tab = "profile" | "activity";
 
        try {
          const [postsRes, commentsRes] = await Promise.all([
-           fetch(`${API_BASE}/api/users/me/posts/`, { headers }),
-           fetch(`${API_BASE}/api/users/me/comments/`, { headers }),
+           fetch(`${API_BASE}/api/users/me/posts/`, { credentials: "include" }),
+           fetch(`${API_BASE}/api/users/me/comments/`, { credentials: "include" }),
          ]);
 
          if (postsRes.ok) {
@@ -186,16 +174,6 @@ type Tab = "profile" | "activity";
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const token =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem("access_token")
-        : null;
-
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
     try {
       setUploadingImage(true);
       const formData = new FormData();
@@ -203,9 +181,7 @@ type Tab = "profile" | "activity";
 
       const res = await fetch(`${API_BASE}/api/users/me/`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
         body: formData,
       });
 

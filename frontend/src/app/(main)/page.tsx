@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { fetchPosts, PostListItem } from "@/shared/api/network";
+import { API_BASE } from "@/shared/api/api";
 import { getPosts as getCommunityPosts } from "@/shared/api/community";
 
 type HomePost = {
@@ -32,9 +33,20 @@ export default function HomeView() {
   const [latestCommunityPosts, setLatestCommunityPosts] = useState<HomePost[]>([]);
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    setIsLoggedIn(!!token);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/users/me/`, {
+          credentials: "include",
+        });
+        if (!cancelled) setIsLoggedIn(res.ok);
+      } catch {
+        if (!cancelled) setIsLoggedIn(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
