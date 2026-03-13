@@ -32,7 +32,7 @@ function OnboardingContent() {
   const [studentId, setStudentId] = useState("");
   const [grade, setGrade] = useState<number | "">("");
   const [admissionYear, setAdmissionYear] = useState<number | "">("");
-  const [primaryMajor, setPrimaryMajor] = useState("");
+  const [department, setDepartment] = useState("");
   const [multiMajorImage, setMultiMajorImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -70,7 +70,7 @@ function OnboardingContent() {
       formData.append("user_type", backendUserType);
       formData.append("name", name.trim());
       formData.append("nickname", nickname.trim());
-      formData.append("department", DEPARTMENT);
+      formData.append("department", userType === "multi_major" ? department.trim() : DEPARTMENT);
       formData.append(
         "personal_info_consent",
         String(personalInfoConsent)
@@ -90,11 +90,8 @@ function OnboardingContent() {
 
         const isMultiMajor = userType === "multi_major";
         formData.append("is_multi_major", String(isMultiMajor));
-        if (isMultiMajor) {
-          formData.append("primary_major", primaryMajor.trim());
-          if (multiMajorImage) {
-            formData.append("multi_major_image", multiMajorImage);
-          }
+        if (isMultiMajor && multiMajorImage) {
+          formData.append("multi_major_image", multiMajorImage);
         }
       } else if (backendUserType === "graduate") {
         if (admissionYear !== "") {
@@ -242,9 +239,26 @@ function OnboardingContent() {
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               학과 <span className="text-red-500">*</span>
             </label>
-            <div className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 text-gray-800 text-sm">
-              {DEPARTMENT}
-            </div>
+            {userType === "multi_major" ? (
+              <>
+                <input
+                  type="text"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  placeholder="1전공을 입력하세요"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#4F6EF7] text-sm"
+                  maxLength={100}
+                  required
+                />
+                {fieldErrors.department && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.department}</p>
+                )}
+              </>
+            ) : (
+              <div className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 text-gray-800 text-sm">
+                {DEPARTMENT}
+              </div>
+            )}
           </div>
 
           <div>
@@ -345,24 +359,6 @@ function OnboardingContent() {
 
               {userType === "multi_major" && (
                 <>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      1전공 학과명 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={primaryMajor}
-                      onChange={(e) => setPrimaryMajor(e.target.value)}
-                      placeholder="1전공을 입력하세요"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#4F6EF7] text-sm"
-                      maxLength={100}
-                    />
-                    {fieldErrors.primary_major && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {fieldErrors.primary_major}
-                      </p>
-                    )}
-                  </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                       다부전공 증빙 이미지 <span className="text-red-500">*</span>
