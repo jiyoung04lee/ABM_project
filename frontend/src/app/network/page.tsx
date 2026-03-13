@@ -10,6 +10,7 @@ import {
   Category,
   PostListItem,
 } from "@/shared/api/network";
+import { API_BASE } from "@/shared/api/api";
 import Image from "next/image";
 import { Eye, MessageCircle, Tag } from "lucide-react";
 

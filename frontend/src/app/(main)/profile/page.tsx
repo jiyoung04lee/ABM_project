@@ -141,8 +141,8 @@ type Tab = "profile" | "activity";
 
        try {
          const [postsRes, commentsRes] = await Promise.all([
-           fetch(`${API_BASE}/api/users/me/posts/`, { headers }),
-           fetch(`${API_BASE}/api/users/me/comments/`, { headers }),
+           fetch(`${API_BASE}/api/users/me/posts/`, { credentials: "include" }),
+           fetch(`${API_BASE}/api/users/me/comments/`, { credentials: "include" }),
          ]);
 
          if (postsRes.ok) {
