@@ -355,6 +355,30 @@ class KakaoLoginView(APIView):
         email = kakao_account.get("email") or None
         name = profile.get("nickname") or "카카오사용자"
 
+        # #region agent log
+        try:
+            import json as _json, time as _time
+            from pathlib import Path as _Path
+
+            _log_path = _Path("/Users/yunseongcheol/Developer/ABM_project/.cursor/debug-69648e.log")
+            _payload = {
+                "sessionId": "69648e",
+                "runId": "pre-fix",
+                "hypothesisId": "H1",
+                "location": "apps.users.views.KakaoLoginView.post:get_or_create",
+                "message": "About to get_or_create Kakao user",
+                "data": {
+                    "has_email": bool(email),
+                    "has_name": bool(name),
+                },
+                "timestamp": int(_time.time() * 1000),
+            }
+            with _log_path.open("a", encoding="utf-8") as _f:
+                _f.write(_json.dumps(_payload, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
+        # #endregion agent log
+
         user, created = User.objects.get_or_create(
             kakao_id=kakao_id,
             defaults={
@@ -365,6 +389,8 @@ class KakaoLoginView(APIView):
                 "is_verified": True,
                 "user_type": "",
                 "is_profile_complete": False,
+                "is_multi_major": False,
+                "multi_major_approved": False,
             },
         )
 
