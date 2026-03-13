@@ -133,6 +133,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name="프로필 사진",
     )
 
+    # 1전공 학과명 (다부전공생 전용)
+    primary_major = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="1전공 학과명",
+    )
+
     # 다부전공/복수전공 인증 정보
     is_multi_major = models.BooleanField(
         default=False,  # type: ignore[reportArgumentType]

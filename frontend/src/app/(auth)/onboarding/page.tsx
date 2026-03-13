@@ -32,6 +32,7 @@ function OnboardingContent() {
   const [studentId, setStudentId] = useState("");
   const [grade, setGrade] = useState<number | "">("");
   const [admissionYear, setAdmissionYear] = useState<number | "">("");
+  const [primaryMajor, setPrimaryMajor] = useState("");
   const [multiMajorImage, setMultiMajorImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -89,8 +90,11 @@ function OnboardingContent() {
 
         const isMultiMajor = userType === "multi_major";
         formData.append("is_multi_major", String(isMultiMajor));
-        if (isMultiMajor && multiMajorImage) {
-          formData.append("multi_major_image", multiMajorImage);
+        if (isMultiMajor) {
+          formData.append("primary_major", primaryMajor.trim());
+          if (multiMajorImage) {
+            formData.append("multi_major_image", multiMajorImage);
+          }
         }
       } else if (backendUserType === "graduate") {
         if (admissionYear !== "") {
@@ -121,6 +125,12 @@ function OnboardingContent() {
       }
 
       if (data.tokens?.access) {
+        if (userType === "multi_major") {
+          // 다부전공생: 로그인 상태를 만들지 않고 승인 대기 페이지로 이동
+          router.replace("/onboarding/multi-major-pending");
+          return;
+        }
+
         localStorage.setItem("access_token", data.tokens.access);
         if (data.tokens.refresh) {
           localStorage.setItem("refresh_token", data.tokens.refresh);
@@ -334,28 +344,48 @@ function OnboardingContent() {
               </div>
 
               {userType === "multi_major" && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    다부전공 증빙 이미지
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] ?? null;
-                      setMultiMajorImage(file);
-                    }}
-                    className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EEF2FF] file:text-[#4F6EF7] file:text-sm hover:file:bg-[#E0E7FF]"
-                  />
-                  {fieldErrors.multi_major_image && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {fieldErrors.multi_major_image}
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                      1전공 학과명 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={primaryMajor}
+                      onChange={(e) => setPrimaryMajor(e.target.value)}
+                      placeholder="1전공을 입력하세요"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#4F6EF7] text-sm"
+                      maxLength={100}
+                    />
+                    {fieldErrors.primary_major && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {fieldErrors.primary_major}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                      다부전공 증빙 이미지 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        setMultiMajorImage(file);
+                      }}
+                      className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EEF2FF] file:text-[#4F6EF7] file:text-sm hover:file:bg-[#E0E7FF]"
+                    />
+                    {fieldErrors.multi_major_image && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {fieldErrors.multi_major_image}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      다부전공(복수전공 포함) 신청을 위해 학적 정보 등 증빙 화면을 캡처하여 업로드해주세요.
                     </p>
-                  )}
-                  <p className="mt-1 text-xs text-gray-500">
-                    다부전공(복수전공 포함) 신청을 위해 학적 정보 등 증빙 화면을 캡처하여 업로드해주세요.
-                  </p>
-                </div>
+                  </div>
+                </>
               )}
             </>
           )}
