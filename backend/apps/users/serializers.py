@@ -257,8 +257,20 @@ class CompleteProfileSerializer(serializers.Serializer):
                     "grade": "학년은 1~4 사이의 값이어야 합니다."
                 })
 
-            # 재학생은 학과를 고정
-            attrs["department"] = "AI빅데이터융합경영학과"
+            # 다부전공 여부에 따라 학과 처리
+            is_multi_major = bool(attrs.get("is_multi_major"))
+            if is_multi_major:
+                # 다부전공생: 학과 칸에 1전공을 직접 입력
+                department = (attrs.get("department") or "").strip()
+                if not department:
+                    raise serializers.ValidationError({
+                        "department": "다부전공생은 1전공 학과명을 입력해야 합니다."
+                    })
+                attrs["department"] = department
+                attrs["primary_major"] = department
+            else:
+                # 일반 재학생: 학과 고정
+                attrs["department"] = "AI빅데이터융합경영학과"
 
         elif attrs["user_type"] == "graduate":
 
@@ -279,22 +291,16 @@ class CompleteProfileSerializer(serializers.Serializer):
         allowed = {"ai", "data", "business"}
         attrs["interests"] = [x for x in interests if x in allowed]
 
-        # 다부전공 신청 시 이미지 + 1전공 필수
+        # 다부전공 신청 시 이미지 필수
         user_type = attrs.get("user_type")
         is_multi_major = bool(attrs.get("is_multi_major"))
         multi_major_image = attrs.get("multi_major_image")
-        primary_major = (attrs.get("primary_major") or "").strip()
 
         if user_type == User.USER_TYPE_STUDENT and is_multi_major:
             if not multi_major_image:
                 raise serializers.ValidationError({
                     "multi_major_image": "다부전공 신청 시 증빙 이미지를 업로드해주세요."
                 })
-            if not primary_major:
-                raise serializers.ValidationError({
-                    "primary_major": "다부전공 신청 시 1전공 학과명을 입력해주세요."
-                })
-            attrs["primary_major"] = primary_major
 
         return attrs
 
