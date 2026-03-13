@@ -233,3 +233,24 @@ class User(AbstractBaseUser, PermissionsMixin):
             return bool(self.admission_year)
 
         return False
+
+
+class StudentRegistry(models.Model):
+    """학번·이름 대조용 재학생 명단."""
+
+    student_id = models.CharField(
+        max_length=8,
+        unique=True,
+        verbose_name="학번",
+    )
+    name = models.CharField(
+        max_length=50,
+        verbose_name="이름",
+    )
+
+    class Meta:
+        verbose_name = "재학생 명부"
+        verbose_name_plural = "재학생 명부"
+
+    def __str__(self) -> str:
+        return f"{self.student_id} - {self.name}"

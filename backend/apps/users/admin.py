@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .models import User
+from .models import User, StudentRegistry
 
 
 @admin.register(User)
@@ -149,3 +149,9 @@ class UserAdmin(BaseUserAdmin):
             readonly.append("email")
 
         return readonly
+
+
+@admin.register(StudentRegistry)
+class StudentRegistryAdmin(admin.ModelAdmin):
+    list_display = ("student_id", "name")
+    search_fields = ("student_id", "name")

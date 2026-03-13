@@ -1,7 +1,7 @@
 import re
 from rest_framework import serializers
 
-from .models import User
+from .models import User, StudentRegistry
 from .utils import get_user_id_from_signup_token
 
 
@@ -209,7 +209,11 @@ class CompleteProfileSerializer(serializers.Serializer):
 
         if attrs["user_type"] == "student":
 
-            student_id = attrs.get("student_id")
+            # 학과는 재학생인 경우 고정
+            attrs["department"] = "AI빅데이터융합경영학과"
+
+            student_id = (attrs.get("student_id") or "").strip()
+            name = (attrs.get("name") or "").strip()
 
             if not student_id:
                 raise serializers.ValidationError({
@@ -226,6 +230,19 @@ class CompleteProfileSerializer(serializers.Serializer):
             ).exists():
                 raise serializers.ValidationError({
                     "student_id": "이미 등록된 학번입니다."
+                })
+
+            # 학번·이름이 사전에 등록된 재학생 명단과 일치하는지 확인
+            try:
+                registry = StudentRegistry.objects.get(student_id=student_id)
+            except StudentRegistry.DoesNotExist:
+                raise serializers.ValidationError({
+                    "student_id": "등록된 학번이 아닙니다. 학과에 문의해주세요."
+                })
+
+            if registry.name.strip() != name:
+                raise serializers.ValidationError({
+                    "name": "이름과 학번이 일치하지 않습니다. 다시 확인해주세요."
                 })
 
             grade = attrs.get("grade")

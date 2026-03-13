@@ -422,6 +422,15 @@ class KakaoLoginView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        # 다부전공생은 승인 전까지 로그인 불가
+        if user.is_multi_major and not user.multi_major_approved:
+            return Response(
+                {
+                    "detail": "다부전공 인증이 승인 대기 중입니다. 승인 후 로그인할 수 있습니다.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         refresh = RefreshToken.for_user(user)
 
         return Response(
