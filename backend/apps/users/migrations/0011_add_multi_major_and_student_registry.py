@@ -9,13 +9,32 @@ class Migration(migrations.Migration):
 
     operations = [
         # 다부전공 관련 필드 추가
-        migrations.AddField(
-            model_name="user",
-            name="is_multi_major",
-            field=models.BooleanField(
-                default=False,
-                verbose_name="다부전공 여부",
-            ),
+        # 기존 프로덕션 DB에는 is_multi_major 컬럼이 먼저 수동으로 생성되어 있을 수 있으므로
+        # 컬럼 존재 여부에 따라 안전하게 동작하도록 RunSQL + SeparateDatabaseAndState 사용
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql=(
+                        'ALTER TABLE "users" '
+                        'ADD COLUMN IF NOT EXISTS "is_multi_major" boolean '
+                        'NOT NULL DEFAULT false;'
+                    ),
+                    reverse_sql=(
+                        'ALTER TABLE "users" '
+                        'DROP COLUMN IF EXISTS "is_multi_major";'
+                    ),
+                ),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name="user",
+                    name="is_multi_major",
+                    field=models.BooleanField(
+                        default=False,
+                        verbose_name="다부전공 여부",
+                    ),
+                ),
+            ],
         ),
         migrations.AddField(
             model_name="user",
