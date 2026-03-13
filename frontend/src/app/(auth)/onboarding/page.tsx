@@ -4,9 +4,10 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/shared/components/layout/Logo";
-import{ API_BASE } from "@/shared/api/api";
+import { API_BASE } from "@/shared/api/api";
 
-type UserType = "student" | "graduate";
+// UI 상 사용자 유형: 다부전공생은 재학생 + is_multi_major 로 매핑
+type UserType = "student" | "graduate" | "multi_major";
 
 const INTEREST_OPTIONS: { value: string; label: string }[] = [
   { value: "ai", label: "AI" },
@@ -19,10 +20,11 @@ function OnboardingContent() {
   const searchParams = useSearchParams();
   const signupToken = searchParams.get("signup_token");
 
+  const DEPARTMENT = "AI빅데이터융합경영학과";
+
   const [userType, setUserType] = useState<UserType>("student");
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
-  const [department, setDepartment] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [email, setEmail] = useState("");
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
@@ -30,6 +32,7 @@ function OnboardingContent() {
   const [studentId, setStudentId] = useState("");
   const [grade, setGrade] = useState<number | "">("");
   const [admissionYear, setAdmissionYear] = useState<number | "">("");
+  const [multiMajorImage, setMultiMajorImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -55,30 +58,53 @@ function OnboardingContent() {
     setFieldErrors({});
     setLoading(true);
 
-    const payload: Record<string, unknown> = {
-      signup_token: signupToken,
-      user_type: userType,
-      name: name.trim(),
-      nickname: nickname.trim(),
-      department: department.trim(),
-      interests: interests,
-      email: email.trim() || undefined,
-      personal_info_consent: personalInfoConsent,
-    };
-
-    if (userType === "student") {
-      payload.student_id = studentId.trim();
-      payload.grade = grade === "" ? undefined : Number(grade);
-    } else {
-      payload.admission_year = admissionYear === "" ? undefined : Number(admissionYear);
-    }
-
     try {
-      const res = await fetch(`${API_BASE}/api/users/social/complete-profile/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const formData = new FormData();
+
+      // 백엔드는 student / graduate 두 종류만 받으므로
+      // 다부전공생은 student + is_multi_major=true 로 보낸다.
+      const backendUserType = userType === "multi_major" ? "student" : userType;
+
+      formData.append("signup_token", signupToken);
+      formData.append("user_type", backendUserType);
+      formData.append("name", name.trim());
+      formData.append("nickname", nickname.trim());
+      formData.append("department", DEPARTMENT);
+      formData.append(
+        "personal_info_consent",
+        String(personalInfoConsent)
+      );
+
+      if (email.trim()) {
+        formData.append("email", email.trim());
+      }
+
+      interests.forEach((v) => formData.append("interests", v));
+
+      if (backendUserType === "student") {
+        formData.append("student_id", studentId.trim());
+        if (grade !== "") {
+          formData.append("grade", String(grade));
+        }
+
+        const isMultiMajor = userType === "multi_major";
+        formData.append("is_multi_major", String(isMultiMajor));
+        if (isMultiMajor && multiMajorImage) {
+          formData.append("multi_major_image", multiMajorImage);
+        }
+      } else if (backendUserType === "graduate") {
+        if (admissionYear !== "") {
+          formData.append("admission_year", String(admissionYear));
+        }
+      }
+
+      const res = await fetch(
+        `${API_BASE}/api/users/social/complete-profile/`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
       const data = await res.json();
 
       if (!res.ok) {
@@ -153,6 +179,16 @@ function OnboardingContent() {
                 />
                 <span>졸업생</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="user_type"
+                  checked={userType === "multi_major"}
+                  onChange={() => setUserType("multi_major")}
+                  className="text-[#4F6EF7]"
+                />
+                <span>다부전공생</span>
+              </label>
             </div>
           </div>
 
@@ -196,15 +232,9 @@ function OnboardingContent() {
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               학과 <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              placeholder="학과명"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#4F6EF7]"
-              maxLength={100}
-              required
-            />
+            <div className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 text-gray-800 text-sm">
+              {DEPARTMENT}
+            </div>
           </div>
 
           <div>
@@ -265,7 +295,7 @@ function OnboardingContent() {
             )}
           </div>
 
-          {userType === "student" && (
+          {(userType === "student" || userType === "multi_major") && (
             <>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -302,6 +332,31 @@ function OnboardingContent() {
                   <p className="text-red-500 text-xs mt-1">{fieldErrors.grade}</p>
                 )}
               </div>
+
+              {userType === "multi_major" && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    다부전공 증빙 이미지
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      setMultiMajorImage(file);
+                    }}
+                    className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EEF2FF] file:text-[#4F6EF7] file:text-sm hover:file:bg-[#E0E7FF]"
+                  />
+                  {fieldErrors.multi_major_image && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {fieldErrors.multi_major_image}
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    다부전공(복수전공 포함) 신청을 위해 학적 정보 등 증빙 화면을 캡처하여 업로드해주세요.
+                  </p>
+                </div>
+              )}
             </>
           )}
 
