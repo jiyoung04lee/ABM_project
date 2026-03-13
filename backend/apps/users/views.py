@@ -147,24 +147,84 @@ def check_student_id(request):
 
 class MyPostsView(generics.ListAPIView):
     """
-    내가 쓴 글 목록
+    내가 쓴 글 목록 (커뮤니티 + 네트워크 통합)
     GET /api/users/me/posts/
     """
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        from apps.community.models import Post  # type: ignore[reportAttributeAccessIssue]
+    def list(self, request, *args, **kwargs):
+        from django.db.models import Exists, OuterRef
 
-        return (
-            Post.objects  # type: ignore[reportAttributeAccessIssue]
-            .filter(author=self.request.user, is_deleted=False)
+        from apps.community.models import Post as CommunityPost, Reaction
+        from apps.community.serializers import PostListSerializer as CommunityPostListSerializer
+        from apps.networks.models import Post as NetworkPost, Reaction as NetworkReaction
+        from apps.networks.serializers import PostListSerializer as NetworkPostListSerializer
+
+        user = request.user
+
+        # 커뮤니티 글 (is_liked 어노테이션 추가)
+        community_qs = (
+            CommunityPost.objects
+            .filter(author=user, is_deleted=False)
             .select_related("category")
+            .prefetch_related("files")
+            .annotate(
+                is_liked=Exists(
+                    Reaction.objects.filter(
+                        post=OuterRef("pk"),
+                        user=user,
+                    )
+                )
+            )
             .order_by("-created_at")
         )
+        community_serializer = CommunityPostListSerializer(
+            community_qs, many=True, context={"request": request}
+        )
+        community_list = []
+        for i, data in enumerate(community_serializer.data):
+            item = dict(data)
+            item["board_type"] = "community"
+            item["view_count"] = getattr(
+                community_qs[i], "view_count", 0
+            )
+            item["category_name"] = (
+                community_qs[i].category.name
+                if community_qs[i].category
+                else "커뮤니티"
+            )
+            community_list.append(item)
 
-    def get_serializer_class(self):
-        from apps.community.serializers import PostListSerializer
-        return PostListSerializer
+        # 네트워크 글 (is_liked 어노테이션 추가)
+        network_qs = (
+            NetworkPost.objects
+            .filter(author=user, is_deleted=False)
+            .select_related("category")
+            .prefetch_related("files")
+            .annotate(
+                is_liked=Exists(
+                    NetworkReaction.objects.filter(
+                        post=OuterRef("pk"),
+                        user=user,
+                    )
+                )
+            )
+            .order_by("-created_at")
+        )
+        network_serializer = NetworkPostListSerializer(
+            network_qs, many=True, context={"request": request}
+        )
+        network_list = []
+        for data in network_serializer.data:
+            item = dict(data)
+            item["board_type"] = "network"
+            network_list.append(item)
+
+        # 합친 뒤 created_at 기준 최신순
+        merged = community_list + network_list
+        merged.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+
+        return Response(merged)
 
 
 class MyCommentsView(generics.ListAPIView):

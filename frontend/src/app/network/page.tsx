@@ -10,8 +10,16 @@ import {
   Category,
   PostListItem,
 } from "@/shared/api/network";
+import { API_BASE } from "@/shared/api/api";
 import Image from "next/image";
 import { Eye, MessageCircle, Tag } from "lucide-react";
+
+function resolveImageUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const base = API_BASE.replace(/\/$/, "");
+  return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
+}
 
 function toPlainText(input: unknown) {
   if (typeof input !== "string") return "";
@@ -916,21 +924,21 @@ export default function NetworkPage() {
                       onClick={() => handleCardClick(p.id)}
                       className="group block bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
                     >
-                      {/* 썸네일 */}
+                      {/* 썸네일 - 이미지 1개/여러 개 동일하게 영역 꽉 채움 */}
                       <div
-                        className={`relative w-full aspect-video overflow-hidden${
+                        className={`relative w-full aspect-video overflow-hidden ${
                           !p.thumbnail
-                            ? " bg-gradient-to-br from-[#D6E4F7] to-[#C5D9F2]"
-                            : ""
+                            ? "bg-gradient-to-br from-[#D6E4F7] to-[#C5D9F2]"
+                            : "bg-gray-100"
                         }`}
                       >
                         {p.thumbnail && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={p.thumbnail}
+                            src={resolveImageUrl(p.thumbnail)}
                             alt={p.title}
                             loading="lazy"
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                           />
                         )}
                       </div>
