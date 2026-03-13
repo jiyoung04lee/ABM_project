@@ -459,19 +459,22 @@ type Tab = "profile" | "activity";
                   <div className="space-y-4">
                     {posts.map((post) => {
                       const created = formatDate(post.created_at);
-                      const category = post.category_name ?? "커뮤니티";
+                      const categoryLabel =
+                        post.board_type === "network"
+                          ? "네트워크"
+                          : (post.category_name ?? "커뮤니티");
                       const views = post.view_count ?? 0;
 
                       return (
                         <div
-                          key={post.id}
+                          key={`${post.board_type ?? "community"}-${post.id}`}
                           className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
                         >
                           <div className="flex items-start justify-between mb-3">
 
                             <div>
                               <div className="inline-block px-4 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-3">
-                                {category}
+                                {categoryLabel}
                               </div>
 
                               <Link

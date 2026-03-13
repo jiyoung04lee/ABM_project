@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { createPost, fetchCategories } from "@/shared/api/network";
+import { createPost, updatePost, fetchCategories } from "@/shared/api/network";
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -46,6 +46,7 @@ function WriteContent() {
   const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -85,29 +86,43 @@ function WriteContent() {
 
   /* ---------------- 이미지 삽입 ---------------- */
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const addImageFiles = (fileList: FileList | File[]) => {
+    if (!editor) return;
+    const imageFiles = Array.from(fileList).filter((f) =>
+      f.type.startsWith("image/")
+    );
+    if (imageFiles.length === 0) return;
 
-    const files = e.target.files;
-    if (!files || !editor) return;
-
-    Array.from(files).forEach((file) => {
-        const url = URL.createObjectURL(file);
-
-        editor
-            .chain()
-            .focus()
-            .setImage({ src: url })
-            .run();
-
-        setFiles((prev) => [...prev, file]);
-        setPreviewImages((prev) => [...prev, url]);
+    imageFiles.forEach((file) => {
+      const url = URL.createObjectURL(file);
+      editor
+        .chain()
+        .focus()
+        .setImage({ src: url })
+        .run();
+      setFiles((prev) => [...prev, file]);
+      setPreviewImages((prev) => [...prev, url]);
     });
 
     if (mainImageIndex === null) {
       setMainImageIndex(0);
     }
+  };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+    addImageFiles(fileList);
     e.target.value = "";
+  };
+
+  const handleImageDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+    if (!e.dataTransfer.files?.length) return;
+    addImageFiles(e.dataTransfer.files);
+    e.dataTransfer.clearData();
   };
 
   /* ---------------- 카테고리 ---------------- */
@@ -150,15 +165,30 @@ function WriteContent() {
       return;
     }
 
+    // blob URL → 플레이스홀더로 교체 (blob URL 순서 = files 배열 순서)
+    const blobUrls: string[] = [];
+    const PLACEHOLDER_RE = /<img([^>]*?)src="(blob:[^"]+)"([^>]*?)\/?>"/gi;
+    let contentWithPlaceholders = content.replace(
+      /<img([^>]*?)src="(blob:[^"]+)"([^>]*?)\/?>/gi,
+      (_match, before, blobUrl, after) => {
+        const idx = blobUrls.length;
+        blobUrls.push(blobUrl);
+        return `<img${before}src="__BLOB_${idx}__"${after}>`;
+      }
+    );
+    // 실제로 사용한 void reference 방지
+    void PLACEHOLDER_RE;
+
     const formData = new FormData();
 
     formData.append("type", type);
     formData.append("title", title);
-    formData.append("content", content);
+    formData.append("content", contentWithPlaceholders);
     formData.append("is_anonymous", "false");
     formData.append("use_real_name", String(useRealName));
     formData.append("category", category);
 
+    // blob URL 순서와 files 배열 순서가 동일
     files.forEach((file) => {
       formData.append("new_files", file);
     });
@@ -171,7 +201,38 @@ function WriteContent() {
 
       setSubmitting(true);
 
-      await createPost(formData);
+      const created = await createPost(formData);
+
+      // 응답의 files 배열로 플레이스홀더를 실제 URL로 교체 후 PATCH
+      if (blobUrls.length > 0 && created.files && created.files.length > 0) {
+        const imageFiles = created.files
+          .filter((f) => f.file_type === "image")
+          .sort((a, b) => a.order - b.order);
+
+        let fixedContent = contentWithPlaceholders;
+        blobUrls.forEach((_, idx) => {
+          const realUrl = imageFiles[idx]?.file ?? "";
+          fixedContent = fixedContent.replace(
+            `src="__BLOB_${idx}__"`,
+            `src="${realUrl}"`
+          );
+        });
+
+        // 플레이스홀더가 남아있으면(파일 매핑 실패) 제거
+        fixedContent = fixedContent.replace(
+          /<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi,
+          ""
+        );
+
+        if (fixedContent !== contentWithPlaceholders) {
+          const patchData = new FormData();
+          patchData.append("content", fixedContent);
+          created.files.forEach((f) => {
+            patchData.append("existing_files", String(f.id));
+          });
+          await updatePost(created.id, patchData);
+        }
+      }
 
       alert("작성 완료");
 
@@ -344,9 +405,22 @@ function WriteContent() {
         className="w-full text-3xl font-normal border-b pb-4 mb-6 outline-none placeholder-gray-300"
       />
 
-      {/* 에디터 */}
-
-      <div className="min-h-[350px] mb-8">
+      {/* 에디터 - 이미지 드래그 앤 드롭 지원 */}
+      <div
+        className={`min-h-[350px] mb-8 rounded-lg border-2 border-dashed transition-colors ${
+          isDraggingOver ? "border-blue-400 bg-blue-50/50" : "border-transparent"
+        }`}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setIsDraggingOver(false);
+        }}
+        onDrop={handleImageDrop}
+      >
         <EditorContent
           editor={editor}
           className="outline-none w-full prose max-w-none"
@@ -354,7 +428,7 @@ function WriteContent() {
       </div>
 
       {/* 실명 */}
-      <div className="flex items-center gap-2 mt-6 pt-4 pb-6 border-t border-gray-200">
+      <div className="flex items-center gap-2 mt-24 pt-4 pb-6 border-t border-gray-200">
         <input
           type="checkbox"
           id="use-real-name"

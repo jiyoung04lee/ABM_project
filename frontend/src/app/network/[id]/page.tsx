@@ -19,7 +19,15 @@ import {
 } from "@/shared/api/network";
 
 import api from "@/shared/api/axios";
+import { API_BASE } from "@/shared/api/api";
 import PostMeta from "@/features/post/components/PostMeta";
+
+function resolveImageUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const base = API_BASE.replace(/\/$/, "");
+  return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
+}
 
 export default function NetworkDetailPage() {
   const { id } = useParams();
@@ -243,10 +251,37 @@ export default function NetworkDetailPage() {
         {post.title}
       </h1>
 
+      {post.thumbnail && (
+        <div className="mb-6 rounded-lg overflow-hidden">
+          <img
+            src={resolveImageUrl(post.thumbnail)}
+            alt="대표 이미지"
+            className="w-full rounded-lg object-cover"
+          />
+        </div>
+      )}
+
       <div
         className="text-[15px] text-[#364153] mb-6 prose max-w-none"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
+
+      {post.files?.filter((f) => f.file_type === "image").length > 0 && (
+        <div className="space-y-4 mb-6">
+          {post.files
+            .filter((f) => f.file_type === "image")
+            .sort((a, b) => a.order - b.order)
+            .map((file) => (
+              <div key={file.id} className="rounded-lg overflow-hidden">
+                <img
+                  src={resolveImageUrl(file.file)}
+                  alt=""
+                  className="w-full rounded-lg object-contain max-h-[480px]"
+                />
+              </div>
+            ))}
+        </div>
+      )}
 
       <div className="flex justify-end mt-8">
         <button
