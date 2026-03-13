@@ -171,6 +171,11 @@ class CompleteProfileSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
     )
+    primary_major = serializers.CharField(
+        max_length=100,
+        required=False,
+        allow_blank=True,
+    )
 
     def validate(self, attrs):
 
@@ -267,19 +272,29 @@ class CompleteProfileSerializer(serializers.Serializer):
                     "admission_year": "입학년도는 2013~2025 사이여야 합니다."
                 })
 
+            # 졸업생도 학과 고정
+            attrs["department"] = "AI빅데이터융합경영학과"
+
         interests = attrs.get("interests") or []
         allowed = {"ai", "data", "business"}
         attrs["interests"] = [x for x in interests if x in allowed]
 
-        # 다부전공 신청 시 이미지 필수
+        # 다부전공 신청 시 이미지 + 1전공 필수
         user_type = attrs.get("user_type")
         is_multi_major = bool(attrs.get("is_multi_major"))
         multi_major_image = attrs.get("multi_major_image")
+        primary_major = (attrs.get("primary_major") or "").strip()
 
-        if user_type == User.USER_TYPE_STUDENT and is_multi_major and not multi_major_image:
-            raise serializers.ValidationError({
-                "multi_major_image": "다부전공 신청 시 증빙 이미지를 업로드해주세요."
-            })
+        if user_type == User.USER_TYPE_STUDENT and is_multi_major:
+            if not multi_major_image:
+                raise serializers.ValidationError({
+                    "multi_major_image": "다부전공 신청 시 증빙 이미지를 업로드해주세요."
+                })
+            if not primary_major:
+                raise serializers.ValidationError({
+                    "primary_major": "다부전공 신청 시 1전공 학과명을 입력해주세요."
+                })
+            attrs["primary_major"] = primary_major
 
         return attrs
 
@@ -309,6 +324,9 @@ class CompleteProfileSerializer(serializers.Serializer):
             if is_multi_major:
                 user.multi_major_image = self.validated_data.get("multi_major_image")
                 user.multi_major_approved = False
+                user.primary_major = self.validated_data.get("primary_major") or None
+            else:
+                user.primary_major = None
 
         else:
             user.admission_year = self.validated_data["admission_year"]
