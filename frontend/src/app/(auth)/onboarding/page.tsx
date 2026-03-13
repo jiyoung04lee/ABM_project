@@ -411,6 +411,7 @@ function OnboardingContent() {
                 <p className="mt-2 text-xs text-gray-500">
                   ※ 분석 도구 사용 시, 관련 법령 및 각 서비스의 가이드에 따라 IP 익명화 등 개인정보 최소화 조치를
                   적용합니다.
+                </p>
               </section>
 
               <section>
