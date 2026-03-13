@@ -89,38 +89,56 @@ class Migration(migrations.Migration):
             ],
         ),
         # 재학생 명단 테이블
-        migrations.CreateModel(
-            name="StudentRegistry",
-            fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
+        # 프로덕션 DB에 users_studentregistry가 이미 있을 수 있으므로 IF NOT EXISTS 사용
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql=(
+                        'CREATE TABLE IF NOT EXISTS "users_studentregistry" ('
+                        '"id" bigserial NOT NULL PRIMARY KEY, '
+                        '"student_id" varchar(8) NOT NULL UNIQUE, '
+                        '"name" varchar(50) NOT NULL'
+                        ");"
                     ),
-                ),
-                (
-                    "student_id",
-                    models.CharField(
-                        max_length=8,
-                        unique=True,
-                        verbose_name="학번",
-                    ),
-                ),
-                (
-                    "name",
-                    models.CharField(
-                        max_length=50,
-                        verbose_name="이름",
+                    reverse_sql=(
+                        'DROP TABLE IF EXISTS "users_studentregistry";'
                     ),
                 ),
             ],
-            options={
-                "verbose_name": "재학생 명부",
-                "verbose_name_plural": "재학생 명부",
-            },
+            state_operations=[
+                migrations.CreateModel(
+                    name="StudentRegistry",
+                    fields=[
+                        (
+                            "id",
+                            models.BigAutoField(
+                                auto_created=True,
+                                primary_key=True,
+                                serialize=False,
+                                verbose_name="ID",
+                            ),
+                        ),
+                        (
+                            "student_id",
+                            models.CharField(
+                                max_length=8,
+                                unique=True,
+                                verbose_name="학번",
+                            ),
+                        ),
+                        (
+                            "name",
+                            models.CharField(
+                                max_length=50,
+                                verbose_name="이름",
+                            ),
+                        ),
+                    ],
+                    options={
+                        "verbose_name": "재학생 명부",
+                        "verbose_name_plural": "재학생 명부",
+                    },
+                ),
+            ],
         ),
     ]
-
