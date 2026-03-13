@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .models import User
+from .models import StudentRegistry, User
 
 
 @admin.register(User)
@@ -18,6 +18,8 @@ class UserAdmin(BaseUserAdmin):
         "student_id",
         "grade",
         "admission_year",
+        "is_multi_major",
+        "multi_major_approved",
         "social_provider",
         "kakao_id",
         "is_profile_complete",
@@ -71,12 +73,15 @@ class UserAdmin(BaseUserAdmin):
                     "name",
                     "nickname",
                     "department",
+                    "profile_image",
                     "user_type",
                     "student_id",
                     "grade",
                     "admission_year",
+                    "is_multi_major",
+                    "multi_major_image",
+                    "multi_major_approved",
                     "bio",
-                    "profile_image",
                 )
             },
         ),
@@ -142,3 +147,9 @@ class UserAdmin(BaseUserAdmin):
             readonly.append("email")
 
         return readonly
+
+
+@admin.register(StudentRegistry)
+class StudentRegistryAdmin(admin.ModelAdmin):
+    list_display = ("student_id", "name")
+    search_fields = ("student_id", "name")

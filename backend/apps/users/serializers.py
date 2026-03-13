@@ -1,7 +1,7 @@
 import re
 from rest_framework import serializers
 
-from .models import User
+from .models import StudentRegistry, User
 from .utils import get_user_id_from_signup_token
 
 
@@ -163,6 +163,15 @@ class CompleteProfileSerializer(serializers.Serializer):
         allow_empty=True,
     )
 
+    is_multi_major = serializers.BooleanField(
+        required=False,
+        default=False,
+    )
+    multi_major_image = serializers.ImageField(
+        required=False,
+        allow_null=True,
+    )
+
     def validate(self, attrs):
 
         token = attrs["signup_token"]
@@ -201,7 +210,11 @@ class CompleteProfileSerializer(serializers.Serializer):
 
         if attrs["user_type"] == "student":
 
-            student_id = attrs.get("student_id")
+            # 이름·학번 공백 제거
+            name = (attrs.get("name") or "").strip()
+            student_id = (attrs.get("student_id") or "").strip()
+            attrs["name"] = name
+            attrs["student_id"] = student_id
 
             if not student_id:
                 raise serializers.ValidationError({
@@ -220,11 +233,27 @@ class CompleteProfileSerializer(serializers.Serializer):
                     "student_id": "이미 등록된 학번입니다."
                 })
 
+            # 재학생 명단(StudentRegistry) 대조
+            try:
+                registry = StudentRegistry.objects.get(student_id=student_id)
+            except StudentRegistry.DoesNotExist:
+                raise serializers.ValidationError({
+                    "student_id": "등록된 학번이 아닙니다. 학과에 문의해주세요."
+                })
+
+            if registry.name.strip() != name:
+                raise serializers.ValidationError({
+                    "name": "이름과 학번이 일치하지 않습니다. 다시 확인해주세요."
+                })
+
             grade = attrs.get("grade")
             if grade is None or not (1 <= grade <= 4):
                 raise serializers.ValidationError({
                     "grade": "학년은 1~4 사이의 값이어야 합니다."
                 })
+
+            # 재학생은 학과를 고정
+            attrs["department"] = "AI빅데이터융합경영학과"
 
         elif attrs["user_type"] == "graduate":
 
@@ -241,6 +270,16 @@ class CompleteProfileSerializer(serializers.Serializer):
         interests = attrs.get("interests") or []
         allowed = {"ai", "data", "business"}
         attrs["interests"] = [x for x in interests if x in allowed]
+
+        # 다부전공 신청 시 이미지 필수
+        user_type = attrs.get("user_type")
+        is_multi_major = bool(attrs.get("is_multi_major"))
+        multi_major_image = attrs.get("multi_major_image")
+
+        if user_type == User.USER_TYPE_STUDENT and is_multi_major and not multi_major_image:
+            raise serializers.ValidationError({
+                "multi_major_image": "다부전공 신청 시 증빙 이미지를 업로드해주세요."
+            })
 
         return attrs
 
@@ -263,6 +302,13 @@ class CompleteProfileSerializer(serializers.Serializer):
             user.student_id = self.validated_data["student_id"]
             user.grade = self.validated_data["grade"]
             user.admission_year = None
+
+            # 다부전공 관련 필드 저장
+            is_multi_major = bool(self.validated_data.get("is_multi_major"))
+            user.is_multi_major = is_multi_major
+            if is_multi_major:
+                user.multi_major_image = self.validated_data.get("multi_major_image")
+                user.multi_major_approved = False
 
         else:
             user.admission_year = self.validated_data["admission_year"]
