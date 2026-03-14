@@ -105,7 +105,7 @@ export default function HomeView() {
 
         <div className="relative mb-6 flex items-center justify-center gap-3 md:gap-4">
           {/* 펭귄 왼쪽 */}
-          <div className="penguin-bounce shrink-0">
+          <div className="penguin-bounce shrink-0 -mt-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/penguin.png"
@@ -119,7 +119,7 @@ export default function HomeView() {
             <span className="text-[#2563EB] whitespace-nowrap">정보 아카이브</span>
           </h1>
           {/* 펭귄 오른쪽 */}
-          <div className="penguin-bounce shrink-0">
+          <div className="penguin-bounce shrink-0 -mt-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/penguin.png"
