@@ -279,11 +279,13 @@ class PostCreateSerializer(serializers.ModelSerializer):
         write_only=True,
     )
     thumbnail_index = serializers.IntegerField(required=False, write_only=True)
+    files = PostFileSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
         ref_name = "NetworkPostCreateSerializer"
         fields = [
+            "id",
             "type",
             "title",
             "content",
@@ -293,6 +295,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "existing_files",
             "new_files",
             "thumbnail_index",
+            "files",
         ]
 
     def validate_category(self, category):
