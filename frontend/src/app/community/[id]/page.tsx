@@ -358,8 +358,19 @@ export default function PostDetailPage() {
                 {comment.replies?.map((reply) => (
                   <div key={reply.id} className="mt-6 ml-10">
                     <div className="flex items-center gap-2">
-                      <span className="text-[14px] text-[#0A0A0A]">
-                        {reply.author_name}
+                      <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+                        <img
+                          src={
+                            reply.author_profile_image
+                              ? reply.author_profile_image
+                              : "/icons/userbaseimage.svg"
+                          }
+                          alt="user"
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      </div>
+                      <span className="text-[14px] font-medium text-[#0A0A0A]">
+                        {reply.is_anonymous ? "익명" : reply.author_name}
                       </span>
                       <span className="text-[12px] text-[#6A7282]">
                         {reply.created_at?.slice(0, 10)}
@@ -370,13 +381,54 @@ export default function PostDetailPage() {
                       {reply.content}
                     </p>
 
-                    <div className="mt-2 flex gap-3 text-xs text-[#6A7282]">
+                    <div className="mt-2 flex gap-3 text-xs text-[#6A7282] items-center">
+                      <button onClick={() => handleCommentLike(reply.id)} className="flex items-center gap-1">
+                        <Image src={"/icons/good.svg"} alt="like" width={14} height={14} />
+                        <span>{reply.like_count}</span>
+                      </button>
+
+                      {/* 대댓글의 답글 버튼 추가 */}
+                      <button 
+                        onClick={() => setReplyOpen(replyOpen === reply.id ? null : reply.id)}
+                        className="hover:text-[#2B7FFF]"
+                      >
+                        답글
+                      </button>
+
                       {reply.author_id === currentUserId && (
-                        <button onClick={() => handleDeleteComment(reply.id)}>
+                        <button onClick={() => handleDeleteComment(reply.id)} className="hover:text-red-500">
                           삭제
                         </button>
                       )}
                     </div>
+
+                    {/* 대댓글 하단에 나타나는 입력창 */}
+                    {replyOpen === reply.id && (
+                      <div className="mt-3">
+                        <textarea
+                          value={replyInput[reply.id] || ""}
+                          onChange={(e) =>
+                            setReplyInput((prev) => ({
+                              ...prev,
+                              [reply.id]: e.target.value,
+                            }))
+                          }
+                          placeholder="답글을 입력하세요..."
+                          className="w-full border border-[#E5E7EB] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#2B7FFF]"
+                        />
+                        <div className="flex justify-end mt-1.5">
+                          <button
+                            // 중요: parent 인자로 현재 대댓글의 ID가 아닌, 
+                            // 최상위 댓글인 comment.id를 넘겨서 같은 라인에 쌓이게 합니다.
+                            onClick={() => handleCreateComment(comment.id)} 
+                            disabled={commentSubmitting}
+                            className="px-3 py-1 bg-[#2B7FFF] text-xs text-white rounded disabled:opacity-50"
+                          >
+                            {commentSubmitting ? "작성 중..." : "답글 등록"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
