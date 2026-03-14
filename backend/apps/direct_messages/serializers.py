@@ -41,27 +41,26 @@ class ConversationSerializer(serializers.ModelSerializer):
             "target_nickname",
         ]
 
-    # serializers.py
-
     def get_other_user(self, obj):
         request = self.context.get("request")
-        user = request.user
-        other = obj.participants.exclude(id=user.id).first()
+        me = request.user
+        other = obj.participants.exclude(id=me.id).first()
 
-        if other:
-            if getattr(other, "is_staff", False):
-                name = "관리자"
-            # 이 부분이 핵심: 방에 저장된 닉네임이 있다면 실명 대신 닉네임을 보냄
-            elif obj.target_nickname: 
-                name = obj.target_nickname
-            else:
-                name = other.name or "사용자"
+        if not other:
+            return {"id": None, "name": "알 수 없음"}
 
-            return {
-                "id": other.id,
-                "name": name,
-            }
-        return None
+        if getattr(other, "is_staff", False):
+            return {"id": other.id, "name": "관리자"}
+
+        if me == obj.creator:
+            name = obj.target_nickname or other.name
+        else:
+            name = obj.creator_nickname or other.name
+
+        return {
+            "id": other.id,
+            "name": name,
+        }
 
     def get_last_message(self, obj):
         last = obj.messages.last()
