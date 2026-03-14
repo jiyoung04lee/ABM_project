@@ -31,7 +31,7 @@ export default function HoverProfileCard({ name, grade, profileImage, userId }: 
       return;
     }
 
-    router.push(`/messages?userId=${userId}`);
+    router.push(`/messages?userId=${userId}&nickname=${name}`);
   };
 
   const canSendMessage = !!userId && userId !== currentUserId;
