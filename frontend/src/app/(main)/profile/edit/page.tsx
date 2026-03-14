@@ -245,8 +245,8 @@ import{ API_BASE } from "@/shared/api/api";
    const isStudent = user.user_type === "student";
 
    return (
-     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 pb-12">
-       <div className="max-w-3xl mx-auto px-4">
+     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 pt-10 pb-12">
+      <div className="max-w-3xl mx-auto px-4">
          {/* Header */}
          <div className="mb-8">
            <h1 className="text-4xl font-bold text-gray-900">프로필 수정</h1>
