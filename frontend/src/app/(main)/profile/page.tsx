@@ -315,7 +315,7 @@ type Tab = "profile" | "activity";
    const joinDate = formatDate(user.created_at);
 
    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 pt-10 pb-12">
+      <div className="w-full pt-10 pb-12">
         <div className="max-w-6xl mx-auto px-4">
 
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
