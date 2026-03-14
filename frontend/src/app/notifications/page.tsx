@@ -87,7 +87,7 @@ function NotificationsPageContent() {
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 w-full py-6">
+    <div className="w-full py-6">
       <div className="max-w-5xl mx-auto w-full px-4 text-left">
         <div className="flex justify-between items-end mb-6">
           <h1 className="text-4xl font-bold text-gray-900">알림</h1>

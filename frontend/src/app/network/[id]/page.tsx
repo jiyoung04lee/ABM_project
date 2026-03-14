@@ -291,69 +291,131 @@ export default function NetworkDetailPage() {
         </button>
       </div>
 
-      {/* 댓글 */}
+      {/* 댓글 섹션 시작 */}
       <div className="mt-1 border-t border-[#E5E7EB] pt-5">
         <h3 className="text-[20px] font-semibold mb-5 mt-1">댓글</h3>
 
-        {comments.map((comment) => (
-          <div key={comment.id} className="mb-12">
-            <div className="flex items-start gap-3">
-
-              <div className="w-10 h-10 rounded-full overflow-hidden">
-                <img
-                  src="/icons/userbaseimage.svg"
-                  alt="profile"
-                  className="w-10 h-10 rounded-full"
-                />
-              </div>
-
-              <div className="flex-1">
-
-                <div className="flex items-center gap-2">
-                  <span className="text-[16px] text-[#0A0A0A]">
-                    {comment.is_anonymous ? "익명" : comment.author_name}
-                  </span>
-                  <span className="text-[14px] text-[#6A7282]">
-                    {comment.created_at?.slice(0, 10)}
-                  </span>
+        {comments.length === 0 ? (
+          <div className="py-20 text-center text-[#9CA3AF] text-[14px]">
+            아직 작성된 댓글이 없습니다.
+          </div>
+        ) : (
+          comments.map((comment) => (
+            <div key={comment.id} className="mb-12">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <img
+                    src="/icons/userbaseimage.svg"
+                    alt="profile"
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
                 </div>
 
-                <p className="mt-2 text-[16px] text-[#364153]">
-                  {comment.content}
-                </p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[16px] text-[#0A0A0A]">
+                      {comment.is_anonymous ? "익명" : comment.author_name}
+                    </span>
+                    <span className="text-[14px] text-[#6A7282]">
+                      {comment.created_at?.slice(0, 10)}
+                    </span>
+                  </div>
 
-                <div className="mt-3 flex items-center gap-3 text-sm text-[#6A7282]">
-                  <button
-                    onClick={() => handleCommentLike(comment.id)}
-                    className="flex items-center gap-1"
-                  >
-                    <Image src="/icons/good.svg" alt="like" width={16} height={16} />
-                    <span>{comment.like_count}</span>
-                  </button>
+                  <p className="mt-2 text-[16px] text-[#364153]">
+                    {comment.content}
+                  </p>
 
-                  <button onClick={() => setReplyOpen(comment.id)}>
-                    답글
-                  </button>
-
-                  {(comment.author_id === currentUserId || isAdmin) && (
-                    <button onClick={() => handleDeleteComment(comment.id)}>
-                      삭제
+                  <div className="mt-3 flex items-center gap-3 text-sm text-[#6A7282]">
+                    <button
+                      onClick={() => handleCommentLike(comment.id)}
+                      className="flex items-center gap-1"
+                    >
+                      <Image src="/icons/good.svg" alt="like" width={16} height={16} />
+                      <span>{comment.like_count}</span>
                     </button>
+
+                    <button onClick={() => setReplyOpen(replyOpen === comment.id ? null : comment.id)}>
+                      답글
+                    </button>
+
+                    {(comment.author_id === currentUserId || isAdmin) && (
+                      <button onClick={() => handleDeleteComment(comment.id)}>
+                        삭제
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 답글(대댓글) 입력창 - 커뮤니티 스타일 */}
+                  {replyOpen === comment.id && (
+                    <div className="mt-4 pl-4 border-l-2 border-[#E5E7EB]">
+                      <textarea
+                        value={replyInput[comment.id] || ""}
+                        onChange={(e) =>
+                          setReplyInput((prev) => ({
+                            ...prev,
+                            [comment.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="답글을 입력하세요..."
+                        className="w-full min-h-[80px] border border-[#E5E7EB] rounded-xl p-3 text-sm focus:outline-none"
+                      />
+                      <div className="flex justify-end mt-2">
+                        <button
+                          onClick={() => handleCreateComment(comment.id)}
+                          disabled={commentSubmitting}
+                          className="px-3 py-1.5 bg-[#2B7FFF] text-white rounded-lg text-xs disabled:opacity-50"
+                        >
+                          {commentSubmitting ? "작성 중..." : "답글 등록"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 대댓글 리스트 렌더링 - 커뮤니티 스타일 */}
+                  {comment.replies && comment.replies.length > 0 && (
+                    <div className="mt-6 ml-10 space-y-6">
+                      {comment.replies.map((reply) => (
+                        <div key={reply.id} className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full overflow-hidden">
+                            <img src="/icons/userbaseimage.svg" alt="profile" className="w-8 h-8 rounded-full" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[14px] font-medium text-[#0A0A0A]">
+                                {reply.is_anonymous ? "익명" : reply.author_name}
+                              </span>
+                              <span className="text-[12px] text-[#6A7282]">
+                                {reply.created_at?.slice(0, 10)}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[14px] text-[#364153]">{reply.content}</p>
+                            <div className="mt-2 flex gap-3 text-xs text-[#6A7282]">
+                              <button onClick={() => handleCommentLike(reply.id)} className="flex items-center gap-1">
+                                <Image src="/icons/good.svg" alt="like" width={14} height={14} />
+                                <span>{reply.like_count}</span>
+                              </button>
+                              {(reply.author_id === currentUserId || isAdmin) && (
+                                <button onClick={() => handleDeleteComment(reply.id)}>삭제</button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
 
-        {/* 댓글 작성 */}
+        {/* 메인 댓글 작성란 */}
         <div className="pt-5 border-t border-[#E5E7EB]">
           <textarea
             value={commentInput}
             onChange={(e) => setCommentInput(e.target.value)}
             placeholder="댓글을 입력하세요..."
-            className="w-full min-h-[160px] border border-[#E5E7EB] rounded-xl p-5 text-[15px]"
+            className="w-full min-h-[160px] border border-[#E5E7EB] rounded-xl p-5 text-[15px] focus:outline-none focus:ring-1 focus:ring-[#2B7FFF] mt-5"
           />
 
           <div className="flex justify-between items-center mt-5">
@@ -370,13 +432,12 @@ export default function NetworkDetailPage() {
             <button
               onClick={() => handleCreateComment(null)}
               disabled={commentSubmitting}
-              className="px-4 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm"
+              className="px-4 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm disabled:opacity-50"
             >
               {commentSubmitting ? "작성 중..." : "댓글 작성"}
             </button>
           </div>
         </div>
-
       </div>
 
     </div>
