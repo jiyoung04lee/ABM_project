@@ -90,7 +90,7 @@ export default function PostDetailPage() {
     }
   };
   
-  // 댓글 작성 
+  // 댓글 작성
   const handleCreateComment = async (parent: number | null = null) => {
     if (commentSubmitting) return;
 
