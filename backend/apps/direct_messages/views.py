@@ -138,8 +138,12 @@ class ConversationStartViewSet(viewsets.ViewSet):
     def create(self, request):
         user = request.user
         target_id = request.data.get("user_id")
-    
-        target_nickname = request.data.get("nickname") 
+        target_nickname = request.data.get("nickname")  
+        
+        my_nickname = None
+        if target_nickname:
+            my_nickname = getattr(user, 'nickname', None) or user.name  
+
         target_user = User.objects.get(id=target_id)
 
         conversations = Conversation.objects.filter(
@@ -147,13 +151,18 @@ class ConversationStartViewSet(viewsets.ViewSet):
         ).filter(
             participants=target_user
         ).filter(
-            target_nickname=target_nickname
+            target_nickname=target_nickname,
+            creator_nickname=my_nickname 
         )
 
         if conversations.exists():
             conversation = conversations.first()
         else:
-            conversation = Conversation.objects.create(target_nickname=target_nickname)
+            conversation = Conversation.objects.create(
+                creator=user,
+                creator_nickname=my_nickname,
+                target_nickname=target_nickname
+            )
             conversation.participants.add(user, target_user)
 
         serializer = ConversationSerializer(conversation, context={"request": request})

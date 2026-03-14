@@ -3,10 +3,10 @@ from django.conf import settings
 
 
 class Conversation(models.Model):
-    participants = models.ManyToManyField(
-        settings.AUTH_USER_MODEL,
-        related_name="conversations"
-    )
+    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="conversations")
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="created_conversations")
+    
+    creator_nickname = models.CharField(max_length=100, null=True, blank=True)
     target_nickname = models.CharField(max_length=100, null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
