@@ -17,7 +17,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Conversation.objects.filter(
             participants=self.request.user
-        ).order_by("-updated_at")
+        ).distinct().order_by("-updated_at")
 
     def get_serializer_context(self):
         return {"request": self.request}
