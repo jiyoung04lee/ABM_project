@@ -103,12 +103,30 @@ export default function HomeView() {
           ✨ AI빅데이터융합경영학과 학생들을 위한
         </div>
 
-        <div className="relative mb-6">
+        <div className="relative mb-6 flex flex-col items-center gap-4">
+          {/* 펭귄 위 */}
+          <div className="penguin-bounce">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/penguin.png"
+              alt=""
+              className="w-20 h-20 md:w-24 md:h-24 object-contain pointer-events-none"
+            />
+          </div>
           <h1 className="text-5xl md:text-6xl font-bold leading-tight text-gray-900">
             AI빅데이터융합경영학과 학생들을 위한
             <br />
             <span className="text-[#2563EB]">정보 아카이브</span>
           </h1>
+          {/* 펭귄 아래 */}
+          <div className="penguin-bounce" style={{ animationDelay: "1s" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/penguin.png"
+              alt=""
+              className="w-20 h-20 md:w-24 md:h-24 object-contain pointer-events-none -scale-y-100"
+            />
+          </div>
         </div>
 
         <p className="text-gray-700 text-lg mb-3 leading-relaxed">

@@ -6,15 +6,24 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
+from rest_framework.pagination import PageNumberPagination
+
 from .models import Notification
 from .serializers import NotificationSerializer
 
 User = get_user_model()
 
 
+class NotificationPagination(PageNumberPagination):
+    page_size = 8
+    page_size_query_param = "page_size"
+    max_page_size = 20
+
+
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = NotificationPagination
 
     def get_queryset(self):
         # 30일 지난 알림 삭제

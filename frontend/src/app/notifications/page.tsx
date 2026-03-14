@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import api from "@/shared/api/axios";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+
+const PAGE_SIZE = 8;
 
 // 시간 포맷팅 함수 (10분 전, 1시간 전 등)
 const formatRelativeTime = (dateString: string) => {
@@ -33,21 +35,52 @@ function NotificationsPageContent() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextPageNum, setNextPageNum] = useState<number | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async (page: number = 1) => {
+    const isFirst = page === 1;
+    if (isFirst) setLoading(true);
+    else setLoadingMore(true);
     try {
-      const res = await api.get("notifications/");
-      setNotifications(res.data.results);
+      const res = await api.get("notifications/", {
+        params: { page_size: PAGE_SIZE, page },
+      });
+      const data = res.data?.results ?? res.data;
+      const list = Array.isArray(data) ? data : [];
+      const hasNext = !!res.data?.next;
+      if (isFirst) {
+        setNotifications(list);
+      } else {
+        setNotifications((prev) => [...prev, ...list]);
+      }
+      setNextPageNum(hasNext ? page + 1 : null);
     } catch (err) {
       console.error("알림 불러오기 실패", err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications(1);
+  }, [fetchNotifications]);
+
+  const loadMore = useCallback(() => {
+    if (nextPageNum == null || loadingMore) return;
+    fetchNotifications(nextPageNum);
+  }, [nextPageNum, loadingMore, fetchNotifications]);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el || nextPageNum == null || loadingMore) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    if (scrollTop + clientHeight >= scrollHeight - 80) {
+      loadMore();
+    }
+  }, [nextPageNum, loadingMore, loadMore]);
 
   const handleClick = async (notification: Notification) => {
     try {
@@ -65,7 +98,7 @@ function NotificationsPageContent() {
   const handleReadAll = async () => {
     try {
       await api.patch("notifications/read_all/");
-      fetchNotifications();
+      fetchNotifications(1);
     } catch (err) {
       console.error("전체 읽음 실패", err);
     }
@@ -99,46 +132,57 @@ function NotificationsPageContent() {
           </button>
         </div>
 
-        <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-y-auto max-h-[70vh]"
+        >
           {notifications.length === 0 ? (
             <div className="p-20 text-center text-gray-400">
               새로운 알림이 없습니다.
             </div>
           ) : (
-            notifications.map((notification) => (
-              <div
-                key={notification.id}
-                onClick={() => handleClick(notification)}
-                className={`px-10 py-6 flex items-center gap-5 cursor-pointer transition relative
-                ${!notification.is_read ? "bg-[#F8FAFF]" : "bg-white"} 
-                hover:bg-gray-50 border-b border-gray-100 last:border-none`}
-              >
-                {/* 아이콘 섹션 */}
-                <div className="w-12 h-12 bg-[#2B7FFF] rounded-full flex items-center justify-center flex-shrink-0">
-                  <Image
-                    src={getIconPath(notification.type)}
-                    alt="icon"
-                    width={22}
-                    height={22}
-                  />
-                </div>
-
-                {/* 텍스트 섹션 */}
-                <div className="flex-1">
-                  <div className="text-[17px] font-medium text-gray-800 leading-snug">
-                    {notification.display_message}
+            <>
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  onClick={() => handleClick(notification)}
+                  className={`px-10 py-6 flex items-center gap-5 cursor-pointer transition relative
+                  ${!notification.is_read ? "bg-[#F8FAFF]" : "bg-white"} 
+                  hover:bg-gray-50 border-b border-gray-100 last:border-none`}
+                >
+                  <div className="w-12 h-12 bg-[#2B7FFF] rounded-full flex items-center justify-center flex-shrink-0">
+                    <Image
+                      src={getIconPath(notification.type)}
+                      alt="icon"
+                      width={22}
+                      height={22}
+                    />
                   </div>
-                  <div className="text-[14px] text-gray-400 mt-1.5 font-normal">
-                    {formatRelativeTime(notification.created_at)}
+                  <div className="flex-1">
+                    <div className="text-[17px] font-medium text-gray-800 leading-snug">
+                      {notification.display_message}
+                    </div>
+                    <div className="text-[14px] text-gray-400 mt-1.5 font-normal">
+                      {formatRelativeTime(notification.created_at)}
+                    </div>
                   </div>
+                  {!notification.is_read && (
+                    <div className="w-2 h-2 bg-[#2B7FFF] rounded-full absolute right-8 top-1/2 -translate-y-1/2" />
+                  )}
                 </div>
-
-                {/* 읽지 않음 파란 점 (우측 상단 혹은 중앙 배치) */}
-                {!notification.is_read && (
-                  <div className="w-2 h-2 bg-[#2B7FFF] rounded-full absolute right-8 top-1/2 -translate-y-1/2"></div>
-                )}
-              </div>
-            ))
+              ))}
+              {loadingMore && (
+                <div className="py-4 text-center text-[14px] text-gray-400">
+                  불러오는 중...
+                </div>
+              )}
+              {nextPageNum != null && !loadingMore && (
+                <div className="py-2 text-center text-[13px] text-gray-400">
+                  아래로 스크롤하면 더 보기
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -14,6 +14,7 @@ import {
   unpinPost,
   toggleCommentLike,
   deleteComment,
+  deletePost,
   PostDetail,
   Comment,
 } from "@/shared/api/network";
@@ -44,6 +45,7 @@ export default function NetworkDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [pinning, setPinning] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -78,6 +80,26 @@ export default function NetworkDetailPage() {
       like_count: res.like_count,
       is_liked: res.liked,
     });
+  };
+
+  const isAuthor = currentUserId != null && post?.author_id === currentUserId;
+
+  const handleEdit = () => {
+    router.push(`/network/edit/${id}`);
+  };
+
+  const handleDelete = async () => {
+    if (!post || deleting) return;
+    if (!confirm("정말 이 글을 삭제할까요?")) return;
+    setDeleting(true);
+    try {
+      await deletePost(post.id);
+      router.push("/network");
+    } catch {
+      alert("삭제에 실패했습니다.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   //댓글 작성 
@@ -248,6 +270,26 @@ export default function NetworkDetailPage() {
         isAnonymous={post.is_anonymous}
         authorId={post.author_id}
       />
+
+      {isAuthor && (
+        <div className="flex justify-end gap-3 mt-2 mb-4">
+          <button
+            type="button"
+            onClick={handleEdit}
+            className="text-[13px] text-[#6A7282] hover:text-[#2B7FFF]"
+          >
+            수정
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="text-[13px] text-[#6A7282] hover:text-[#DC2626] disabled:opacity-50"
+          >
+            {deleting ? "삭제 중..." : "삭제"}
+          </button>
+        </div>
+      )}
 
       <div className="border-b border-[#E5E7EB] mb-10 mt-4" />
 
