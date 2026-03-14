@@ -91,27 +91,25 @@ export default function PostDetailPage() {
   };
   
   // 댓글 작성 
-  const handleCreateComment = async (
-    parent: number | null = null
-  ) => {
+  const handleCreateComment = async (parent: number | null = null) => {
     if (commentSubmitting) return;
 
-    const content =
-      parent === null
-        ? commentInput.trim()
-        : replyInput[parent]?.trim();
+    let content = "";
+    if (parent === null) {
+      content = commentInput.trim();
+    } else {
+      content = replyInput[replyOpen!]?.trim() || replyInput[parent]?.trim() || "";
+    }
 
     if (!content) return;
 
     setCommentSubmitting(true);
     try {
-      const payload: { content: string; parent?: number; is_anonymous?: boolean} = {
-        content, is_anonymous: isAnonymous,
+      const payload: { content: string; parent?: number; is_anonymous?: boolean } = {
+        content,
+        is_anonymous: isAnonymous,
       };
-
-      if (parent !== null) {
-        payload.parent = parent;
-      }
+      if (parent !== null) payload.parent = parent;
 
       const res = await createComment(Number(id), payload);
 
@@ -120,19 +118,19 @@ export default function PostDetailPage() {
         setCommentInput("");
       } else {
         setComments((prev) =>
-          prev.map((comment) =>
-            comment.id === parent
+          prev.map((c) =>
+            c.id === parent
               ? {
-                  ...comment,
-                  replies: [...comment.replies, res.data],
+                  ...c,
+                  replies: [...(c.replies || []), res.data],
                 }
-              : comment
+              : c
           )
         );
-        setReplyInput((prev) => ({ ...prev, [parent]: "" }));
+        setReplyInput((prev) => ({ ...prev, [replyOpen!]: "", [parent]: "" }));
         setReplyOpen(null);
       }
-    } catch {
+    } catch (err) {
       alert("댓글 작성 실패");
     } finally {
       setCommentSubmitting(false);

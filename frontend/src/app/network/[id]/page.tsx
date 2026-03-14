@@ -79,18 +79,21 @@ export default function NetworkDetailPage() {
     });
   };
 
+  //댓글 작성 
   const handleCreateComment = async (parent: number | null = null) => {
     if (commentSubmitting) return;
 
-    const content =
-      parent === null
-        ? commentInput.trim()
-        : replyInput[parent]?.trim();
+    // 열려있는 답글창(replyOpen)의 입력값을 우선적으로 가져옵니다.
+    let content = "";
+    if (parent === null) {
+      content = commentInput.trim();
+    } else {
+      content = replyInput[replyOpen!]?.trim() || replyInput[parent]?.trim() || "";
+    }
 
     if (!content) return;
 
     setCommentSubmitting(true);
-
     try {
       const res = await addComment(Number(id), {
         content,
@@ -103,20 +106,20 @@ export default function NetworkDetailPage() {
         setCommentInput("");
       } else {
         setComments((prev) =>
-          prev.map((comment) =>
-            comment.id === parent
+          prev.map((c) =>
+            c.id === parent
               ? {
-                  ...comment,
-                  replies: [...(comment.replies || []), res],
+                  ...c,
+                  replies: [...(c.replies || []), res],
                 }
-              : comment
+              : c
           )
         );
-
-        setReplyInput((prev) => ({ ...prev, [parent]: "" }));
+        // 입력창 초기화
+        setReplyInput((prev) => ({ ...prev, [replyOpen!]: "", [parent]: "" }));
         setReplyOpen(null);
       }
-    } catch {
+    } catch (err) {
       alert("댓글 작성 실패");
     } finally {
       setCommentSubmitting(false);
@@ -365,11 +368,7 @@ export default function NetworkDetailPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
                           <img
-                            src={
-                              reply.author_profile_image
-                                ? reply.author_profile_image
-                                : "/icons/userbaseimage.svg"
-                            }
+                            src={reply.author_profile_image || "/icons/userbaseimage.svg"}
                             alt="user"
                             className="w-8 h-8 rounded-full object-cover"
                           />
@@ -387,13 +386,11 @@ export default function NetworkDetailPage() {
                       </p>
 
                       <div className="mt-2 flex gap-3 text-xs text-[#6A7282] items-center">
-                        {/* 좋아요 기능 유지 */}
                         <button onClick={() => handleCommentLike(reply.id)} className="flex items-center gap-1">
-                          <Image src={"/icons/good.svg"} alt="like" width={14} height={14} />
+                          <Image src="/icons/good.svg" alt="like" width={14} height={14} />
                           <span>{reply.like_count}</span>
                         </button>
 
-                        {/* [추가] 대댓글에 답글 달기 버튼 */}
                         <button 
                           onClick={() => setReplyOpen(replyOpen === reply.id ? null : reply.id)}
                           className="hover:text-[#2B7FFF]"
@@ -401,14 +398,14 @@ export default function NetworkDetailPage() {
                           답글
                         </button>
 
-                        {reply.author_id === currentUserId && (
+                        {(reply.author_id === currentUserId || isAdmin) && (
                           <button onClick={() => handleDeleteComment(reply.id)} className="hover:text-red-500">
                             삭제
                           </button>
                         )}
                       </div>
 
-                      {/* [추가] 대댓글에 대한 답글 입력창 - 토글 */}
+                      {/* 대댓글에 대한 답글 입력창 */}
                       {replyOpen === reply.id && (
                         <div className="mt-3">
                           <textarea
@@ -424,7 +421,7 @@ export default function NetworkDetailPage() {
                           />
                           <div className="flex justify-end mt-1.5">
                             <button
-                              onClick={() => handleCreateComment(comment.id)} // 부모 댓글 ID를 사용하여 같은 라인에 추가
+                              onClick={() => handleCreateComment(comment.id)} // 최상위 댓글 ID를 parent로 전달
                               disabled={commentSubmitting}
                               className="px-3 py-1 bg-[#2B7FFF] text-xs text-white rounded disabled:opacity-50"
                             >
