@@ -135,7 +135,7 @@ function NotificationsPageContent() {
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-y-auto max-h-[70vh]"
+          className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar"
         >
           {notifications.length === 0 ? (
             <div className="p-20 text-center text-gray-400">
