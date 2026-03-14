@@ -132,8 +132,7 @@ export default function PostDetailPage() {
         setReplyInput((prev) => ({ ...prev, [parent]: "" }));
         setReplyOpen(null);
       }
-    } catch (err) {
-      console.log("에러전체: ", err)
+    } catch {
       alert("댓글 작성 실패");
     } finally {
       setCommentSubmitting(false);

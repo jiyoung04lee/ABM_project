@@ -21,7 +21,6 @@ export default function PostMeta({
   authorId,
 }: Props) {
   const displayName = isAnonymous ? "익명" : author ?? "알 수 없음";
-  console.log("meta authorId:", authorId);
   return (
     <div className="flex justify-between items-start mb-4">
       <div className="flex items-center gap-3 relative group">
