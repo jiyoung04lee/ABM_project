@@ -38,6 +38,7 @@ class ConversationSerializer(serializers.ModelSerializer):
             "last_message",
             "last_message_time",
             "unread_count",
+            "target_nickname",
         ]
 
     def get_other_user(self, obj):
