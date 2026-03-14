@@ -95,8 +95,11 @@ type Tab = "profile" | "activity";
    const [comments, setComments] = useState<MyComment[]>([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState("");
-   const [uploadingImage, setUploadingImage] = useState(false);
-   const [activityTab, setActivityTab] = useState<"posts" | "comments">("posts");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [activityTab, setActivityTab] = useState<"posts" | "comments">("posts");
+  const ITEMS_PER_PAGE = 6;
+  const [postsPage, setPostsPage] = useState(1);
+  const [commentsPage, setCommentsPage] = useState(1);
 
    useEffect(() => {
      const token =
@@ -243,7 +246,11 @@ type Tab = "profile" | "activity";
         await deleteCommunityPost(post.id);
       }
 
-      setPosts((prev) => prev.filter((p) => p.id !== post.id));
+      setPosts((prev) => {
+        const next = prev.filter((p) => p.id !== post.id);
+        return next;
+      });
+      setPostsPage((p) => (posts.length <= 1 ? 1 : Math.min(p, Math.ceil((posts.length - 1) / ITEMS_PER_PAGE) || 1)));
     } catch {
       alert("글 삭제에 실패했습니다.");
     }
@@ -261,6 +268,7 @@ type Tab = "profile" | "activity";
     try {
       await deleteCommunityComment(id);
       setComments((prev) => prev.filter((c) => c.id !== id));
+      setCommentsPage((p) => (comments.length <= 1 ? 1 : Math.min(p, Math.ceil((comments.length - 1) / ITEMS_PER_PAGE) || 1)));
     } catch {
       alert("댓글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
@@ -455,9 +463,15 @@ type Tab = "profile" | "activity";
                 </div>
 
                 {/* 내가 작성한 글 */}
-                {activityTab === "posts" && (
+                {activityTab === "posts" && (() => {
+                  const totalPostsPages = Math.max(1, Math.ceil(posts.length / ITEMS_PER_PAGE));
+                  const paginatedPosts = posts.slice((postsPage - 1) * ITEMS_PER_PAGE, postsPage * ITEMS_PER_PAGE);
+                  return (
                   <div className="space-y-4">
-                    {posts.map((post) => {
+                    {paginatedPosts.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">작성한 글이 없습니다.</p>
+                    ) : (
+                    paginatedPosts.map((post) => {
                       const created = formatDate(post.created_at);
                       const categoryLabel =
                         post.board_type === "network"
@@ -524,15 +538,58 @@ type Tab = "profile" | "activity";
 
                         </div>
                       );
-                    })}
+                    })
+                    )}
+                    {totalPostsPages > 1 && (
+                      <div className="mt-8 flex justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPostsPage((p) => Math.max(1, p - 1))}
+                          disabled={postsPage === 1}
+                          className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                          이전
+                        </button>
+                        {Array.from({ length: totalPostsPages }).map((_, idx) => {
+                          const pageNumber = idx + 1;
+                          const isActive = pageNumber === postsPage;
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setPostsPage(pageNumber)}
+                              className={`min-w-[32px] px-2 py-1 rounded-lg text-sm border ${
+                                isActive ? "bg-[#2563EB] text-white border-[#2563EB]" : "bg-white text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => setPostsPage((p) => Math.min(totalPostsPages, p + 1))}
+                          disabled={postsPage === totalPostsPages}
+                          className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                          다음
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* 내가 작성한 댓글 */}
-                {activityTab === "comments" && (
+                {activityTab === "comments" && (() => {
+                  const totalCommentsPages = Math.max(1, Math.ceil(comments.length / ITEMS_PER_PAGE));
+                  const paginatedComments = comments.slice((commentsPage - 1) * ITEMS_PER_PAGE, commentsPage * ITEMS_PER_PAGE);
+                  return (
                   <div className="space-y-4">
-
-                    {comments.map((comment) => {
+                    {paginatedComments.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">작성한 댓글이 없습니다.</p>
+                    ) : (
+                    paginatedComments.map((comment) => {
                       const created = formatDate(comment.created_at);
 
                       return (
@@ -581,10 +638,47 @@ type Tab = "profile" | "activity";
 
                         </div>
                       );
-                    })}
-
+                    })
+                    )}
+                    {totalCommentsPages > 1 && (
+                      <div className="mt-8 flex justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCommentsPage((p) => Math.max(1, p - 1))}
+                          disabled={commentsPage === 1}
+                          className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                          이전
+                        </button>
+                        {Array.from({ length: totalCommentsPages }).map((_, idx) => {
+                          const pageNumber = idx + 1;
+                          const isActive = pageNumber === commentsPage;
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setCommentsPage(pageNumber)}
+                              className={`min-w-[32px] px-2 py-1 rounded-lg text-sm border ${
+                                isActive ? "bg-[#2563EB] text-white border-[#2563EB]" : "bg-white text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => setCommentsPage((p) => Math.min(totalCommentsPages, p + 1))}
+                          disabled={commentsPage === totalCommentsPages}
+                          className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                          다음
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
+                  );
+                })()}
 
               </div>
 
