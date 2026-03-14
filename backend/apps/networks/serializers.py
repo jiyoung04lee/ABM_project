@@ -355,7 +355,10 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
         if image_files:
             idx = 0
-            if thumbnail_index is not None and 0 <= thumbnail_index < len(image_files):
+            if (
+                thumbnail_index is not None
+                and 0 <= thumbnail_index < len(image_files)
+            ):
                 idx = thumbnail_index
             _, thumb_source = image_files[idx]
             thumb_file = make_thumbnail(thumb_source)
@@ -385,18 +388,22 @@ class PostCreateSerializer(serializers.ModelSerializer):
                     "image" if content_type.startswith("image/") else "pdf"
                 )
 
-                PostFile.objects.create(
-                    post=instance,
-                    file=file,
-                    file_type=file_type,
-                    order=current_count + index,
-                )
+            PostFile.objects.create(
+                post=instance,
+                file=file,
+                file_type=file_type,
+                order=current_count + index,
+            )
 
         first_image = instance.files.filter(file_type="image").first()
         if first_image and first_image.file:
             thumb_file = make_thumbnail(first_image.file)
             if thumb_file:
-                instance.thumbnail.save(thumb_file.name, thumb_file, save=False)
+                instance.thumbnail.save(
+                    thumb_file.name,
+                    thumb_file,
+                    save=False,
+                )
         else:
             # 이미지가 없다면 썸네일도 제거
             if instance.thumbnail:
@@ -412,6 +419,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
+    author_id = serializers.SerializerMethodField()
     replies = serializers.SerializerMethodField()
     is_liked = serializers.BooleanField(read_only=True)
 
@@ -421,6 +429,7 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "author",
+            "author_id",
             "author_name",
             "content",
             "parent",
@@ -441,6 +450,10 @@ class CommentSerializer(serializers.ModelSerializer):
             return "익명"
 
         return obj.author.nickname if obj.author else None
+
+    def get_author_id(self, obj):
+        author = getattr(obj, "author", None)
+        return author.id if author else None
 
     def get_replies(self, obj):
         replies = obj.replies.select_related("author").filter(is_deleted=False)

@@ -352,6 +352,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     author_profile_image = serializers.SerializerMethodField()
+    author_id = serializers.SerializerMethodField()
     replies = serializers.SerializerMethodField()
     is_liked = serializers.BooleanField(read_only=True)
 
@@ -360,6 +361,7 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "author",
+            "author_id",
             "author_name",
             "author_profile_image",
             "content",
@@ -379,6 +381,10 @@ class CommentSerializer(serializers.ModelSerializer):
         if obj.is_anonymous:
             return "익명"
         return obj.author.nickname
+
+    def get_author_id(self, obj):
+        author = getattr(obj, "author", None)
+        return author.id if author else None
 
     def get_author_profile_image(self, obj):
         request = self.context.get("request")
@@ -403,7 +409,11 @@ class CommentSerializer(serializers.ModelSerializer):
             return []
 
         replies = obj.replies.select_related("author").filter(is_deleted=False)
-        return CommentSerializer(replies, many=True, context=self.context).data
+        return CommentSerializer(
+            replies,
+            many=True,
+            context=self.context,
+        ).data
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
