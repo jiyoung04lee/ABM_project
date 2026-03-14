@@ -2,6 +2,7 @@ export interface Post {
   id: number;
   title: string;
   content?: string;
+  content_preview?: string;
   author_id?: number | null;
   author_name?: string | null;
   author_profile_image?: string | null; 

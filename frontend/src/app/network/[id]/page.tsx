@@ -251,26 +251,14 @@ export default function NetworkDetailPage() {
         {post.title}
       </h1>
 
-      {post.thumbnail && (
-        <div className="mb-6 rounded-lg overflow-hidden">
-          <img
-            src={resolveImageUrl(post.thumbnail)}
-            alt="대표 이미지"
-            className="w-full rounded-lg object-cover"
-          />
-        </div>
-      )}
-
-      {/* 본문: 썸네일로 첫 번째 이미지를 이미 보여주므로 content에서 첫 img 제거. blob img(깨진 아이콘)도 제거 */}
+      {/* 본문: 이미지는 삽입한 위치 그대로. blob/__BLOB_N__만 제거(깨진 아이콘 방지) */}
       <div
         className="text-[15px] text-[#364153] mb-6 prose max-w-none [&_img]:max-h-[480px] [&_img]:rounded-lg [&_img]:w-full [&_img]:object-contain"
         dangerouslySetInnerHTML={{
           __html: (() => {
-            let html = post.content;
+            let html = post.content ?? "";
             html = html.replace(/<img[^>]*src="blob:[^"]*"[^>]*\/?>/gi, "");
-            if (post.thumbnail) {
-              html = html.replace(/<img[^>]*>/i, "");
-            }
+            html = html.replace(/<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi, "");
             return html;
           })(),
         }}
