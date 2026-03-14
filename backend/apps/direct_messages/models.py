@@ -7,11 +7,14 @@ class Conversation(models.Model):
         settings.AUTH_USER_MODEL,
         related_name="conversations"
     )
+    target_nickname = models.CharField(max_length=100, null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Conversation {self.id}"
+        type_str = f"({self.target_nickname})" if self.target_nickname else "(실명)"
+        return f"Conversation {self.id} {type_str}"
 
 
 class Message(models.Model):
