@@ -282,11 +282,20 @@ textarea {
   margin: 20px 0;
 }
 
-@keyframes penguin-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+@keyframes penguin-walk {
+  0%, 100% { transform: translateX(-16px); }
+  50% { transform: translateX(16px); }
 }
 
-.penguin-bounce {
-  animation: penguin-bounce 2s ease-in-out infinite;
+@keyframes penguin-walk-reverse {
+  0%, 100% { transform: translateX(16px); }
+  50% { transform: translateX(-16px); }
+}
+
+.penguin-walk-left {
+  animation: penguin-walk 3s ease-in-out infinite;
+}
+
+.penguin-walk-right {
+  animation: penguin-walk-reverse 3s ease-in-out infinite;
 }

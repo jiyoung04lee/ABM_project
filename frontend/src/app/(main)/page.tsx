@@ -103,28 +103,28 @@ export default function HomeView() {
           ✨ AI빅데이터융합경영학과 학생들을 위한
         </div>
 
-        <div className="relative mb-6 flex flex-col items-center gap-4">
-          {/* 펭귄 위 */}
-          <div className="penguin-bounce">
+        <div className="relative mb-6 flex items-center justify-center gap-4 md:gap-8">
+          {/* 펭귄 왼쪽 */}
+          <div className="penguin-walk-left shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/penguin.png"
               alt=""
-              className="w-20 h-20 md:w-24 md:h-24 object-contain pointer-events-none"
+              className="w-16 h-16 md:w-20 md:h-20 object-contain pointer-events-none"
             />
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold leading-tight text-gray-900">
+          <h1 className="text-5xl md:text-6xl font-bold leading-tight text-gray-900 text-center">
             AI빅데이터융합경영학과 학생들을 위한
             <br />
             <span className="text-[#2563EB]">정보 아카이브</span>
           </h1>
-          {/* 펭귄 아래 */}
-          <div className="penguin-bounce" style={{ animationDelay: "1s" }}>
+          {/* 펭귄 오른쪽 */}
+          <div className="penguin-walk-right shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/penguin.png"
               alt=""
-              className="w-20 h-20 md:w-24 md:h-24 object-contain pointer-events-none -scale-y-100"
+              className="w-16 h-16 md:w-20 md:h-20 object-contain pointer-events-none -scale-x-100"
             />
           </div>
         </div>
