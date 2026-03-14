@@ -245,7 +245,7 @@ function MessagesPageContent(){
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-6 -mt-20 pt-24">
+    <div className="w-full py-6">
       <div className="max-w-6xl mx-auto w-full px-4 text-left">
         <h1 className="text-2xl font-bold mb-6 text-gray-800 ml-2">메시지</h1>
 
