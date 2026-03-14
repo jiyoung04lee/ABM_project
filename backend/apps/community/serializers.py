@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils.html import strip_tags
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -20,13 +21,14 @@ class PostListSerializer(serializers.ModelSerializer):
     author_profile_image = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
     is_liked = serializers.BooleanField(read_only=True)
+    content_preview = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = [
             "id",
             "title",
-            "content",
+            "content_preview",
             "author_id",
             "author_name",
             "author_profile_image",
@@ -82,6 +84,10 @@ class PostListSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(url)
 
         return url
+
+    def get_content_preview(self, obj):
+        plain = strip_tags(obj.content or "")
+        return (plain[:200] + "…") if len(plain) > 200 else plain
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

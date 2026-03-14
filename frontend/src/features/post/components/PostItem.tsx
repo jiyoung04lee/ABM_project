@@ -13,7 +13,6 @@ interface Props {
 }
 
 export default function PostItem({ post }: Props) {
-  console.log(post);
   const router = useRouter();
 
   const handleMoveDetail = () => {
@@ -26,8 +25,7 @@ export default function PostItem({ post }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const MAX_LENGTH = 100;
-
-  const content = post.content ?? "";
+  const content = post.content_preview ?? post.content ?? "";
   const truncatedContent =
     content.length > MAX_LENGTH ? content.slice(0, MAX_LENGTH) : content;
   const isLong = content.length > MAX_LENGTH;

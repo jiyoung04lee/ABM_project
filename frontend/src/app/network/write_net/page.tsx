@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { createPost, updatePost, fetchCategories } from "@/shared/api/network";
+import { API_BASE } from "@/shared/api/api";
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -64,7 +65,7 @@ function WriteContent() {
         types: ["textStyle"],
       }),
       ImageExtension.configure({
-        inline: true,
+        inline: false,
         allowBase64: true,
         HTMLAttributes: {
             class: "editor-image",
@@ -99,6 +100,7 @@ function WriteContent() {
         .chain()
         .focus()
         .setImage({ src: url })
+        .createParagraphNear()
         .run();
       setFiles((prev) => [...prev, file]);
       setPreviewImages((prev) => [...prev, url]);
@@ -203,15 +205,21 @@ function WriteContent() {
 
       const created = await createPost(formData);
 
-      // 응답의 files 배열로 플레이스홀더를 실제 URL로 교체 후 PATCH
+      // 응답의 files 배열로 플레이스홀더를 실제 절대 URL로 교체 후 PATCH
       if (blobUrls.length > 0 && created.files && created.files.length > 0) {
         const imageFiles = created.files
           .filter((f) => f.file_type === "image")
           .sort((a, b) => a.order - b.order);
+        const base = API_BASE.replace(/\/$/, "");
 
         let fixedContent = contentWithPlaceholders;
         blobUrls.forEach((_, idx) => {
-          const realUrl = imageFiles[idx]?.file ?? "";
+          const raw = imageFiles[idx]?.file ?? "";
+          const realUrl = raw
+            ? raw.startsWith("http://") || raw.startsWith("https://")
+              ? raw
+              : `${base}${raw.startsWith("/") ? raw : `/${raw}`}`
+            : "";
           fixedContent = fixedContent.replace(
             `src="__BLOB_${idx}__"`,
             `src="${realUrl}"`
@@ -224,14 +232,12 @@ function WriteContent() {
           ""
         );
 
-        if (fixedContent !== contentWithPlaceholders) {
-          const patchData = new FormData();
-          patchData.append("content", fixedContent);
-          created.files.forEach((f) => {
-            patchData.append("existing_files", String(f.id));
-          });
-          await updatePost(created.id, patchData);
-        }
+        const patchData = new FormData();
+        patchData.append("content", fixedContent);
+        created.files.forEach((f) => {
+          patchData.append("existing_files", String(f.id));
+        });
+        await updatePost(created.id, patchData);
       }
 
       alert("작성 완료");

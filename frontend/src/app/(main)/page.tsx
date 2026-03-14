@@ -44,15 +44,16 @@ export default function HomeView() {
       return;
     }
 
-    // 최신 네트워크 / 커뮤니티 글 불러오기
-    (async () => {
-      try {
-        // 네트워크: 최신 글 2개 (고정글 + 일반글 기준)
-        const networkRes = await fetchPosts({ type: "student", page: 1 });
+    // 최신 네트워크 / 커뮤니티 글 병렬 로드
+    Promise.allSettled([
+      fetchPosts({ type: "student", page: 1 }),
+      getCommunityPosts({ ordering: "latest" }),
+    ]).then(([networkResult, communityResult]) => {
+      if (networkResult.status === "fulfilled") {
+        const networkRes = networkResult.value;
         const networkList: PostListItem[] = [];
         if (networkRes.pinned?.length) networkList.push(...networkRes.pinned);
         if (networkRes.posts) networkList.push(...networkRes.posts);
-
         setLatestNetworkPosts(
           networkList.slice(0, 2).map((p) => ({
             id: p.id,
@@ -62,41 +63,31 @@ export default function HomeView() {
             date: formatDate(p.created_at),
           }))
         );
-      } catch {
+      } else {
         setLatestNetworkPosts([]);
       }
 
-      try {
-        // 커뮤니티: 최신 글 2개
-        const { data } = await getCommunityPosts({ ordering: "latest" });
+      if (communityResult.status === "fulfilled") {
+        const { data } = communityResult.value;
         const payload = (data as any).results ?? data;
-
         const list: any[] = [];
         const rawPinned = payload.pinned;
-
-        if (Array.isArray(rawPinned)) {
-          list.push(...rawPinned);
-        } else if (rawPinned) {
-          list.push(rawPinned);
-        }
-
-        if (Array.isArray(payload.posts)) {
-          list.push(...payload.posts);
-        }
-
+        if (Array.isArray(rawPinned)) list.push(...rawPinned);
+        else if (rawPinned) list.push(rawPinned);
+        if (Array.isArray(payload.posts)) list.push(...payload.posts);
         setLatestCommunityPosts(
           list.slice(0, 2).map((p: any) => ({
             id: p.id,
             title: p.title,
             author: p.author_name,
-            category: null, // 커뮤니티는 목록에 category_name이 없으므로 생략
+            category: null,
             date: formatDate(p.created_at),
           }))
         );
-      } catch {
+      } else {
         setLatestCommunityPosts([]);
       }
-    })();
+    });
   }, [isLoggedIn]);
 
   return (

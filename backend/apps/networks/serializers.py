@@ -144,17 +144,21 @@ class PostListSerializer(serializers.ModelSerializer):
 
     def get_thumbnail(self, obj):
         request = self.context.get("request")
+        if obj.thumbnail:
+            url = obj.thumbnail.url
+            if str(url).startswith(("http://", "https://")):
+                return url
+            if request:
+                return request.build_absolute_uri(url)
+            return url
         first_image = obj.files.filter(file_type="image").first()
         if not first_image:
             return None
-
         url = first_image.file.url
         if str(url).startswith(("http://", "https://")):
             return url
-
         if request:
             return request.build_absolute_uri(url)
-
         return url
 
     def to_representation(self, instance):
@@ -274,6 +278,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True,
     )
+    thumbnail_index = serializers.IntegerField(required=False, write_only=True)
 
     class Meta:
         model = Post
@@ -287,6 +292,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "category",
             "existing_files",
             "new_files",
+            "thumbnail_index",
         ]
 
     def validate_category(self, category):
@@ -326,19 +332,17 @@ class PostCreateSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         new_files = validated_data.pop("new_files", [])
+        thumbnail_index = validated_data.pop("thumbnail_index", None)
         user = self.context["request"].user
 
         post = Post.objects.create(author=user, **validated_data)
 
-        first_image = None
-
+        image_files = []
         for index, file in enumerate(new_files):
             content_type = getattr(file, "content_type", "")
             file_type = "image" if content_type.startswith("image/") else "pdf"
-
-            if file_type == "image" and first_image is None:
-                first_image = file
-
+            if file_type == "image":
+                image_files.append((index, file))
             PostFile.objects.create(
                 post=post,
                 file=file,
@@ -346,8 +350,12 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 order=index,
             )
 
-        if first_image:
-            thumb_file = make_thumbnail(first_image)
+        if image_files:
+            idx = 0
+            if thumbnail_index is not None and 0 <= thumbnail_index < len(image_files):
+                idx = thumbnail_index
+            _, thumb_source = image_files[idx]
+            thumb_file = make_thumbnail(thumb_source)
             if thumb_file:
                 post.thumbnail.save(thumb_file.name, thumb_file, save=True)
 
