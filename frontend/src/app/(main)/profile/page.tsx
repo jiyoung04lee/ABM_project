@@ -315,7 +315,7 @@ type Tab = "profile" | "activity";
    const joinDate = formatDate(user.created_at);
 
    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 py-12">
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 pb-12">
         <div className="max-w-6xl mx-auto px-4">
 
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
@@ -435,9 +435,7 @@ type Tab = "profile" | "activity";
 
               {/* 글 / 댓글 탭 */}
               <div className="bg-white border border-gray-200 p-6 shadow-sm">
-
                 <div className="flex border-b mb-6">
-
                   <button
                     onClick={() => setActivityTab("posts")}
                     className={`px-6 py-3 text-sm font-semibold border-b-2 ${
@@ -459,227 +457,119 @@ type Tab = "profile" | "activity";
                   >
                     내가 작성한 댓글
                   </button>
-
                 </div>
 
-                {/* 내가 작성한 글 */}
+                {/* 내가 작성한 글 탭 내용 */}
                 {activityTab === "posts" && (() => {
                   const totalPostsPages = Math.max(1, Math.ceil(posts.length / ITEMS_PER_PAGE));
                   const paginatedPosts = posts.slice((postsPage - 1) * ITEMS_PER_PAGE, postsPage * ITEMS_PER_PAGE);
                   return (
-                  <div className="space-y-4">
-                    {paginatedPosts.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">작성한 글이 없습니다.</p>
-                    ) : (
-                    paginatedPosts.map((post) => {
-                      const created = formatDate(post.created_at);
-                      const categoryLabel =
-                        post.board_type === "network"
-                          ? "네트워크"
-                          : (post.category_name ?? "커뮤니티");
-                      const views = post.view_count ?? 0;
+                    <div className="flex flex-col">
+                      {/* 리스트 영역: max-h로 높이 제한 및 내부 스크롤 적용 */}
+                      <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        {paginatedPosts.length === 0 ? (
+                          <p className="text-gray-500 text-center py-8">작성한 글이 없습니다.</p>
+                        ) : (
+                          paginatedPosts.map((post) => {
+                            const created = formatDate(post.created_at);
+                            const categoryLabel =
+                              post.board_type === "network"
+                                ? "네트워크"
+                                : (post.category_name ?? "커뮤니티");
+                            const views = post.view_count ?? 0;
 
-                      return (
-                        <div
-                          key={`${post.board_type ?? "community"}-${post.id}`}
-                          className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-
-                            <div>
-                              <div className="inline-block px-4 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-3">
-                                {categoryLabel}
+                            return (
+                              <div
+                                key={`${post.board_type ?? "community"}-${post.id}`}
+                                className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
+                              >
+                                <div className="flex items-start justify-between mb-3">
+                                  <div>
+                                    <div className="inline-block px-4 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-3">
+                                      {categoryLabel}
+                                    </div>
+                                    <Link href={post.board_type === "network" ? `/network/${post.id}` : `/community/${post.id}`}>
+                                      <h3 className="text-lg font-bold mb-2 hover:underline">{post.title}</h3>
+                                    </Link>
+                                    <div className="text-sm font-semibold text-gray-500">{created}</div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={() => handleEditPost(post)} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-500 rounded-lg hover:bg-blue-50">
+                                      <Edit className="w-4 h-4" /> 수정
+                                    </button>
+                                    <button onClick={() => handleDeleteMyPost(post)} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50">
+                                      <Trash2 className="w-4 h-4" /> 삭제
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-6 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
+                                  <span>조회 {views}</span>
+                                  <span>좋아요 {post.like_count}</span>
+                                  <span>댓글 {post.comment_count}</span>
+                                </div>
                               </div>
-
-                              <Link
-                                href={
-                                  post.board_type === "network"
-                                    ? `/network/${post.id}`
-                                    : `/community/${post.id}`
-                                }
-                              >
-                                <h3 className="text-lg font-bold mb-2 hover:underline">
-                                  {post.title}
-                                </h3>
-                              </Link>
-
-                              <div className="text-sm font-semibold text-gray-500">
-                                {created}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-
-                              <button
-                                onClick={() => handleEditPost(post)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-500 rounded-lg hover:bg-blue-50"
-                              >
-                                <Edit className="w-4 h-4" />
-                                수정
-                              </button>
-
-                              <button
-                                onClick={() => handleDeleteMyPost(post)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                삭제
-                              </button>
-
-                            </div>
-
-                          </div>
-
-                          <div className="flex items-center gap-6 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
-                            <span>조회 {views}</span>
-                            <span>좋아요 {post.like_count}</span>
-                            <span>댓글 {post.comment_count}</span>
-                          </div>
-
-                        </div>
-                      );
-                    })
-                    )}
-                    {totalPostsPages > 1 && (
-                      <div className="mt-8 flex justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setPostsPage((p) => Math.max(1, p - 1))}
-                          disabled={postsPage === 1}
-                          className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-                        >
-                          이전
-                        </button>
-                        {Array.from({ length: totalPostsPages }).map((_, idx) => {
-                          const pageNumber = idx + 1;
-                          const isActive = pageNumber === postsPage;
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setPostsPage(pageNumber)}
-                              className={`min-w-[32px] px-2 py-1 rounded-lg text-sm border ${
-                                isActive ? "bg-[#2563EB] text-white border-[#2563EB]" : "bg-white text-gray-700 hover:bg-gray-50"
-                              }`}
-                            >
-                              {pageNumber}
-                            </button>
-                          );
-                        })}
-                        <button
-                          type="button"
-                          onClick={() => setPostsPage((p) => Math.min(totalPostsPages, p + 1))}
-                          disabled={postsPage === totalPostsPages}
-                          className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-                        >
-                          다음
-                        </button>
+                            );
+                          })
+                        )}
                       </div>
-                    )}
-                  </div>
+                      {/* 페이지네이션은 스크롤 영역 밖에 배치 */}
+                      {totalPostsPages > 1 && (
+                        <div className="mt-8 flex justify-center gap-2">
+                          <button type="button" onClick={() => setPostsPage((p) => Math.max(1, p - 1))} disabled={postsPage === 1} className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40">이전</button>
+                          {Array.from({ length: totalPostsPages }).map((_, idx) => (
+                            <button key={idx} onClick={() => setPostsPage(idx + 1)} className={`min-w-[32px] px-2 py-1 rounded-lg text-sm border ${postsPage === idx + 1 ? "bg-[#2563EB] text-white" : "bg-white"}`}>{idx + 1}</button>
+                          ))}
+                          <button type="button" onClick={() => setPostsPage((p) => Math.min(totalPostsPages, p + 1))} disabled={postsPage === totalPostsPages} className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40">다음</button>
+                        </div>
+                      )}
+                    </div>
                   );
                 })()}
 
-                {/* 내가 작성한 댓글 */}
+                {/* 내가 작성한 댓글 탭 내용 */}
                 {activityTab === "comments" && (() => {
                   const totalCommentsPages = Math.max(1, Math.ceil(comments.length / ITEMS_PER_PAGE));
                   const paginatedComments = comments.slice((commentsPage - 1) * ITEMS_PER_PAGE, commentsPage * ITEMS_PER_PAGE);
                   return (
-                  <div className="space-y-4">
-                    {paginatedComments.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">작성한 댓글이 없습니다.</p>
-                    ) : (
-                    paginatedComments.map((comment) => {
-                      const created = formatDate(comment.created_at);
-
-                      return (
-                        <div
-                          key={comment.id}
-                          className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all"
-                        >
-
-                          <div className="flex items-start justify-between mb-3">
-
-                            <div className="flex-1">
-
-                              <div className="flex items-center gap-2 mb-2">
-                                <MessageCircle className="w-4 h-4 text-indigo-600" />
-                                <span className="text-sm font-semibold text-gray-600">
-                                  "{comment.post_title}" 글에 댓글
-                                </span>
+                    <div className="flex flex-col">
+                      <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        {paginatedComments.length === 0 ? (
+                          <p className="text-gray-500 text-center py-8">작성한 댓글이 없습니다.</p>
+                        ) : (
+                          paginatedComments.map((comment) => (
+                            <div key={comment.id} className="p-6 border-2 border-gray-200 rounded-2xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 hover:border-[#2563EB] transition-all">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <MessageCircle className="w-4 h-4 text-indigo-600" />
+                                    <span className="text-sm font-semibold text-gray-600">"{comment.post_title}" 글에 댓글</span>
+                                  </div>
+                                  <p className="text-base text-gray-800 leading-relaxed mb-2">{comment.content}</p>
+                                  <div className="text-sm font-semibold text-gray-500">{formatDate(comment.created_at)}</div>
+                                </div>
+                                <button onClick={() => handleDeleteMyComment(comment.id)} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50">
+                                  <Trash2 className="w-4 h-4" /> 삭제
+                                </button>
                               </div>
-
-                              <p className="text-base text-gray-800 leading-relaxed mb-2">
-                                {comment.content}
-                              </p>
-
-                              <div className="text-sm font-semibold text-gray-500">
-                                {created}
+                              <div className="flex items-center gap-4 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
+                                <span>좋아요 {comment.like_count}</span>
                               </div>
-
                             </div>
-
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleDeleteMyComment(comment.id)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 rounded-lg hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                삭제
-                              </button>
-
-                            </div>
-
-                          </div>
-
-                          <div className="flex items-center gap-4 text-sm font-bold text-gray-500 mt-4 pt-4 border-t border-gray-200">
-                            <span>좋아요 {comment.like_count}</span>
-                          </div>
-
-                        </div>
-                      );
-                    })
-                    )}
-                    {totalCommentsPages > 1 && (
-                      <div className="mt-8 flex justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setCommentsPage((p) => Math.max(1, p - 1))}
-                          disabled={commentsPage === 1}
-                          className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-                        >
-                          이전
-                        </button>
-                        {Array.from({ length: totalCommentsPages }).map((_, idx) => {
-                          const pageNumber = idx + 1;
-                          const isActive = pageNumber === commentsPage;
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setCommentsPage(pageNumber)}
-                              className={`min-w-[32px] px-2 py-1 rounded-lg text-sm border ${
-                                isActive ? "bg-[#2563EB] text-white border-[#2563EB]" : "bg-white text-gray-700 hover:bg-gray-50"
-                              }`}
-                            >
-                              {pageNumber}
-                            </button>
-                          );
-                        })}
-                        <button
-                          type="button"
-                          onClick={() => setCommentsPage((p) => Math.min(totalCommentsPages, p + 1))}
-                          disabled={commentsPage === totalCommentsPages}
-                          className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-                        >
-                          다음
-                        </button>
+                          ))
+                        )}
                       </div>
-                    )}
-                  </div>
+                      {totalCommentsPages > 1 && (
+                        <div className="mt-8 flex justify-center gap-2">
+                          <button type="button" onClick={() => setCommentsPage((p) => Math.max(1, p - 1))} disabled={commentsPage === 1} className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40">이전</button>
+                          {Array.from({ length: totalCommentsPages }).map((_, idx) => (
+                            <button key={idx} onClick={() => setCommentsPage(idx + 1)} className={`min-w-[32px] px-2 py-1 rounded-lg text-sm border ${commentsPage === idx + 1 ? "bg-[#2563EB] text-white" : "bg-white"}`}>{idx + 1}</button>
+                          ))}
+                          <button type="button" onClick={() => setCommentsPage((p) => Math.min(totalCommentsPages, p + 1))} disabled={commentsPage === totalCommentsPages} className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40">다음</button>
+                        </div>
+                      )}
+                    </div>
                   );
                 })()}
-
               </div>
 
             </div>

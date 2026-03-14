@@ -72,6 +72,7 @@ export interface Comment {
   author: number | null;
   author_id: number | null;
   author_name: string | null;
+  author_profile_image?: string | null;
   content: string;
   parent: number | null;
   is_deleted: boolean;
