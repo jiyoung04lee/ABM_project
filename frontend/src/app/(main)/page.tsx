@@ -105,12 +105,12 @@ export default function HomeView() {
 
         <div className="relative mb-6 flex items-center justify-center gap-3 md:gap-4">
           {/* 펭귄 왼쪽 */}
-          <div className="penguin-bounce shrink-0 -mt-8">
+          <div className="penguin-bounce shrink-0 -mt-10">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/penguin.png"
               alt=""
-              className="w-16 h-16 md:w-20 md:h-20 object-contain pointer-events-none"
+              className="w-20 h-20 md:w-24 md:h-24 object-contain pointer-events-none"
             />
           </div>
           <h1 className="text-5xl md:text-6xl font-bold leading-tight text-gray-900 text-center shrink-0">
@@ -119,12 +119,12 @@ export default function HomeView() {
             <span className="text-[#2563EB] whitespace-nowrap">정보 아카이브</span>
           </h1>
           {/* 펭귄 오른쪽 */}
-          <div className="penguin-bounce shrink-0 -mt-8">
+          <div className="penguin-bounce shrink-0 -mt-10">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/penguin.png"
               alt=""
-              className="w-16 h-16 md:w-20 md:h-20 object-contain pointer-events-none -scale-x-100"
+              className="w-20 h-20 md:w-24 md:h-24 object-contain pointer-events-none -scale-x-100"
             />
           </div>
         </div>
