@@ -220,15 +220,23 @@ function MessagesPageContent(){
 
     const userId = Number(targetUserId);
 
-    const existing = conversations.find(
-      (c) => c.other_user && c.other_user.id === userId && (targetNickname ? c.other_user.name === targetNickname : true)
-    );
+    // ID가 같으면서 이름(실명/닉네임)까지 완벽히 일치하는 방을 찾음
+    const existing = conversations.find((c) => {
+      const isSameUser = c.other_user && c.other_user.id === userId;
+      
+      const isSameContext = targetNickname 
+        ? c.other_user.name === targetNickname 
+        : c.other_user.name !== targetNickname; 
+
+      return isSameUser && (targetNickname ? c.other_user.name === targetNickname : c.other_user.name === c.other_user.name);
+    });
 
     if (existing) {
       handleSelectConversation(existing);
       return;
     }
 
+    // 기존 방이 없으면 새로 생성 (이때 서버로 nickname이 날아감)
     createConversation(userId, targetNickname).then((created) => {
       if (created) {
         handleSelectConversation(created);
