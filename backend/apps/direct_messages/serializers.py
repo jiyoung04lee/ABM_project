@@ -48,8 +48,13 @@ class ConversationSerializer(serializers.ModelSerializer):
         other = obj.participants.exclude(id=user.id).first()
 
         if other:
+            # 1. 관리자인 경우
             if getattr(other, "is_staff", False):
                 name = "관리자"
+            # 2. 대화방에 고정된 닉네임이 있는 경우 (익명/닉네임 방)
+            elif obj.target_nickname:
+                name = obj.target_nickname
+            # 3. 실명 방인 경우
             else:
                 name = other.name or getattr(other, "nickname", None) or "사용자"
 
