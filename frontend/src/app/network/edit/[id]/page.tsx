@@ -1,15 +1,28 @@
 "use client";
 
 import { AxiosError } from "axios";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { Suspense } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-
 import {
   fetchPostDetail,
   fetchCategories,
   updatePost,
 } from "@/shared/api/network";
+import { API_BASE } from "@/shared/api/api";
+
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
+import ImageExtension from "@tiptap/extension-image";
+import Dropcursor from "@tiptap/extension-dropcursor";
+import Gapcursor from "@tiptap/extension-gapcursor";
+import Placeholder from "@tiptap/extension-placeholder";
+import Color from "@tiptap/extension-color";
+import { TextStyle } from "@tiptap/extension-text-style";
 
 type NetworkType = "student" | "graduate" | "qa";
 
@@ -20,134 +33,126 @@ interface Category {
   slug: string;
 }
 
-export default function EditPage() {
+function EditContent() {
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
-
-  const postId = params.id as string;
-  const type = (searchParams.get("type") as NetworkType) ?? "student";
+  const postId = Number(params.id);
 
   const [title, setTitle] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [category, setCategory] = useState<string | null>(null);
   const [content, setContent] = useState("");
+  const [postType, setPostType] = useState<NetworkType>("student");
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [useRealName, setUseRealName] = useState(false);
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [previewImages, setPreviewImages] = useState<string[]>([]);
-  const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
-
-  const [existingFiles, setExistingFiles] = useState<number[]>([]);
-  const [existingImages, setExistingImages] = useState<
-    { id: number; url: string }[]
-  >([]);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [existingFileIds, setExistingFileIds] = useState<number[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  /* 게시글 불러오기 */
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Link,
+      Gapcursor,
+      Dropcursor,
+      TextStyle,
+      Color.configure({ types: ["textStyle"] }),
+      ImageExtension.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: { class: "editor-image" },
+      }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Placeholder.configure({ placeholder: "내용을 입력하세요" }),
+    ],
+    content: "",
+    immediatelyRender: false,
+    onUpdate: ({ editor: e }) => {
+      setContent(e.getHTML());
+    },
+  });
 
   useEffect(() => {
-    const init = async () => {
+    (async () => {
       try {
-        const post = await fetchPostDetail(Number(postId));
-
+        const post = await fetchPostDetail(postId);
         setTitle(post.title);
         setContent(post.content);
+        setPostType(post.type);
         setIsAnonymous(post.is_anonymous);
+        setUseRealName(post.use_real_name ?? false);
 
-        if (post.category) {
-          setCategory(String(post.category));
-        }
-
+        if (post.category) setCategory(String(post.category));
         if (post.files) {
-          setExistingFiles(post.files.map((f: any) => f.id));
-
-          const images = post.files
-            .filter((f: any) => f.file_type === "image")
-            .map((f: any) => ({
-              id: f.id,
-              url: f.file,
-            }));
-
-          setExistingImages(images);
+          setExistingFileIds(post.files.map((f) => f.id));
         }
+
+        if (editor) {
+          editor.commands.setContent(post.content);
+        }
+        setLoaded(true);
       } catch (err) {
         console.error(err);
       }
-    };
-
-    init();
-  }, [postId]);
-
-  /* 카테고리 */
+    })();
+  }, [postId, editor]);
 
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const results = await fetchCategories(type);
-        setCategories(results);
-
-        if (results.length > 0 && !category) {
-          setCategory(String(results[0].id));
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    loadCategories();
-  }, [type, category]);
-
-  /* 파일 */
-
-  const handleFiles = (fileList: FileList | File[]) => {
-    const newFiles = Array.from(fileList);
-
-    setFiles((prev) => [...prev, ...newFiles]);
-
-    const previews = newFiles
-      .filter((file) => file.type.startsWith("image/"))
-      .map((file) => URL.createObjectURL(file));
-
-    setPreviewImages((prev) => [...prev, ...previews]);
-
-    if (mainImageIndex === null && previews.length > 0) {
-      setMainImageIndex(0);
+    if (loaded && editor && content && !editor.getHTML().includes("<img")) {
+      editor.commands.setContent(content);
     }
+  }, [loaded, editor]);
+
+  useEffect(() => {
+    (async () => {
+      const cats = await fetchCategories(postType);
+      setCategories(cats);
+    })();
+  }, [postType]);
+
+  const addImageFiles = (fileList: FileList | File[]) => {
+    if (!editor) return;
+    const imageFiles = Array.from(fileList).filter((f) =>
+      f.type.startsWith("image/")
+    );
+    if (imageFiles.length === 0) return;
+
+    imageFiles.forEach((file) => {
+      const url = URL.createObjectURL(file);
+      editor.chain().focus().setImage({ src: url }).createParagraphNear().run();
+      setNewFiles((prev) => [...prev, file]);
+    });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files;
     if (!fileList) return;
-
-    handleFiles(fileList);
+    addImageFiles(fileList);
+    e.target.value = "";
   };
 
-  /* 기존 이미지 삭제 */
-
-  const removeExistingImage = (id: number) => {
-    setExistingImages((prev) => prev.filter((img) => img.id !== id));
-    setExistingFiles((prev) => prev.filter((fileId) => fileId !== id));
+  const handleImageDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+    if (!e.dataTransfer.files?.length) return;
+    addImageFiles(e.dataTransfer.files);
+    e.dataTransfer.clearData();
   };
-
-  /* 새 이미지 삭제 */
-
-  const removeNewImage = (index: number) => {
-    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  /* 수정 */
 
   const handleSubmit = async () => {
     if (submitting) return;
-
     if (!title.trim() || !content.trim()) {
       alert("제목과 내용을 입력해주세요.");
       return;
     }
-
     if (!category) {
       alert("카테고리를 선택해주세요.");
       return;
@@ -156,36 +161,76 @@ export default function EditPage() {
     setSubmitting(true);
 
     try {
-      const formData = new FormData();
+      const blobUrls: string[] = [];
+      let contentToSave = content.replace(
+        /<img([^>]*?)src="(blob:[^"]+)"([^>]*?)\/?>/gi,
+        (_match, before, blobUrl, after) => {
+          const idx = blobUrls.length;
+          blobUrls.push(blobUrl);
+          return `<img${before}src="__BLOB_${idx}__"${after}>`;
+        }
+      );
 
-      formData.append("type", type);
+      const formData = new FormData();
+      formData.append("type", postType);
       formData.append("title", title);
-      formData.append("content", content);
+      formData.append("content", contentToSave);
       formData.append("is_anonymous", String(isAnonymous));
+      formData.append("use_real_name", String(useRealName));
       formData.append("category", category);
 
-      existingFiles.forEach((id) => {
+      existingFileIds.forEach((id) => {
         formData.append("existing_files", String(id));
       });
-
-      files.forEach((file) => {
+      newFiles.forEach((file) => {
         formData.append("new_files", file);
       });
 
-      if (mainImageIndex !== null) {
-        formData.append("thumbnail_index", String(mainImageIndex));
-      }
+      const updated = await updatePost(postId, formData);
 
-      await updatePost(Number(postId), formData);
+      if (blobUrls.length > 0 && updated.files && updated.files.length > 0) {
+        const imageFiles = updated.files
+          .filter((f: any) => f.file_type === "image")
+          .sort((a: any, b: any) => a.order - b.order);
+        const base = API_BASE.replace(/\/$/, "");
+
+        const newImageFiles = imageFiles.filter(
+          (f: any) => !existingFileIds.includes(f.id)
+        );
+
+        let fixedContent = contentToSave;
+        blobUrls.forEach((_, idx) => {
+          const raw = newImageFiles[idx]?.file ?? "";
+          const realUrl = raw
+            ? raw.startsWith("http://") || raw.startsWith("https://")
+              ? raw
+              : `${base}${raw.startsWith("/") ? raw : `/${raw}`}`
+            : "";
+          fixedContent = fixedContent.replace(
+            `src="__BLOB_${idx}__"`,
+            `src="${realUrl}"`
+          );
+        });
+
+        fixedContent = fixedContent.replace(
+          /<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi,
+          ""
+        );
+
+        if (fixedContent !== contentToSave) {
+          const patchData = new FormData();
+          patchData.append("content", fixedContent);
+          updated.files.forEach((f: any) => {
+            patchData.append("existing_files", String(f.id));
+          });
+          await updatePost(postId, patchData);
+        }
+      }
 
       alert("수정 완료");
-
-      router.push(`/network/${type}/${postId}`);
+      router.push(`/network/${postId}`);
     } catch (err) {
-      if (err instanceof AxiosError) {
-        console.error(err.response?.data);
-      }
-
+      if (err instanceof AxiosError) console.error(err.response?.data);
       alert("수정 실패");
     } finally {
       setSubmitting(false);
@@ -193,140 +238,111 @@ export default function EditPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
-
-      {/* 상단 */}
-
-      <div className="flex items-center gap-4 mb-10">
-        <button onClick={() => router.back()}>
-          <Image src="/icons/back.svg" alt="back" width={24} height={24} />
+    <div className="max-w-4xl mx-auto px-6 py-6 flex flex-col min-h-screen">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()}>
+            <Image src="/icons/back.svg" alt="back" width={22} height={22} />
+          </button>
+          <span className="text-lg font-semibold">네트워크 글 수정</span>
+        </div>
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="bg-black text-white px-6 py-2 rounded-md text-sm"
+        >
+          {submitting ? "수정 중..." : "완료"}
         </button>
-        <h1 className="text-[20px] font-semibold">네트워크 글 수정</h1>
       </div>
 
-      {/* 카테고리 */}
+      {editor && (
+        <div className="flex items-center gap-3 border-b py-3 text-gray-700 text-sm">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-2 py-1 hover:bg-gray-100 rounded"
+          >
+            <Image src="/icons/upload.svg" alt="upload" width={22} height={22} />
+          </button>
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+          <input
+            type="color"
+            onInput={(e) =>
+              editor?.chain().focus().setColor((e.target as HTMLInputElement).value).run()
+            }
+            className="w-6 h-6 border-none cursor-pointer"
+          />
+          <button onClick={() => editor.chain().focus().toggleBold().run()} className="p-3 hover:bg-gray-100 rounded"><b>B</b></button>
+          <button onClick={() => editor.chain().focus().toggleItalic().run()} className="p-3 hover:bg-gray-100 rounded"><i>I</i></button>
+          <button onClick={() => editor.chain().focus().toggleUnderline().run()} className="p-3 hover:bg-gray-100 rounded"><u>U</u></button>
+          <button onClick={() => editor.chain().focus().toggleStrike().run()} className="p-3 hover:bg-gray-100 rounded"><s>S</s></button>
+          <button onClick={() => editor.chain().focus().setTextAlign("left").run()} className="p-3 hover:bg-gray-100 rounded">
+            <Image src="/icons/left.svg" alt="left" width={18} height={18} />
+          </button>
+          <button onClick={() => editor.chain().focus().setTextAlign("center").run()} className="p-3 hover:bg-gray-100 rounded">
+            <Image src="/icons/center.svg" alt="center" width={18} height={18} />
+          </button>
+          <button onClick={() => editor.chain().focus().setTextAlign("right").run()} className="p-3 hover:bg-gray-100 rounded">
+            <Image src="/icons/right.svg" alt="right" width={18} height={18} />
+          </button>
+        </div>
+      )}
 
-      <div className="mb-6">
-        <label className="block text-sm mb-2 text-[#6A7282]">카테고리</label>
-
+      <div className="mt-6 mb-4">
         <select
           value={category ?? ""}
           onChange={(e) => setCategory(e.target.value)}
-          className="w-full border rounded-xl px-4 py-2"
+          className="px-4 py-2 bg-gray-100 rounded-md text-sm outline-none"
         >
           {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
           ))}
         </select>
       </div>
 
-      {/* 제목 */}
-
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="제목"
-        className="w-full border rounded-xl px-4 py-2 mb-6"
+        placeholder="제목을 입력하세요"
+        className="w-full text-3xl font-normal border-b pb-4 mb-6 outline-none placeholder-gray-300"
       />
 
-      {/* 내용 */}
+      <div
+        className={`min-h-[350px] mb-8 rounded-lg border-2 border-dashed transition-colors ${
+          isDraggingOver ? "border-blue-400 bg-blue-50/50" : "border-transparent"
+        }`}
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingOver(true); }}
+        onDragLeave={(e) => { e.preventDefault(); setIsDraggingOver(false); }}
+        onDrop={handleImageDrop}
+      >
+        <EditorContent editor={editor} className="outline-none w-full prose max-w-none" />
+      </div>
 
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="w-full h-[400px] border rounded-xl p-4 mb-6"
-      />
-
-      {/* 기존 이미지 */}
-
-      {existingImages.length > 0 && (
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          {existingImages.map((img) => (
-            <div key={img.id} className="relative">
-
-              <img
-                src={img.url}
-                className="w-full h-24 object-cover rounded-lg"
-              />
-
-              <button
-                onClick={() => removeExistingImage(img.id)}
-                className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded"
-              >
-                삭제
-              </button>
-
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 새 이미지 */}
-
-      {previewImages.length > 0 && (
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          {previewImages.map((src, index) => (
-            <div key={index} className="relative">
-
-              <img
-                src={src}
-                className="w-full h-24 object-cover rounded-lg"
-              />
-
-              <button
-                onClick={() => removeNewImage(index)}
-                className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded"
-              >
-                삭제
-              </button>
-
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 파일 업로드 */}
-
-      <input
-        type="file"
-        multiple
-        accept="image/*,application/pdf"
-        onChange={handleFileChange}
-        className="mb-6"
-      />
-
-      {/* 익명 */}
-
-      <div className="flex gap-2 mb-10">
+      <div className="flex items-center gap-2 mt-24 pt-4 pb-6 border-t border-gray-200">
         <input
           type="checkbox"
-          checked={isAnonymous}
-          onChange={() => setIsAnonymous(!isAnonymous)}
+          id="use-real-name"
+          checked={useRealName}
+          onChange={() => setUseRealName((prev) => !prev)}
+          className="w-4 h-4 accent-[#2B7FFF]"
         />
-        <span className="text-sm">익명 작성</span>
+        <label htmlFor="use-real-name" className="text-sm text-gray-500 cursor-pointer">
+          실명으로 작성
+        </label>
       </div>
-
-      {/* 버튼 */}
-
-      <div className="flex gap-4">
-        <button
-          onClick={() => router.back()}
-          className="flex-1 border rounded-xl py-3"
-        >
-          취소
-        </button>
-
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="flex-1 bg-[#2B7FFF] text-white rounded-xl py-3"
-        >
-          {submitting ? "수정 중..." : "수정하기"}
-        </button>
-      </div>
-
     </div>
+  );
+}
+
+export default function EditPage() {
+  return (
+    <Suspense fallback={<div className="p-10">로딩...</div>}>
+      <EditContent />
+    </Suspense>
   );
 }
