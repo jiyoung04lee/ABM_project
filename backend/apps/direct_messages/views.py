@@ -136,26 +136,25 @@ class ConversationStartViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request):
-
         user = request.user
         target_id = request.data.get("user_id")
-
+    
+        target_nickname = request.data.get("nickname") 
         target_user = User.objects.get(id=target_id)
 
         conversations = Conversation.objects.filter(
             participants=user
-        ).filter(participants=target_user)
+        ).filter(
+            participants=target_user
+        ).filter(
+            target_nickname=target_nickname
+        )
 
         if conversations.exists():
             conversation = conversations.first()
-
         else:
-            conversation = Conversation.objects.create()
+            conversation = Conversation.objects.create(target_nickname=target_nickname)
             conversation.participants.add(user, target_user)
 
-        serializer = ConversationSerializer(
-            conversation,
-            context={"request": request}
-        )
-
+        serializer = ConversationSerializer(conversation, context={"request": request})
         return Response(serializer.data)

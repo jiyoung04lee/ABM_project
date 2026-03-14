@@ -29,6 +29,7 @@ interface Message {
 function MessagesPageContent(){
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
+  const targetNickname = searchParams.get("nickname");
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] =
@@ -141,11 +142,13 @@ function MessagesPageContent(){
 
   // 새 대화 생성 (또는 기존 대화 찾기)
   const createConversation = async (
-    userId: number
+    userId: number,
+    nickname: string | null
   ): Promise<Conversation | null> => {
     try {
       const res = await api.post("messages/start/", {
         user_id: userId,
+        nickname: nickname
       });
 
       const c = res.data;
@@ -218,7 +221,7 @@ function MessagesPageContent(){
     const userId = Number(targetUserId);
 
     const existing = conversations.find(
-      (c) => c.other_user && c.other_user.id === userId
+      (c) => c.other_user && c.other_user.id === userId && (targetNickname ? c.other_user.name === targetNickname : true)
     );
 
     if (existing) {
@@ -226,12 +229,12 @@ function MessagesPageContent(){
       return;
     }
 
-    createConversation(userId).then((created) => {
+    createConversation(userId, targetNickname).then((created) => {
       if (created) {
         handleSelectConversation(created);
       }
     });
-  }, [targetUserId, conversations]);
+  }, [targetUserId, targetNickname, conversations]);
 
   useEffect(() => {
     api.get("users/me/").then((res) => {
