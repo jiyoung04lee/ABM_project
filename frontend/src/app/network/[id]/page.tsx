@@ -261,27 +261,20 @@ export default function NetworkDetailPage() {
         </div>
       )}
 
+      {/* 본문: 썸네일로 첫 번째 이미지를 이미 보여주므로 content에서 첫 img 제거. blob img(깨진 아이콘)도 제거 */}
       <div
-        className="text-[15px] text-[#364153] mb-6 prose max-w-none"
-        dangerouslySetInnerHTML={{ __html: post.content }}
+        className="text-[15px] text-[#364153] mb-6 prose max-w-none [&_img]:max-h-[480px] [&_img]:rounded-lg [&_img]:w-full [&_img]:object-contain"
+        dangerouslySetInnerHTML={{
+          __html: (() => {
+            let html = post.content;
+            html = html.replace(/<img[^>]*src="blob:[^"]*"[^>]*\/?>/gi, "");
+            if (post.thumbnail) {
+              html = html.replace(/<img[^>]*>/i, "");
+            }
+            return html;
+          })(),
+        }}
       />
-
-      {post.files?.filter((f) => f.file_type === "image").length > 0 && (
-        <div className="space-y-4 mb-6">
-          {post.files
-            .filter((f) => f.file_type === "image")
-            .sort((a, b) => a.order - b.order)
-            .map((file) => (
-              <div key={file.id} className="rounded-lg overflow-hidden">
-                <img
-                  src={resolveImageUrl(file.file)}
-                  alt=""
-                  className="w-full rounded-lg object-contain max-h-[480px]"
-                />
-              </div>
-            ))}
-        </div>
-      )}
 
       <div className="flex justify-end mt-8">
         <button
