@@ -5,7 +5,7 @@ import api from "@/shared/api/axios";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 6;
 
 // 시간 포맷팅 함수 (10분 전, 1시간 전 등)
 const formatRelativeTime = (dateString: string) => {
