@@ -60,9 +60,10 @@ export default function NetworkDetailPage() {
   }, []);
 
   const loadData = async () => {
-    const data = await fetchPostDetail(Number(id));
-    const cs = await fetchComments(Number(id));
-
+    const [data, cs] = await Promise.all([
+      fetchPostDetail(Number(id)),
+      fetchComments(Number(id)),
+    ]);
     setPost(data);
     setComments(cs);
   };

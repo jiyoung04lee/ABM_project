@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchCategories,
-  fetchPosts,
   togglePostLike,
   NetworkType,
   Category,
   PostListItem,
 } from "@/shared/api/network";
+import { useNetworkPosts } from "@/shared/hooks/useNetworkPosts";
 import { API_BASE } from "@/shared/api/api";
 import Image from "next/image";
 import { Eye, MessageCircle, Tag } from "lucide-react";
@@ -526,14 +526,16 @@ export default function NetworkPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySlug, setCategorySlug] = useState<string | undefined>(undefined);
 
-  const [pinned, setPinned] = useState<PostListItem[]>([]);
-  const [posts, setPosts] = useState<PostListItem[]>([]);
-  const [loading, setLoading] = useState(false);
-
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
   const [keyword, setKeyword] = useState("");
+
+  const {
+    pinned,
+    posts,
+    totalPages,
+    isLoading: loading,
+    mutate,
+  } = useNetworkPosts(tab, categorySlug, page);
 
   useEffect(() => {
     const token =
@@ -549,32 +551,6 @@ export default function NetworkPage() {
       setPage(1);
     })();
   }, [tab]);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetchPosts({
-          type: tab,
-          category: categorySlug,
-          page,
-        });
-        setPinned(res.pinned);
-        setPosts(res.posts ?? []);
-
-        const apiTotalPages = res.total_pages;
-        const apiCount = res.count ?? 0;
-        const PAGE_SIZE = 9;
-        if (apiTotalPages && apiTotalPages > 0) {
-          setTotalPages(apiTotalPages);
-        } else {
-          setTotalPages(Math.max(1, Math.ceil(apiCount / PAGE_SIZE)));
-        }
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [tab, categorySlug, page]);
 
   const filtered = useMemo(() => {
     const baseList =
@@ -622,13 +598,8 @@ export default function NetworkPage() {
       return;
     }
     try {
-      const res = await togglePostLike(postId);
-      const updateItem = (p: PostListItem) =>
-        p.id === postId
-          ? { ...p, like_count: res.like_count, is_liked: res.liked }
-          : p;
-      setPosts((prev) => prev.map(updateItem));
-      setPinned((prev) => prev.map(updateItem));
+      await togglePostLike(postId);
+      mutate();
     } catch {
       // 좋아요 실패 시 무시
     }
