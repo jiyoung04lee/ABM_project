@@ -20,6 +20,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Color from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
+import { LinkCard } from "@/features/network/ui/LinkCard";
 
 type NetworkType = "student" | "graduate" | "qa";
 
@@ -79,6 +80,7 @@ function WriteContent() {
       StarterKit,
       Underline,
       HorizontalRule,
+      LinkCard,
       Link.configure({
         openOnClick: true,
         autolink: true,
@@ -109,31 +111,24 @@ function WriteContent() {
     editorProps: {
       handlePaste(view, event) {
 
-        const text = event.clipboardData?.getData("text");
+        const text = event.clipboardData?.getData("text")
 
         if (text && /(https?:\/\/[^\s]+)/.test(text)) {
 
-          event.preventDefault();
+          event.preventDefault()
 
-          const { schema } = view.state;
+          const node = view.state.schema.nodes.linkCard.create({
+            url: text
+          })
 
-          const link = schema.marks.link.create({
-            href: text
-          });
+          const transaction = view.state.tr.replaceSelectionWith(node)
 
-          const transaction = view.state.tr.insertText(text);
-          transaction.addMark(
-            transaction.selection.from,
-            transaction.selection.to,
-            link
-          );
+          view.dispatch(transaction)
 
-          view.dispatch(transaction);
-
-          return true;
+          return true
         }
 
-        return false;
+        return false
       },
     },
 
@@ -464,9 +459,10 @@ function WriteContent() {
             editor
               ?.chain()
               .focus()
-              .insertContent(
-                `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
-              )
+              .insertContent({
+                type: "linkCard",
+                attrs: { url }
+              })
               .run()
             }
           }

@@ -67,7 +67,7 @@ export const LinkCard = Node.create({
       container.appendChild(info)
 
       container.onclick = () => {
-        window.open(node.attrs.url, "_blank")
+        window.open(node.attrs.url, "_blank", "noopener,noreferrer")
       }
 
       return {

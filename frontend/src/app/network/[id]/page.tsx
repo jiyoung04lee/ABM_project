@@ -307,7 +307,7 @@ export default function NetworkDetailPage() {
             html = html.replace(/<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi, "");
 
             html = html.replace(
-              /<link-card[^>]*url="([^"]+)"[^>]*><\/link-card>/gi,
+              /<link-card[^>]*url="([^"]+)"[^>]*\/?>/gi,
               (_, url) => {
                 const domain = new URL(url).hostname;
 
