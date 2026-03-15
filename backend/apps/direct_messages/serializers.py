@@ -52,10 +52,16 @@ class ConversationSerializer(serializers.ModelSerializer):
         if getattr(other, "is_staff", False):
             return {"id": other.id, "name": "관리자"}
 
-        if me == obj.creator:
-            name = obj.target_nickname or other.name
+        # ⭐ 닉네임 채팅방 여부 판단
+        is_nickname_chat = obj.creator_nickname or obj.target_nickname
+
+        if is_nickname_chat:
+            if me == obj.creator:
+                name = obj.target_nickname
+            else:
+                name = obj.creator_nickname
         else:
-            name = obj.creator_nickname or other.name
+            name = other.name
 
         return {
             "id": other.id,
