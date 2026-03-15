@@ -76,6 +76,7 @@ export default function PostItem({ post }: Props) {
           createdAt={post.created_at}
           isAnonymous={post.is_anonymous}
           authorId={post.author_id}
+          isNickname={!!post.nickname}
         />
 
         {post.thumbnail && (

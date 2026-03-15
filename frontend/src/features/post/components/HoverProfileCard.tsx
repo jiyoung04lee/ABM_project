@@ -9,9 +9,10 @@ interface Props {
   grade?: string | null;
   profileImage?: string | null;
   userId?: number | null;
+  isNickname?: boolean;
 }
 
-export default function HoverProfileCard({ name, grade, profileImage, userId }: Props) {
+export default function HoverProfileCard({ name, grade, profileImage, userId, isNickname }: Props) {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
@@ -27,11 +28,13 @@ export default function HoverProfileCard({ name, grade, profileImage, userId }: 
   }, []);
 
   const handleMessage = () => {
-    if (!userId || userId === currentUserId) {
-      return;
-    }
+    if (!userId || userId === currentUserId) return;
 
-    router.push(`/messages?userId=${userId}&nickname=${name}`);
+    if (isNickname) {
+      router.push(`/messages?userId=${userId}&nickname=${name}`);
+    } else {
+      router.push(`/messages?userId=${userId}`);
+    }
   };
 
   const canSendMessage = !!userId && userId !== currentUserId;
