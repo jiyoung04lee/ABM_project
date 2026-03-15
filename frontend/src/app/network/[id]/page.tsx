@@ -305,6 +305,27 @@ export default function NetworkDetailPage() {
             let html = post.content ?? "";
             html = html.replace(/<img[^>]*src="blob:[^"]*"[^>]*\/?>/gi, "");
             html = html.replace(/<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi, "");
+
+            html = html.replace(
+              /<link-card[^>]*url="([^"]+)"[^>]*><\/link-card>/gi,
+              (_, url) => {
+                const domain = new URL(url).hostname;
+
+                return `
+                <a href="${url}" target="_blank" class="block border rounded-lg overflow-hidden shadow-sm hover:bg-gray-50 mt-4">
+                  <div class="flex">
+                    <div class="w-40 h-24 bg-gray-200 flex items-center justify-center text-gray-400">
+                      ...
+                    </div>
+                    <div class="p-3">
+                      <div class="text-sm font-medium">${url}</div>
+                      <div class="text-xs text-gray-500">${domain}</div>
+                    </div>
+                  </div>
+                </a>
+                `;
+              }
+            );
             return html;
           })(),
         }}
