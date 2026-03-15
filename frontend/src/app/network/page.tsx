@@ -895,9 +895,9 @@ export default function NetworkPage() {
                       onClick={() => handleCardClick(p.id)}
                       className="group block bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
                     >
-                      {/* 썸네일 - 이미지 1개/여러 개 동일하게 영역 꽉 채움 */}
+                      {/* 썸네일 - 이미지 없을 때만 하늘색 배경 */}
                       <div
-                        className={`relative w-full aspect-video overflow-hidden ${
+                        className={`relative w-full min-h-[200px] aspect-video overflow-hidden ${
                           !p.thumbnail
                             ? "bg-gradient-to-br from-[#D6E4F7] to-[#C5D9F2]"
                             : "bg-gray-100"
@@ -910,6 +910,9 @@ export default function NetworkPage() {
                             alt={p.title}
                             loading="lazy"
                             className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
                           />
                         )}
                       </div>
