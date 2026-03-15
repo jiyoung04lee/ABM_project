@@ -84,7 +84,6 @@ function EditContent() {
       try {
         const post = await fetchPostDetail(postId);
         setTitle(post.title);
-        setContent(post.content);
         setPostType(post.type);
         setIsAnonymous(post.is_anonymous);
         setUseRealName(post.use_real_name ?? false);
@@ -94,8 +93,30 @@ function EditContent() {
           setExistingFileIds(post.files.map((f) => f.id));
         }
 
+        let contentToSet = post.content ?? "";
+        if (post.files?.length) {
+          const base = API_BASE.replace(/\/$/, "");
+          const imageFiles = post.files
+            .filter((f: { file_type: string }) => f.file_type === "image")
+            .sort((a: { order: number }, b: { order: number }) => a.order - b.order);
+          imageFiles.forEach((f: { file: string }, idx: number) => {
+            const raw = f.file ?? "";
+            const realUrl =
+              raw && (raw.startsWith("http://") || raw.startsWith("https://"))
+                ? raw
+                : raw
+                  ? `${base}${raw.startsWith("/") ? raw : `/${raw}`}`
+                  : "";
+            if (realUrl)
+              contentToSet = contentToSet.replace(
+                new RegExp(`src="__BLOB_${idx}__"`, "g"),
+                `src="${realUrl}"`
+              );
+          });
+        }
+        setContent(contentToSet);
         if (editor) {
-          editor.commands.setContent(post.content);
+          editor.commands.setContent(contentToSet);
         }
         setLoaded(true);
       } catch (err) {
