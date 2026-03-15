@@ -11,6 +11,9 @@ export const LinkCard = Node.create({
     return {
       url: {
         default: null,
+        renderHTML: attributes => ({
+          url: attributes.url,
+        }),
       },
     }
   },
