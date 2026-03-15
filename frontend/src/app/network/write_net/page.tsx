@@ -19,6 +19,7 @@ import Gapcursor from "@tiptap/extension-gapcursor";
 import Placeholder from "@tiptap/extension-placeholder";
 import Color from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
+import HorizontalRule from "@tiptap/extension-horizontal-rule";
 
 type NetworkType = "student" | "graduate" | "qa";
 
@@ -28,6 +29,26 @@ interface Category {
   name: string;
   slug: string;
 }
+
+const FontSize = TextStyle.extend({
+  addAttributes() {
+    return {
+      fontSize: {
+        default: null,
+        parseHTML: (element) => element.style.fontSize,
+        renderHTML: (attributes) => {
+          if (!attributes.fontSize) {
+            return {};
+          }
+
+          return {
+            style: `font-size: ${attributes.fontSize}`,
+          };
+        },
+      },
+    };
+  },
+});
 
 function WriteContent() {
 
@@ -57,10 +78,14 @@ function WriteContent() {
     extensions: [
       StarterKit,
       Underline,
-      Link,
+      Link.configure({
+        openOnClick: true,
+      }),
+      HorizontalRule,
       Gapcursor,
       Dropcursor,
       TextStyle,
+      FontSize,
       Color.configure({
         types: ["textStyle"],
       }),
@@ -68,7 +93,7 @@ function WriteContent() {
         inline: false,
         allowBase64: true,
         HTMLAttributes: {
-            class: "editor-image",
+          class: "editor-image",
         },
       }),
       TextAlign.configure({
@@ -263,11 +288,8 @@ function WriteContent() {
   /* ---------------- UI ---------------- */
 
   return (
-
-    <div className="max-w-4xl mx-auto px-6 py-6 flex flex-col min-h-screen">
-
+    <div className="max-w-4xl mx-auto px-6 pt-10 pb-6 flex flex-col min-h-screen">
       {/* 상단 헤더 */}
-
       <div className="flex items-center justify-between mb-6">
 
         <div className="flex items-center gap-3">
@@ -288,19 +310,15 @@ function WriteContent() {
       </div>
 
       {/* 툴바 */}
-
       {editor && (
-
         <div className="flex items-center gap-3 border-b py-3 text-gray-700 text-sm">
-
           {/* 이미지 삽입 */}
-
           <button
             onClick={() => fileInputRef.current?.click()}
             className="px-2 py-1 hover:bg-gray-100 rounded"
           >
             <Image
-                src="/icons/upload.svg"
+                src="/icons/image_upload.svg"
                 alt="upload"
                 width={22}
                 height={22}
@@ -328,6 +346,21 @@ function WriteContent() {
           />
 
           {/* 텍스트 스타일 */}
+          <select
+            onChange={(e) =>
+              editor
+                ?.chain()
+                .focus()
+                .setMark("textStyle", { fontSize: e.target.value })
+                .run()
+            }
+            className="border rounded px-2 py-1 text-sm"
+          >
+            <option value="14px">14</option>
+            <option value="16px">16</option>
+            <option value="18px">18</option>
+            <option value="24px">24</option>
+          </select>
 
           <button 
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -353,8 +386,14 @@ function WriteContent() {
             <s>S</s>
           </button>
 
-          {/* 정렬 */}
+          <button
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            ─
+          </button>
 
+          {/* 정렬 */}
           <button
             onClick={() => editor.chain().focus().setTextAlign("left").run()}
             className="p-3 hover:bg-gray-100 rounded"
@@ -375,6 +414,26 @@ function WriteContent() {
             >
             <Image src="/icons/right.svg" alt="right" width={18} height={18} />
           </button>
+
+          <button
+            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            <Image src="/icons/both.svg" alt="justify" width={18} height={18} />
+          </button>
+
+          {/* 링크 */}
+          <button
+          onClick={() => {
+            const url = prompt("링크를 입력하세요");
+            if (url) {
+              editor.chain().focus().setLink({ href: url }).run();
+            }
+          }}
+          className="p-3 hover:bg-gray-100 rounded"
+        >
+          🔗
+        </button>
 
         </div>
 
