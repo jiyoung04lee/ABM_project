@@ -302,7 +302,24 @@ export default function NetworkDetailPage() {
         dangerouslySetInnerHTML={{
           __html: (() => {
             let html = post.content ?? "";
-    
+            const base = API_BASE.replace(/\/$/, "");
+            const imageFiles = (post.files ?? [])
+              .filter((f) => f.file_type === "image")
+              .sort((a, b) => a.order - b.order);
+            imageFiles.forEach((f, idx) => {
+              const raw = f.file ?? "";
+              const realUrl =
+                raw && (raw.startsWith("http://") || raw.startsWith("https://"))
+                  ? raw
+                  : raw
+                    ? `${base}${raw.startsWith("/") ? raw : `/${raw}`}`
+                    : "";
+              if (realUrl)
+                html = html.replace(
+                  new RegExp(`src="__BLOB_${idx}__"`, "g"),
+                  `src="${realUrl}"`
+                );
+            });
             html = html.replace(/<img[^>]*src="blob:[^"]*"[^>]*\/?>/gi, "");
             html = html.replace(/<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi, "");
             html = html.replace(
