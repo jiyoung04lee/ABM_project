@@ -6,6 +6,7 @@ export interface Post {
   author_id?: number | null;
   author_name?: string | null;
   author_profile_image?: string | null; 
+  nickname?: string | null;
   is_pinned: boolean;
   is_anonymous: boolean;
   like_count: number;
@@ -23,6 +24,7 @@ export interface PostDetail {
   author_id?: number | null;
   author_name: string | null;
   author_profile_image?: string | null; 
+  nickname?: string | null;
   is_anonymous: boolean;
   like_count: number;
   is_liked: boolean;

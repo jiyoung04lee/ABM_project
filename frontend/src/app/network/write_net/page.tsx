@@ -20,6 +20,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Color from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
+import { LinkCard } from "@/features/network/ui/LinkCard";
 
 type NetworkType = "student" | "graduate" | "qa";
 
@@ -78,10 +79,13 @@ function WriteContent() {
     extensions: [
       StarterKit,
       Underline,
+      HorizontalRule,
+      LinkCard,
       Link.configure({
         openOnClick: true,
+        autolink: false,
+        linkOnPaste: false,
       }),
-      HorizontalRule,
       Gapcursor,
       Dropcursor,
       TextStyle,
@@ -103,6 +107,31 @@ function WriteContent() {
         placeholder: "내용을 입력하세요",
       }),
     ],
+
+    editorProps: {
+      handlePaste(view, event) {
+
+        const text = event.clipboardData?.getData("text");
+
+        if (text && /(https?:\/\/[^\s]+)/.test(text)) {
+
+          event.preventDefault();
+
+          const node = view.state.schema.nodes.linkCard.create({
+            url: text,
+          });
+
+          const transaction = view.state.tr.replaceSelectionWith(node);
+
+          view.dispatch(transaction);
+
+          return true;
+        }
+
+        return false;
+      },
+    },
+
     content: "",
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
@@ -425,11 +454,18 @@ function WriteContent() {
           {/* 링크 */}
           <button
           onClick={() => {
-            const url = prompt("링크를 입력하세요");
-            if (url) {
-              editor.chain().focus().setLink({ href: url }).run();
+            const url = prompt("링크를 입력하세요")
+            if (!url) return
+            editor
+              ?.chain()
+              .focus()
+              .insertContent({
+                type: "linkCard",
+                attrs: { url },
+              })
+              .run()
             }
-          }}
+          }
           className="p-3 hover:bg-gray-100 rounded"
         >
           🔗

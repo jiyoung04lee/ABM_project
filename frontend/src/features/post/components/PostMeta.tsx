@@ -11,6 +11,7 @@ interface Props {
   createdAt: string;
   isAnonymous?: boolean;
   authorId?: number | null;
+  isNickname?: boolean; 
 }
 
 export default function PostMeta({
@@ -20,6 +21,7 @@ export default function PostMeta({
   createdAt,
   isAnonymous = false,
   authorId,
+  isNickname,
 }: Props) {
   const [myId, setMyId] = useState<number | null>(null);
 
@@ -57,6 +59,7 @@ export default function PostMeta({
                 grade={grade}
                 profileImage={profileImage}
                 userId={authorId}
+                isNickname={isNickname}
               />
             </div>
           )}

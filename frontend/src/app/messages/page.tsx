@@ -222,13 +222,13 @@ function MessagesPageContent(){
 
     // ID가 같으면서 이름(실명/닉네임)까지 완벽히 일치하는 방을 찾음
     const existing = conversations.find((c) => {
-      const isSameUser = c.other_user && c.other_user.id === userId;
-      
-      const isSameContext = targetNickname 
-        ? c.other_user.name === targetNickname 
-        : c.other_user.name !== targetNickname; 
+      if (!c.other_user || c.other_user.id !== userId) return false;
 
-      return isSameUser && (targetNickname ? c.other_user.name === targetNickname : c.other_user.name === c.other_user.name);
+      if (targetNickname) {
+        return c.other_user.name === targetNickname;
+      }
+
+      return c.other_user.name !== targetNickname;
     });
 
     if (existing) {
