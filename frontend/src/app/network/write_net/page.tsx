@@ -20,7 +20,6 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Color from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
-import { LinkCard } from "@/features/network/ui/LinkCard";
 
 type NetworkType = "student" | "graduate" | "qa";
 
@@ -80,11 +79,10 @@ function WriteContent() {
       StarterKit,
       Underline,
       HorizontalRule,
-      LinkCard,
       Link.configure({
         openOnClick: true,
-        autolink: false,
-        linkOnPaste: false,
+        autolink: true,
+        linkOnPaste: true,
       }),
       Gapcursor,
       Dropcursor,
@@ -117,11 +115,18 @@ function WriteContent() {
 
           event.preventDefault();
 
-          const node = view.state.schema.nodes.linkCard.create({
-            url: text,
+          const { schema } = view.state;
+
+          const link = schema.marks.link.create({
+            href: text
           });
 
-          const transaction = view.state.tr.replaceSelectionWith(node);
+          const transaction = view.state.tr.insertText(text);
+          transaction.addMark(
+            transaction.selection.from,
+            transaction.selection.to,
+            link
+          );
 
           view.dispatch(transaction);
 
@@ -459,10 +464,9 @@ function WriteContent() {
             editor
               ?.chain()
               .focus()
-              .insertContent({
-                type: "linkCard",
-                attrs: { url },
-              })
+              .insertContent(
+                `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+              )
               .run()
             }
           }
