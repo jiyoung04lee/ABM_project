@@ -78,7 +78,6 @@ function WriteContent() {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Underline,
       HorizontalRule,
       LinkCard,
       Link.configure({
@@ -88,7 +87,6 @@ function WriteContent() {
       }),
       Gapcursor,
       Dropcursor,
-      TextStyle,
       FontSize,
       Color.configure({
         types: ["textStyle"],

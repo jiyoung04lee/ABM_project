@@ -24,7 +24,7 @@ export const LinkCard = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["link-card", HTMLAttributes, 0]
+    return ["link-card", HTMLAttributes]
   },
 
   addNodeView() {
