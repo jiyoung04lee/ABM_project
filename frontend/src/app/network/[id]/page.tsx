@@ -297,35 +297,48 @@ export default function NetworkDetailPage() {
         {post.title}
       </h1>
 
-      {/* 본문: 이미지는 삽입한 위치 그대로. blob/__BLOB_N__만 제거(깨진 아이콘 방지) */}
       <div
-        className="text-[15px] text-[#364153] mb-6 prose max-w-none [&_img]:max-h-[480px] [&_img]:rounded-lg [&_img]:w-full [&_img]:object-contain"
+        className="text-[15px] text-[#364153] mb-6 prose max-w-none ..."
         dangerouslySetInnerHTML={{
           __html: (() => {
             let html = post.content ?? "";
+    
             html = html.replace(/<img[^>]*src="blob:[^"]*"[^>]*\/?>/gi, "");
             html = html.replace(/<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi, "");
-
             html = html.replace(
-              /<link-card[^>]*url="([^"]+)"[^>]*\/?>/gi,
-              (_, url) => {
-                const domain = new URL(url).hostname;
+              /<link-card[^>]*url="([^"]+)"[^>]*>(.*?)<\/link-card>/gi,
+              (match, url) => {
+                let domain = "";
+                try {
+                  domain = new URL(url).hostname;
+                } catch {
+                  domain = url;
+                }
 
                 return `
-                <a href="${url}" target="_blank" class="block border rounded-lg overflow-hidden shadow-sm hover:bg-gray-50 mt-4">
-                  <div class="flex">
-                    <div class="w-40 h-24 bg-gray-200 flex items-center justify-center text-gray-400">
-                      ...
+                <a href="${url}" target="_blank" rel="noopener noreferrer" class="not-prose block border rounded-lg overflow-hidden shadow-sm hover:bg-gray-50 my-4 no-underline text-inherit">
+                  <div class="flex items-center">
+                    <div class="w-32 h-20 bg-gray-100 flex items-center justify-center text-gray-400 shrink-0 border-r">
+                      <span style="font-size: 20px;">🔗</span>
                     </div>
-                    <div class="p-3">
-                      <div class="text-sm font-medium">${url}</div>
-                      <div class="text-xs text-gray-500">${domain}</div>
+                    <div class="p-3 overflow-hidden">
+                      <div class="text-sm font-medium truncate text-blue-600">${url}</div>
+                      <div class="text-xs text-gray-500 mt-1">${domain}</div>
                     </div>
                   </div>
                 </a>
                 `;
               }
             );
+            
+            html = html.replace(
+              /<link-card[^>]*url="([^"]+)"[^>]*\/?>/gi,
+              (match, url) => {
+                let domain = ""; try { domain = new URL(url).hostname; } catch { domain = url; }
+                return `<a href="${url}" target="_blank" ... (생략) ... </a>`;
+              }
+            );
+
             return html;
           })(),
         }}
