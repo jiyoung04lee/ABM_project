@@ -62,12 +62,8 @@ def admin_info(request):
 
 
 class MeView(generics.RetrieveUpdateAPIView):
-    """
-    GET  /api/users/me/    - 내 정보 조회
-    PATCH /api/users/me/   - 프로필 수정
-    """
-    permission_classes = [permissions.IsAuthenticated]
 
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
     def get_serializer_class(self):
@@ -78,9 +74,21 @@ class MeView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
-    def update(self, request, *args, **kwargs):
-        kwargs["partial"] = True
-        return super().update(request, *args, **kwargs)
+    def retrieve(self, request, *args, **kwargs):
+        from apps.community.models import Reaction
+        from apps.networks.models import Reaction as NetworkReaction
+
+        user = request.user
+
+        community_likes = Reaction.objects.filter(user=user).count()
+        network_likes = NetworkReaction.objects.filter(user=user).count()
+
+        serializer = self.get_serializer(user)
+
+        data = serializer.data
+        data["liked_count"] = community_likes + network_likes
+
+        return Response(data)
 
 
 class LogoutView(generics.GenericAPIView):
@@ -233,24 +241,58 @@ class MyPostsView(generics.ListAPIView):
 
 class MyCommentsView(generics.ListAPIView):
     """
-    내가 쓴 댓글 목록
+    내가 쓴 댓글 목록 (커뮤니티 + 네트워크 통합)
     GET /api/users/me/comments/
     """
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        from apps.community.models import Comment  # type: ignore[reportAttributeAccessIssue]
+    def list(self, request, *args, **kwargs):
 
-        return (
-            Comment.objects  # type: ignore[reportAttributeAccessIssue]
-            .filter(author=self.request.user, is_deleted=False)
+        from apps.community.models import Comment as CommunityComment
+        from apps.networks.models import Comment as NetworkComment
+
+        from apps.community.serializers import MyActivityCommentSerializer as CommunityCommentSerializer
+        from apps.networks.serializers import MyActivityCommentSerializer as NetworkCommentSerializer
+
+        user = request.user
+
+        # 커뮤니티 댓글
+        community_qs = (
+            CommunityComment.objects
+            .filter(author=user, is_deleted=False)
             .select_related("post")
             .order_by("-created_at")
         )
 
-    def get_serializer_class(self):
-        from apps.community.serializers import MyActivityCommentSerializer
-        return MyActivityCommentSerializer
+        community_serializer = CommunityCommentSerializer(community_qs, many=True)
+
+        community_list = []
+        for data in community_serializer.data:
+            item = dict(data)
+            item["board_type"] = "community"
+            community_list.append(item)
+
+        # 네트워크 댓글
+        network_qs = (
+            NetworkComment.objects
+            .filter(author=user, is_deleted=False)
+            .select_related("post")
+            .order_by("-created_at")
+        )
+
+        network_serializer = NetworkCommentSerializer(network_qs, many=True)
+
+        network_list = []
+        for data in network_serializer.data:
+            item = dict(data)
+            item["board_type"] = "network"
+            network_list.append(item)
+
+        merged = community_list + network_list
+
+        merged.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+
+        return Response(merged)
 
 
 # ---------------------------------------------------------------------------
