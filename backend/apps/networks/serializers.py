@@ -151,15 +151,10 @@ class PostListSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(url)
             return url
-        first_image = obj.files.filter(file_type="image").first()
-        if not first_image:
-            return None
-        url = first_image.file.url
-        if str(url).startswith(("http://", "https://")):
-            return url
-        if request:
-            return request.build_absolute_uri(url)
-        return url
+
+        # 썸네일이 없으면 원본 이미지를 쓰지 않고
+        # 프론트에서 기본 16:9 이미지를 사용하게 한다.
+        return None
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
