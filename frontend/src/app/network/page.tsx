@@ -905,7 +905,7 @@ function NetworkPageContent() {
                       className="group block bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
                     >
                       {/* 썸네일 */}
-                      <div className="relative w-full min-h-[200px] aspect-video overflow-hidden bg-gray-100">
+                      <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
 
                         {p.thumbnail ? (
                           <img

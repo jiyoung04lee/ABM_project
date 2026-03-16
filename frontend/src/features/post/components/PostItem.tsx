@@ -70,14 +70,16 @@ export default function PostItem({ post }: Props) {
             </span>
           )}
         </div>
-        <PostMeta
-          author={post.author_name ?? null}
-          profileImage={post.author_profile_image ?? null}
-          createdAt={post.created_at}
-          isAnonymous={post.is_anonymous}
-          authorId={post.author_id}
-          isNickname={!!post.nickname}
-        />
+        <div className="mb-3">
+          <PostMeta
+            author={post.author_name ?? null}
+            profileImage={post.author_profile_image ?? null}
+            createdAt={post.created_at}
+            isAnonymous={post.is_anonymous}
+            authorId={post.author_id}
+            isNickname={!!post.nickname}
+          />
+        </div>
 
         {post.thumbnail && (
           <div className="mb-4 rounded-lg overflow-hidden">
