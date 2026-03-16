@@ -336,9 +336,8 @@ class PostCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         new_files = validated_data.pop("new_files", [])
         thumbnail_index = validated_data.pop("thumbnail_index", None)
-        user = self.context["request"].user
 
-        post = Post.objects.create(author=user, **validated_data)
+        post = Post.objects.create(**validated_data)
 
         image_files = []
         for index, file in enumerate(new_files):
