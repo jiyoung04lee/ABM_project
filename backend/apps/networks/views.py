@@ -35,10 +35,11 @@ from logs.utils import (
 )
 
 from apps.users.utils_score import (
+    add_score,
     add_post_like_score,
     remove_post_like_score,
     add_comment_like_score,
-    remove_comment_like_score
+    remove_comment_like_score,
 )
 
 class CategoryViewSet(ReadOnlyModelViewSet):
