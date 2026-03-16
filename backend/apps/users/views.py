@@ -250,9 +250,8 @@ class MyCommentsView(generics.ListAPIView):
 
         from apps.community.models import Comment as CommunityComment
         from apps.networks.models import Comment as NetworkComment
-
-        from apps.community.serializers import MyActivityCommentSerializer as CommunityCommentSerializer
-        from apps.networks.serializers import MyActivityCommentSerializer as NetworkCommentSerializer
+        from apps.community.serializers import MyActivityCommentSerializer
+        
 
         user = request.user
 
@@ -264,7 +263,7 @@ class MyCommentsView(generics.ListAPIView):
             .order_by("-created_at")
         )
 
-        community_serializer = CommunityCommentSerializer(community_qs, many=True)
+        community_serializer = MyActivityCommentSerializer(community_qs, many=True)
 
         community_list = []
         for data in community_serializer.data:
@@ -280,7 +279,7 @@ class MyCommentsView(generics.ListAPIView):
             .order_by("-created_at")
         )
 
-        network_serializer = NetworkCommentSerializer(network_qs, many=True)
+        network_serializer = MyActivityCommentSerializer(network_qs, many=True)
 
         network_list = []
         for data in network_serializer.data:
