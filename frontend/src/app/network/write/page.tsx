@@ -117,7 +117,7 @@ function WriteContent() {
       await createPost(formData);
 
       alert("작성 완료");
-      router.push("/network");
+      router.push(`/network?type=${type}`);
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
         console.error(err.response?.data);
