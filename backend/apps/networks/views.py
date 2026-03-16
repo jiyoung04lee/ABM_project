@@ -124,8 +124,10 @@ class PostViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
-        # 활동 점수 +15
-        add_score(self.request.user, 15)
+        is_first = not Post.objects.filter(
+            author=self.request.user, is_deleted=False
+        ).exclude(pk=post.pk).exists()
+        add_score(self.request.user, 30 if is_first else 15)
 
         viewer = get_viewer_grade_info(self.request.user)
         create_event_log(
