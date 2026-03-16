@@ -259,7 +259,7 @@ function EditContent() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-6 flex flex-col min-h-screen">
+    <div className="max-w-4xl mx-auto px-6 pt-10 flex flex-col min-h-screen">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()}>
