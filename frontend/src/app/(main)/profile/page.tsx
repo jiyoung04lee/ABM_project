@@ -381,42 +381,42 @@ function buildYearGradeStatus(user: UserMeResponse | null) {
                 <span className="text-lg">›</span>
               </Link>
 
-            </div>
+              {/* 활동 우수자 */}
+              <div className="bg-white border border-gray-200 p-4 shadow-sm mt-4">
 
-            {/* 활동 우수자 */}
-            <div className="bg-white border border-gray-200 p-4 shadow-sm mt-4">
+                <h3 className="text-sm font-semibold mb-3 text-gray-700">
+                  활동 우수자
+                </h3>
 
-              <h3 className="text-sm font-semibold mb-3 text-gray-700">
-                활동 우수자
-              </h3>
+                <div className="space-y-3">
 
-              <div className="space-y-3">
+                  {topUsers.map((u) => (
+                    <div key={u.id} className="flex items-center gap-3">
 
-                {topUsers.map((u) => (
-                  <div key={u.id} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
 
-                    <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
+                        {u.profile_image ? (
+                          <img
+                            src={u.profile_image}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src="/icons/userbaseimage.svg"
+                            className="w-full h-full object-cover"
+                          />
+                        )}
 
-                      {u.profile_image ? (
-                        <img
-                          src={u.profile_image}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <img
-                          src="/icons/userbaseimage.svg"
-                          className="w-full h-full object-cover"
-                        />
-                      )}
+                      </div>
+
+                      <div className="text-sm font-semibold">
+                        {u.nickname}
+                      </div>
 
                     </div>
+                  ))}
 
-                    <div className="text-sm font-semibold">
-                      {u.nickname}
-                    </div>
-
-                  </div>
-                ))}
+                </div>
 
               </div>
 
@@ -458,7 +458,7 @@ function buildYearGradeStatus(user: UserMeResponse | null) {
                   <h3 className="text-lg font-bold">활동점수</h3>
 
                   <div className="text-sm font-semibold text-gray-600">
-                    Lv.{level} · {score} / 300
+                    {score}점
                   </div>
                 </div>
 
@@ -636,4 +636,3 @@ function buildYearGradeStatus(user: UserMeResponse | null) {
       </div>
     );
  }
-
