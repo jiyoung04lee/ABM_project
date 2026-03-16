@@ -34,6 +34,12 @@ from logs.utils import (
     get_viewer_grade_info,
 )
 
+from apps.users.utils_score import (
+    add_post_like_score,
+    remove_post_like_score,
+    add_comment_like_score,
+    remove_comment_like_score
+)
 
 class CategoryViewSet(ReadOnlyModelViewSet):
     serializer_class = CategorySerializer
@@ -116,7 +122,10 @@ class PostViewSet(ModelViewSet):
         return PostDetailSerializer
 
     def perform_create(self, serializer):
-        post = serializer.save()
+        post = serializer.save(author=self.request.user)
+        # 활동 점수 +15
+        add_score(self.request.user, 15)
+
         viewer = get_viewer_grade_info(self.request.user)
         create_event_log(
             event_type="post_create",
@@ -181,6 +190,10 @@ class PostViewSet(ModelViewSet):
 
         if reaction:
             reaction.delete()
+
+            # 좋아요 취소시 점수 차감 
+            remove_post_like_score(user, post.id)
+
             Post.objects.filter(pk=post.pk).update(like_count=F("like_count") - 1)
             post.refresh_from_db(fields=["like_count"])
             if post.like_count < 0:
@@ -189,6 +202,10 @@ class PostViewSet(ModelViewSet):
             return Response({"liked": False, "like_count": post.like_count})
 
         Reaction.objects.create(post=post, user=user)
+
+        # 좋아요 점수 
+        add_post_like_score(user, post.id)
+
         Post.objects.filter(pk=post.pk).update(like_count=F("like_count") + 1)
         post.refresh_from_db(fields=["like_count"])
 
@@ -230,6 +247,9 @@ class PostViewSet(ModelViewSet):
             post=post,
             is_anonymous=request.data.get("is_anonymous", False),
         )
+
+        # 활동 점수 +2
+        add_score(request.user, 2)
 
         Post.objects.filter(pk=post.pk).update(
             comment_count=F("comment_count") + 1
@@ -437,8 +457,13 @@ class CommentViewSet(ModelViewSet):
 
         reaction = CommentReaction.objects.filter(comment=comment, user=user).first()
 
+
         if reaction:
             reaction.delete()
+
+            # 좋아요 취소 시 점수 차감
+            remove_comment_like_score(user, comment.id)
+            
             Comment.objects.filter(pk=comment.pk).update(like_count=F("like_count") - 1)
             comment.refresh_from_db(fields=["like_count"])
             if comment.like_count < 0:
@@ -447,6 +472,10 @@ class CommentViewSet(ModelViewSet):
             return Response({"liked": False, "like_count": comment.like_count})
 
         CommentReaction.objects.create(comment=comment, user=user)
+
+        # 댓글 좋아요 점수 
+        add_comment_like_score(user, comment.id)
+        
         Comment.objects.filter(pk=comment.pk).update(like_count=F("like_count") + 1)
         comment.refresh_from_db(fields=["like_count"])
         return Response({"liked": True, "like_count": comment.like_count})
