@@ -1,4 +1,5 @@
 from django.urls import path
+from .views import top_active_users
 
 from . import views
 
@@ -14,6 +15,9 @@ urlpatterns = [
     path("admin-info/", views.admin_info, name="admin_info"),
     path("me/posts/", views.MyPostsView.as_view(), name="my_posts"),
     path("me/comments/", views.MyCommentsView.as_view(), name="my_comments"),
+
+    # 우수자 순위 
+    path("top-active/", top_active_users),
 
     # 로그아웃
     path("logout/", views.LogoutView.as_view(), name="logout"),

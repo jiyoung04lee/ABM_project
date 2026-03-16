@@ -206,6 +206,18 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name="수정일시",
     )
 
+    # 활동 점수 시스템
+    score = models.PositiveIntegerField(
+        default=0,
+        verbose_name="활동 점수",
+    )
+
+    last_login_point_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="로그인 점수 마지막 지급일",
+    )
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -241,6 +253,13 @@ class User(AbstractBaseUser, PermissionsMixin):
             return bool(self.admission_year)
 
         return False
+    
+
+    # 레벨 계산
+    @property
+    def level(self):
+        level = self.score // 30 + 1
+        return min(level, 10)
 
 
 class StudentRegistry(models.Model):
@@ -262,3 +281,32 @@ class StudentRegistry(models.Model):
 
     def __str__(self) -> str:
         return f"{self.student_id} - {self.name}"
+    
+
+class ScoreHistory(models.Model):
+
+    SCORE_TYPE_CHOICES = (
+        ("post_like", "게시글 좋아요"),
+        ("comment_like", "댓글 좋아요"),
+    )
+
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="score_histories",
+    )
+
+    score_type = models.CharField(
+        max_length=20,
+        choices=SCORE_TYPE_CHOICES,
+    )
+
+    target_id = models.IntegerField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "score_type", "target_id")
+        indexes = [
+            models.Index(fields=["user", "score_type"]),
+        ]

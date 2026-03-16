@@ -34,6 +34,8 @@ import { deletePost as deleteNetworkPost, } from "@/shared/api/network";
    major: string;
    profile_image: string | null;
    created_at: string;
+   score: number;
+   level: number;
  }
 
  interface MyPost {
@@ -58,7 +60,14 @@ import { deletePost as deleteNetworkPost, } from "@/shared/api/network";
 
 type Tab = "profile" | "activity";
 
- function formatDate(dateString: string | null | undefined) {
+interface TopUser {
+  id: number;
+  nickname: string;
+  profile_image: string | null;
+  level: number;
+}
+
+function formatDate(dateString: string | null | undefined) {
    if (!dateString) return "-";
    const d = new Date(dateString);
    if (Number.isNaN(d.getTime())) return "-";
@@ -68,7 +77,7 @@ type Tab = "profile" | "activity";
    return `${y}.${m}.${day}`;
  }
 
- function buildYearGradeStatus(user: UserMeResponse | null) {
+function buildYearGradeStatus(user: UserMeResponse | null) {
    if (!user) return "";
 
    const isStudent = user.user_type === "student";
@@ -88,13 +97,14 @@ type Tab = "profile" | "activity";
  }
 
  export default function ProfilePage() {
-   const router = useRouter();
-   const [activeTab, setActiveTab] = useState<Tab>("profile");
-   const [user, setUser] = useState<UserMeResponse | null>(null);
-   const [posts, setPosts] = useState<MyPost[]>([]);
-   const [comments, setComments] = useState<MyComment[]>([]);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState("");
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<Tab>("profile");
+  const [user, setUser] = useState<UserMeResponse | null>(null);
+  const [posts, setPosts] = useState<MyPost[]>([]);
+  const [comments, setComments] = useState<MyComment[]>([]);
+  const [topUsers, setTopUsers] = useState<TopUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [activityTab, setActivityTab] = useState<"posts" | "comments">("posts");
   const ITEMS_PER_PAGE = 6;
@@ -160,6 +170,13 @@ type Tab = "profile" | "activity";
            fetch(`${API_BASE}/api/users/me/comments/`, { headers }),
          ]);
 
+         const topRes = await fetch(`${API_BASE}/api/users/top-active/`);
+
+         if (topRes.ok) {
+           const topData = await topRes.json();
+           setTopUsers(topData);
+         }
+
          if (postsRes.ok) {
            const postsJson = await postsRes.json();
            const postsData: MyPost[] = Array.isArray(postsJson)
@@ -224,7 +241,8 @@ type Tab = "profile" | "activity";
   const postsCount = posts.length;
   const commentsCount = comments.length;
   const likesCount = posts.reduce((sum, p) => sum + p.like_count, 0);
-  const score = 120; // 예시 점수 (나중에 API 연결)
+  const score = user?.score ?? 0;
+  const level = user?.level ?? 1;
   const maxScore = 300;
   const scorePercent = (score / maxScore) * 100;
   const [animatedPercent, setAnimatedPercent] = useState(0);
@@ -363,9 +381,43 @@ type Tab = "profile" | "activity";
                 <span className="text-lg">›</span>
               </Link>
 
-              <div className="flex items-center justify-between border-t mt-4 pt-4 text-sm">
-                <span className="text-gray-500">포인트</span>
-                <span className="font-semibold">{score || 0}P</span>
+            </div>
+
+            {/* 활동 우수자 */}
+            <div className="bg-white border border-gray-200 p-4 shadow-sm mt-4">
+
+              <h3 className="text-sm font-semibold mb-3 text-gray-700">
+                활동 우수자
+              </h3>
+
+              <div className="space-y-3">
+
+                {topUsers.map((u) => (
+                  <div key={u.id} className="flex items-center gap-3">
+
+                    <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
+
+                      {u.profile_image ? (
+                        <img
+                          src={u.profile_image}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src="/icons/userbaseimage.svg"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+
+                    </div>
+
+                    <div className="text-sm font-semibold">
+                      {u.nickname}
+                    </div>
+
+                  </div>
+                ))}
+
               </div>
 
             </div>
@@ -403,7 +455,11 @@ type Tab = "profile" | "activity";
               <div className="bg-white border border-gray-200 p-6 shadow-sm">
 
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-bold mb-4">활동점수</h3>
+                  <h3 className="text-lg font-bold">활동점수</h3>
+
+                  <div className="text-sm font-semibold text-gray-600">
+                    Lv.{level} · {score} / 300
+                  </div>
                 </div>
 
                 <div className="w-full h-5 bg-gray-200 rounded-full overflow-hidden relative mb-3">

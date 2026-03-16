@@ -10,6 +10,7 @@ from .utils import get_user_id_from_signup_token
 # ------------------------------------------------------------
 
 class UserSerializer(serializers.ModelSerializer):
+    level = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = User
@@ -31,6 +32,8 @@ class UserSerializer(serializers.ModelSerializer):
             "is_verified",
             "is_staff",
             "created_at",
+            "score",
+            "level"
         )
 
         read_only_fields = (

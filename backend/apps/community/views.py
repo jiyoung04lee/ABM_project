@@ -24,6 +24,12 @@ from .serializers import (
 )
 from .permissions import IsAuthorOrReadOnly
 from apps.notifications.models import Notification
+from apps.users.utils_score import (
+    add_post_like_score,
+    remove_post_like_score,
+    add_comment_like_score,
+    remove_comment_like_score
+)
 from logs.utils import (
     create_event_log,
     get_author_grade_info,
@@ -104,6 +110,9 @@ class PostViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
+        # 활동 점수 +5
+        add_score(self.request.user, 5)
+
         viewer = get_viewer_grade_info(self.request.user)
         create_event_log(
             event_type="post_create",
@@ -136,6 +145,9 @@ class PostViewSet(ModelViewSet):
         if reaction:
             reaction.delete()
 
+            # 좋아요 삭제 시 점수 차감
+            remove_post_like_score(user, post.id)
+
             # 좋아요 알림 삭제
             Notification.objects.filter(
                 recipient=post.author,
@@ -157,6 +169,9 @@ class PostViewSet(ModelViewSet):
 
         else:
             Reaction.objects.create(post=post, user=user)
+
+            # 활동 점수 
+            add_post_like_score(user, post.id)
 
             Post.objects.filter(pk=post.pk).update(
                 like_count=F("like_count") + 1
@@ -212,6 +227,8 @@ class PostViewSet(ModelViewSet):
             author=request.user,
             post=post
         )
+        # 활동점수 +2
+        add_score(request.user, 2)
 
         comment.is_anonymous = request.data.get("is_anonymous", False)
         comment.save()
@@ -468,6 +485,9 @@ class CommentViewSet(ModelViewSet):
         if reaction:
             reaction.delete()
 
+            # 좋아요 취소 시 점수 차감 
+            remove_comment_like_score(user, comment.id)
+
             Notification.objects.filter(
                 recipient=comment.author,
                 actor=user,
@@ -491,6 +511,9 @@ class CommentViewSet(ModelViewSet):
                 comment=comment,
                 user=user
             )
+            
+            # 댓글 좋아요 
+            add_comment_like_score(user, comment.id)
 
             Comment.objects.filter(pk=comment.pk).update(
                 like_count=F("like_count") + 1
