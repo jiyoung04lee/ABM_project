@@ -36,6 +36,7 @@ import { deletePost as deleteNetworkPost, } from "@/shared/api/network";
    created_at: string;
    score: number;
    level: number;
+   liked_count:number;
  }
 
  interface MyPost {
@@ -240,7 +241,7 @@ function buildYearGradeStatus(user: UserMeResponse | null) {
 
   const postsCount = posts.length;
   const commentsCount = comments.length;
-  const likesCount = posts.reduce((sum, p) => sum + p.like_count, 0);
+  const likesCount = user?.liked_count ?? 0;
   const score = user?.score ?? 0;
   const level = user?.level ?? 1;
   const maxScore = 300;
@@ -381,42 +382,42 @@ function buildYearGradeStatus(user: UserMeResponse | null) {
                 <span className="text-lg">›</span>
               </Link>
 
-              {/* 활동 우수자 */}
-              <div className="bg-white border border-gray-200 p-4 shadow-sm mt-4">
+            </div>
 
-                <h3 className="text-sm font-semibold mb-3 text-gray-700">
-                  활동 우수자
-                </h3>
+            {/* 활동 우수자 */}
+            <div className="bg-white border border-gray-200 p-4 shadow-sm mt-4">
 
-                <div className="space-y-3">
+              <h3 className="text-sm font-semibold mb-3 text-gray-700">
+                활동 우수자
+              </h3>
 
-                  {topUsers.map((u) => (
-                    <div key={u.id} className="flex items-center gap-3">
+              <div className="space-y-3">
 
-                      <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
+                {topUsers.map((u) => (
+                  <div key={u.id} className="flex items-center gap-3">
 
-                        {u.profile_image ? (
-                          <img
-                            src={u.profile_image}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <img
-                            src="/icons/userbaseimage.svg"
-                            className="w-full h-full object-cover"
-                          />
-                        )}
+                    <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
 
-                      </div>
-
-                      <div className="text-sm font-semibold">
-                        {u.nickname}
-                      </div>
+                      {u.profile_image ? (
+                        <img
+                          src={u.profile_image}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src="/icons/userbaseimage.svg"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
 
                     </div>
-                  ))}
 
-                </div>
+                    <div className="text-sm font-semibold">
+                      {u.nickname}
+                    </div>
+
+                  </div>
+                ))}
 
               </div>
 
@@ -458,7 +459,7 @@ function buildYearGradeStatus(user: UserMeResponse | null) {
                   <h3 className="text-lg font-bold">활동점수</h3>
 
                   <div className="text-sm font-semibold text-gray-600">
-                    {score}점
+                    Lv.{level} · {score} / 300
                   </div>
                 </div>
 
@@ -636,3 +637,4 @@ function buildYearGradeStatus(user: UserMeResponse | null) {
       </div>
     );
  }
+
