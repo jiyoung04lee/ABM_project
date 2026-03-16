@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     siteName: "AIVE",
     images: [
       {
-        url: "https://www.abmaive.com/images/AIVELOGO.png",
+        url: "https://www.abmaive.com/icons/AIVELOGO.png",
         width: 1200,
         height: 630,
         alt: "AIVE",
