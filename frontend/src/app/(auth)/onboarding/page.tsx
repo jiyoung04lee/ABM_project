@@ -299,7 +299,7 @@ function OnboardingContent() {
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               학교 이메일 <span className="text-red-500">*</span>
             </label>
-            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden focus-within:border-[#4F6EF7]">
+            <div className="flex items-center border border-gray-200 rounded-xl focus-within:border-[#4F6EF7]">
               <input
                 type="text"
                 value={email.replace(/@kookmin\.ac\.kr$/, "")}
@@ -307,10 +307,10 @@ function OnboardingContent() {
                   setEmail(e.target.value.replace(/@.*/, "") + "@kookmin.ac.kr")
                 }
                 placeholder="example123"
-                className="flex-1 px-4 py-3 outline-none bg-white text-sm"
+                className="min-w-0 flex-1 px-4 py-3 outline-none bg-white text-sm rounded-l-xl"
                 required
               />
-              <span className="flex-shrink-0 px-3 py-3 bg-gray-50 text-gray-500 text-sm font-medium border-l border-gray-200 whitespace-nowrap">
+              <span className="flex-shrink-0 px-4 py-3 bg-gray-50 text-gray-600 text-sm font-semibold border-l border-gray-200 whitespace-nowrap rounded-r-xl">
                 @kookmin.ac.kr
               </span>
             </div>
