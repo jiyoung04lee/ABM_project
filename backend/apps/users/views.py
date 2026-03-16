@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
+from django.db.models import Q
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -11,6 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny
 
 from logs.utils import create_event_log
 
@@ -28,6 +30,8 @@ from .utils import (
     delete_signup_token,
 )
 
+from .utils_score import give_login_point
+from .utils_score import add_score
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
@@ -481,6 +485,9 @@ class KakaoLoginView(APIView):
             user=user,
         )
 
+        # 로그인 점수 
+        give_login_point(user)
+
         if not user.is_profile_complete:
             signup_token = generate_and_store_signup_token(user.id)
             return Response(
@@ -539,6 +546,9 @@ class CompleteProfileView(generics.GenericAPIView):
 
         user = serializer.save()
 
+        # 활동 점수 
+        add_score(user, 30)
+
         delete_signup_token(serializer.validated_data["signup_token"])
 
         create_event_log(
@@ -563,3 +573,44 @@ class CompleteProfileView(generics.GenericAPIView):
             },
             status=status.HTTP_200_OK,
         )
+    
+# 순위 불러 오기 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def top_active_users(request):
+
+    grade1 = (
+        User.objects
+        .filter(user_type="student", grade=1)
+        .order_by("-score")
+        .first()
+    )
+
+    grade2 = (
+        User.objects
+        .filter(user_type="student", grade=2)
+        .order_by("-score")
+        .first()
+    )
+
+    grade34 = (
+        User.objects
+        .filter(user_type="student")
+        .filter(Q(grade=3) | Q(grade=4))
+        .order_by("-score")
+        .first()
+    )
+
+    users = [u for u in [grade1, grade2, grade34] if u]
+
+    result = []
+
+    for u in users:
+        result.append({
+            "id": u.id,
+            "nickname": u.nickname,
+            "profile_image": u.profile_image.url if u.profile_image else None,
+            "level": u.level,
+        })
+
+    return Response(result)
