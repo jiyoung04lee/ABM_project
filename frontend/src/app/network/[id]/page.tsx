@@ -298,7 +298,7 @@ export default function NetworkDetailPage() {
       </h1>
 
       <div
-        className="text-[15px] text-[#364153] mb-6 prose max-w-none whitespace-pre-wrap"
+        className="text-[15px] text-[#364153] mb-6 prose max-w-none [&>p]:mb-4"
         dangerouslySetInnerHTML={{
           __html: (() => {
             let html = post.content ?? "";
