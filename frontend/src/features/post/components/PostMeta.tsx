@@ -36,38 +36,36 @@ export default function PostMeta({
   const showCard = !isAnonymous && authorId && myId !== authorId;
 
   return (
-    <div className="flex justify-between items-start mb-4">
-      <div className="flex items-center gap-3 relative group">
-        <div className="w-10 h-10 rounded-full overflow-hidden">
-          <img
-            src={!isAnonymous && profileImage ? profileImage : "/icons/userbaseimage.svg"}
-            alt="user"
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        <div className="relative">
-          <div className="text-[14px] font-semibold text-[#0A0A0A]">
-            {displayName}
-          </div>
-
-          {/* Hover 카드 노출 조건 수정 */}
-          {showCard && (
-            <div className="hidden group-hover:block">
-              <HoverProfileCard
-                name={displayName}
-                grade={grade}
-                profileImage={profileImage}
-                userId={authorId}
-                isNickname={isNickname}
-              />
-            </div>
-          )}
-        </div>
+    <div className="flex items-center gap-3 relative group">
+      <div className="w-10 h-10 rounded-full overflow-hidden">
+        <img
+          src={!isAnonymous && profileImage ? profileImage : "/icons/userbaseimage.svg"}
+          alt="user"
+          className="w-full h-full object-cover"
+        />
       </div>
 
-      <div className="text-[12px] text-[#6A7282]">
-        {new Date(createdAt).toLocaleDateString()}
+      <div className="relative">
+        <div className="text-[14px] font-semibold text-[#0A0A0A]">
+          {displayName}
+        </div>
+
+        <div className="mt-0.5 text-[12px] text-[#6A7282]">
+          {new Date(createdAt).toLocaleDateString()}
+        </div>
+
+        {/* Hover 카드 노출 조건 수정 */}
+        {showCard && (
+          <div className="hidden group-hover:block">
+            <HoverProfileCard
+              name={displayName}
+              grade={grade}
+              profileImage={profileImage}
+              userId={authorId}
+              isNickname={isNickname}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

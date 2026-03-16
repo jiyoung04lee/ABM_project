@@ -616,6 +616,7 @@ function NetworkPageContent() {
   const handleChangeTab = (nextTab: NetworkType) => {
     setTab(nextTab);
     setPage(1);
+    router.replace(`/network?type=${nextTab}`, { scroll: false });
   };
 
   const handleChangeCategory = (slug: string | undefined) => {
