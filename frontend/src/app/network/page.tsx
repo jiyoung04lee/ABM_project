@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   fetchCategories,
@@ -519,7 +519,7 @@ function formatDotDate(iso?: string) {
   return `${y}.${m}.${day}`;
 }
 
-export default function NetworkPage() {
+function NetworkPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -1046,5 +1046,13 @@ export default function NetworkPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function NetworkPage() {
+  return (
+    <Suspense>
+      <NetworkPageContent />
+    </Suspense>
   );
 }
