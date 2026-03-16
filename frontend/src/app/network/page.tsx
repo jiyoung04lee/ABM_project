@@ -910,7 +910,7 @@ export default function NetworkPage() {
                           />
                         ) : (
                           <img
-                            src="/images/networkimage.png"
+                            src="/icons/networkimage.png"
                             alt="default thumbnail"
                             className="absolute inset-0 w-full h-full object-cover"
                           />
