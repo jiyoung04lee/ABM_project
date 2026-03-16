@@ -977,8 +977,13 @@ class UserManagementView(APIView):
                 qs = qs.filter(interest_q)
 
         users = qs.order_by("nickname").values(
-            "id", "nickname", "grade",
-            "interests", "post_count", "comment_count"
+            "id",
+            "nickname",
+            "grade",
+            "interests",
+            "post_count",
+            "comment_count",
+            "score",
         )
 
         result = [
@@ -989,6 +994,7 @@ class UserManagementView(APIView):
                 "interests": u["interests"] or [],
                 "post_count": u["post_count"] or 0,
                 "comment_count": u["comment_count"] or 0,
+                "score": u.get("score") or 0,
             }
             for u in users
         ]
