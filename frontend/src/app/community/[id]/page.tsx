@@ -12,6 +12,7 @@ import {
   deleteComment,
   pinPost,
   unpinPost,
+  deletePost as deleteCommunityPost,
 } from "@/shared/api/community";
 import api from "@/shared/api/axios";
 import PostMeta from "@/features/post/components/PostMeta";
@@ -35,6 +36,7 @@ export default function PostDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [pinning, setPinning] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchDetail();
@@ -59,6 +61,28 @@ export default function PostDetailPage() {
       setComments(res.data.comments || []);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const isAuthor = post && currentUserId === post.author_id;
+
+  const handleEdit = () => {
+    if (!post) return;
+    router.push(`/community/edit/${post.id}`);
+  };
+
+  const handleDelete = async () => {
+    if (!post || deleting) return;
+    if (!confirm("이 게시글을 삭제할까요?")) return;
+    setDeleting(true);
+    try {
+      await deleteCommunityPost(post.id);
+      alert("게시글이 삭제되었습니다.");
+      router.push("/community");
+    } catch {
+      alert("게시글 삭제에 실패했습니다.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -227,7 +251,27 @@ export default function PostDetailPage() {
         authorId={post.author_id}
       />
 
-      <div className="border-b border-[#E5E7EB] mb-10" />
+      {isAuthor && (
+        <div className="flex justify-end gap-3 mt-2 mb-4">
+          <button
+            type="button"
+            onClick={handleEdit}
+            className="text-[13px] text-[#6A7282] hover:text-[#2B7FFF]"
+          >
+            수정
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="text-[13px] text-[#6A7282] hover:text-[#DC2626] disabled:opacity-50"
+          >
+            {deleting ? "삭제 중..." : "삭제"}
+          </button>
+        </div>
+      )}
+
+      <div className="border-b border-[#E5E7EB] mb-10 mt-2" />
 
       {post.category && (
         <div className="mt-2 mb-6">

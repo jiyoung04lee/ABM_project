@@ -13,7 +13,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
-import ImageExtension from "@tiptap/extension-image";
+import ResizeImage from "tiptap-extension-resize-image";
 import Dropcursor from "@tiptap/extension-dropcursor";
 import Gapcursor from "@tiptap/extension-gapcursor";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -91,7 +91,7 @@ function WriteContent() {
       Color.configure({
         types: ["textStyle"],
       }),
-      ImageExtension.configure({
+      ResizeImage.configure({
         inline: false,
         allowBase64: true,
         HTMLAttributes: {
@@ -294,7 +294,7 @@ function WriteContent() {
 
       alert("작성 완료");
 
-      router.push("/network");
+      router.push(`/network?type=${type}`);
 
     } catch (err) {
 

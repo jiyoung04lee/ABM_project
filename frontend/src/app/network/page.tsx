@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   fetchCategories,
   togglePostLike,
@@ -521,8 +521,16 @@ function formatDotDate(iso?: string) {
 
 export default function NetworkPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [tab, setTab] = useState<NetworkType>("student");
+
+  useEffect(() => {
+    const t = searchParams.get("type") as NetworkType | null;
+    if (t && ["student", "graduate", "qa"].includes(t)) {
+      setTab(t);
+    }
+  }, [searchParams]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySlug, setCategorySlug] = useState<string | undefined>(undefined);
 
