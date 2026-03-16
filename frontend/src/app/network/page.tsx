@@ -895,16 +895,10 @@ export default function NetworkPage() {
                       onClick={() => handleCardClick(p.id)}
                       className="group block bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
                     >
-                      {/* 썸네일 - 이미지 없을 때만 하늘색 배경 */}
-                      <div
-                        className={`relative w-full min-h-[200px] aspect-video overflow-hidden ${
-                          !p.thumbnail
-                            ? "bg-gradient-to-br from-[#D6E4F7] to-[#C5D9F2]"
-                            : "bg-gray-100"
-                        }`}
-                      >
-                        {p.thumbnail && (
-                          // eslint-disable-next-line @next/next/no-img-element
+                      {/* 썸네일 */}
+                      <div className="relative w-full min-h-[200px] aspect-video overflow-hidden bg-gray-100">
+
+                        {p.thumbnail ? (
                           <img
                             src={resolveImageUrl(p.thumbnail)}
                             alt={p.title}
@@ -914,7 +908,14 @@ export default function NetworkPage() {
                               e.currentTarget.style.display = "none";
                             }}
                           />
+                        ) : (
+                          <img
+                            src="/images/networkimage.png"
+                            alt="default thumbnail"
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
                         )}
+
                       </div>
 
                       {/* 내용 */}
