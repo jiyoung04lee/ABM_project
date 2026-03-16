@@ -25,10 +25,11 @@ from .serializers import (
 from .permissions import IsAuthorOrReadOnly
 from apps.notifications.models import Notification
 from apps.users.utils_score import (
+    add_score,
     add_post_like_score,
     remove_post_like_score,
     add_comment_like_score,
-    remove_comment_like_score
+    remove_comment_like_score,
 )
 from logs.utils import (
     create_event_log,

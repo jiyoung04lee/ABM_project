@@ -1389,7 +1389,7 @@ export default function AdminPage() {
                   { label: "전체 사용자", value: usersList.length, icon: Users, color: "bg-blue-100", iconColor: "text-blue-600" },
                   { label: "총 게시글", value: usersList.reduce((s, u) => s + u.post_count, 0), icon: FileText, color: "bg-purple-100", iconColor: "text-purple-600" },
                   { label: "총 댓글", value: usersList.reduce((s, u) => s + u.comment_count, 0), icon: MessageSquare, color: "bg-orange-100", iconColor: "text-orange-600" },
-                  { label: "활성 사용자", value: usersList.length, icon: Activity, color: "bg-green-100", iconColor: "text-green-600" },
+                  { label: "평균 점수", value: usersList.length ? Math.round(usersList.reduce((s, u) => s + (u.score ?? 0), 0) / usersList.length) : 0, icon: TrendingUp, color: "bg-green-100", iconColor: "text-green-600" },
                 ].map(({ label, value, icon: Icon, color, iconColor }) => (
                   <div key={label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
                     <div className="flex items-center gap-2 mb-2">
@@ -1477,7 +1477,7 @@ export default function AdminPage() {
                     <table className="w-full">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                          {["닉네임", "학년", "관심분야", "게시글", "댓글"].map((h) => (
+                          {["닉네임", "학년", "관심분야", "게시글", "댓글", "점수"].map((h) => (
                             <th key={h} className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{h}</th>
                           ))}
                         </tr>
@@ -1498,6 +1498,7 @@ export default function AdminPage() {
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-600">{u.post_count}</td>
                             <td className="px-6 py-4 text-sm text-gray-600">{u.comment_count}</td>
+                            <td className="px-6 py-4 text-sm text-gray-900 font-semibold">{u.score ?? 0}</td>
                           </tr>
                         ))}
                       </tbody>

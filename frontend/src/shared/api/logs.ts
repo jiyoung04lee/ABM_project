@@ -102,6 +102,7 @@ export interface UserManagementUser {
   interests: string[];
   post_count: number;
   comment_count: number;
+  score: number;
 }
 /** grade: [1,2], interest: ["ai","data"] → ?grade=1&grade=2&interest=ai&interest=data */
 export const getUsers = (params?: { grade?: number[]; interest?: string[] }) =>
