@@ -303,7 +303,7 @@ import{ API_BASE } from "@/shared/api/api";
                </label>
              </div>
              <p className="text-sm font-semibold text-gray-500 mt-2">
-               프로필 사진 변경 (현재는 로컬 미리보기만 지원)
+               프로필 사진 변경
              </p>
            </div>
 
