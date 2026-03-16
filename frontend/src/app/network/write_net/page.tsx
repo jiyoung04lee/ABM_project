@@ -91,12 +91,7 @@ function WriteContent() {
       Color.configure({
         types: ["textStyle"],
       }),
-      ResizeImage.configure({
-        inline: false,
-        HTMLAttributes: {
-          class: "editor-image",
-        },
-      }),
+      ResizeImage,
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
