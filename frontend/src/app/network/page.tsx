@@ -561,10 +561,7 @@ function NetworkPageContent() {
   }, [tab]);
 
   const filtered = useMemo(() => {
-    const baseList =
-      page === 1
-        ? [...pinned, ...posts]
-        : posts;
+    const baseList = page === 1 ? [...pinned, ...posts] : posts;
 
     const q = keyword.trim().toLowerCase();
     if (!q) return baseList;
@@ -740,7 +737,6 @@ function NetworkPageContent() {
             {loading ? (
               <div style={styles.grid}>
                 {Array.from({ length: 6 }).map((_, i) => (
-                  // eslint-disable-next-line react/no-array-index-key
                   <div key={i} style={styles.cardLink}>
                     <div
                       style={{
@@ -831,7 +827,7 @@ function NetworkPageContent() {
                           <h3 className="text-[17px] font-semibold text-gray-900 mb-1 line-clamp-1">
                             {p.title}
                           </h3>
-                        <p className="text-[15px] text-[#4A5565] mb-3 leading-relaxed line-clamp-2">
+                          <p className="text-[15px] text-[#4A5565] mb-3 leading-relaxed line-clamp-2">
                             {descText}
                           </p>
                           <div className="flex items-center gap-4 text-xs text-gray-500">
@@ -863,7 +859,6 @@ function NetworkPageContent() {
                             <Tag className="w-3 h-3" />
                             {badgeLabel}
                           </span>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={(p as any).author_profile_image || "/icons/userbaseimage.svg"}
                             alt="profile"
@@ -902,17 +897,16 @@ function NetworkPageContent() {
                       key={p.id}
                       type="button"
                       onClick={() => handleCardClick(p.id)}
-                      className="group block bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
+                      className="group flex flex-col bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
                     >
                       {/* 썸네일 */}
-                      <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
-
+                      <div className="relative w-full h-[200px] overflow-hidden bg-gray-100 flex-none shrink-0 isolate">
                         {p.thumbnail ? (
                           <img
                             src={resolveImageUrl(p.thumbnail)}
                             alt={p.title}
                             loading="lazy"
-                            className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                            className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
                               e.currentTarget.style.display = "none";
                             }}
@@ -924,11 +918,10 @@ function NetworkPageContent() {
                             className="absolute inset-0 w-full h-full object-cover"
                           />
                         )}
-
                       </div>
 
                       {/* 내용 */}
-                      <div className="p-5">
+                      <div className="p-5 flex-1">
                         {/* 뱃지 */}
                         <div className="flex items-center gap-2 mb-3">
                           {p.is_pinned && (
@@ -954,7 +947,6 @@ function NetworkPageContent() {
 
                         {/* 작성자 / 날짜 */}
                         <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={(p as any).author_profile_image || "/icons/userbaseimage.svg"}
                             alt="profile"
@@ -1018,7 +1010,6 @@ function NetworkPageContent() {
                   const isActive = pageNumber === page;
                   return (
                     <button
-                      // eslint-disable-next-line react/no-array-index-key
                       key={idx}
                       type="button"
                       onClick={() => handleChangePage(pageNumber)}
@@ -1044,7 +1035,6 @@ function NetworkPageContent() {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );
