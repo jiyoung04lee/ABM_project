@@ -250,6 +250,7 @@ export default function PostDetailPage() {
           createdAt={post.created_at}
           isAnonymous={post.is_anonymous}
           authorId={post.author_id}
+          isNickname={false}
         />
 
         {isAuthor && (

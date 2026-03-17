@@ -270,6 +270,7 @@ export default function NetworkDetailPage() {
           createdAt={post.created_at}
           isAnonymous={post.is_anonymous}
           authorId={post.author_id}
+          isNickname={true}
         />
 
         {isAuthor && (
