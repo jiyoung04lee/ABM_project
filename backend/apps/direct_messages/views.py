@@ -26,11 +26,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def messages(self, request, pk=None):
         conversation = self.get_object()
 
-        serializer = MessageSerializer(
-            messages,
-            many=True,
-            context={"request": request}
-        )
+        messages = conversation.messages.all()  
 
         # 상대방 메시지 자동 읽음 처리
         messages.filter(
