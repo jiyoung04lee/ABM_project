@@ -309,7 +309,7 @@ function WriteContent() {
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="flex flex-col h-screen pt-[72px] bg-white ">
+    <div className="flex flex-col h-screen pt-[64px] bg-white ">
       {submitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white rounded-2xl px-8 py-6 shadow-xl flex flex-col items-center gap-3">
