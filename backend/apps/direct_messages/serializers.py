@@ -77,7 +77,7 @@ class ConversationSerializer(serializers.ModelSerializer):
             return {"id": other.id, "name": "관리자"}
 
         # 닉네임 채팅인지 확인
-        if obj.creator_nickname or obj.target_nickname:
+        if obj.creator_nickname and obj.target_nickname:
 
             # 내가 creator면 상대 닉네임
             if me == obj.creator:
