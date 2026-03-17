@@ -5,8 +5,7 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { createPost, updatePost, fetchCategories } from "@/shared/api/network";
-import { API_BASE } from "@/shared/api/api";
+import { createPost, fetchCategories } from "@/shared/api/network";
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -289,17 +288,13 @@ function WriteContent() {
     }
 
     // blob URL → 플레이스홀더로 교체 (blob URL 순서 = files 배열 순서)
-    const blobUrls: string[] = [];
-    const PLACEHOLDER_RE = /<img([^>]*?)src="(blob:[^"]+)"([^>]*?)\/?>"/gi;
-    let contentWithPlaceholders = content.replace(
+    let blobIdx = 0;
+    const contentWithPlaceholders = content.replace(
       /<img([^>]*?)src="(blob:[^"]+)"([^>]*?)\/?>/gi,
-      (_match, before, blobUrl, after) => {
-        const idx = blobUrls.length;
-        blobUrls.push(blobUrl);
-        return `<img${before}src="__BLOB_${idx}__"${after}>`;
+      (_match, before, _blobUrl, after) => {
+        return `<img${before}src="__BLOB_${blobIdx++}__"${after}>`;
       }
     );
-    void PLACEHOLDER_RE;
 
     const formData = new FormData();
 
@@ -321,42 +316,7 @@ function WriteContent() {
     try {
       setSubmitting(true);
 
-      const created = await createPost(formData);
-
-      // 응답의 files 배열로 플레이스홀더를 실제 절대 URL로 교체 후 PATCH
-      if (blobUrls.length > 0 && created.files && created.files.length > 0) {
-        const imageFiles = created.files
-          .filter((f) => f.file_type === "image")
-          .sort((a, b) => a.order - b.order);
-        const base = API_BASE.replace(/\/$/, "");
-
-        let fixedContent = contentWithPlaceholders;
-        blobUrls.forEach((_, idx) => {
-          const raw = imageFiles[idx]?.file ?? "";
-          const realUrl = raw
-            ? raw.startsWith("http://") || raw.startsWith("https://")
-              ? raw
-              : `${base}${raw.startsWith("/") ? raw : `/${raw}`}`
-            : "";
-          fixedContent = fixedContent.replace(
-            `src="__BLOB_${idx}__"`,
-            `src="${realUrl}"`
-          );
-        });
-
-        // 플레이스홀더가 남아있으면(파일 매핑 실패) 제거
-        fixedContent = fixedContent.replace(
-          /<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi,
-          ""
-        );
-
-        const patchData = new FormData();
-        patchData.append("content", fixedContent);
-        created.files.forEach((f) => {
-          patchData.append("existing_files", String(f.id));
-        });
-        await updatePost(created.id, patchData);
-      }
+      await createPost(formData);
 
       alert("작성 완료");
 
