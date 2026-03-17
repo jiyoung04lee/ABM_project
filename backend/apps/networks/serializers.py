@@ -6,11 +6,12 @@ from django.core.files.base import ContentFile
 from PIL import Image, ImageOps
 from io import BytesIO
 import os
+import re
 
 from .models import Post, PostFile, Comment, Category
 
 
-def make_thumbnail(uploaded_file, size=(800, 450)):
+def make_thumbnail(uploaded_file, size=(600, 338)):
     """
     주어진 이미지를 지정된 크기로 센터 크롭한 썸네일 파일(ContentFile)로 반환.
     실패 시 None 반환.
@@ -31,10 +32,16 @@ def make_thumbnail(uploaded_file, size=(800, 450)):
         thumb = ImageOps.fit(image, size, Image.LANCZOS)
 
         buffer = BytesIO()
-        thumb.save(buffer, format="JPEG", quality=85)
+        thumb.save(
+            buffer,
+            format="JPEG",
+            quality=75,
+        )
         buffer.seek(0)
 
-        base_name, _ = os.path.splitext(getattr(uploaded_file, "name", "thumb"))
+        base_name, _ = os.path.splitext(
+            getattr(uploaded_file, "name", "thumb")
+        )
         thumb_name = f"{base_name}_thumb.jpg"
 
         file = ContentFile(buffer.read(), name=thumb_name)
@@ -346,6 +353,41 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 file_type=file_type,
                 order=index,
             )
+
+        # __BLOB_N__ 플레이스홀더를 실제 파일 URL로 치환
+        if image_files and post.content:
+            request = self.context.get("request")
+            fixed_content = post.content
+
+            for index, _ in image_files:
+                file_obj = post.files.filter(
+                    file_type="image", order=index
+                ).first()
+                if not file_obj or not file_obj.file:
+                    continue
+
+                url = file_obj.file.url
+                if (
+                    not str(url).startswith(("http://", "https://"))
+                    and request
+                ):
+                    url = request.build_absolute_uri(url)
+
+                placeholder = f'src="__BLOB_{index}__"'
+                real = f'src="{url}"'
+                fixed_content = fixed_content.replace(placeholder, real)
+
+            # 매핑되지 않은 플레이스홀더 img 태그 제거
+            fixed_content = re.sub(
+                r'<img[^>]*src="__BLOB_\d+__"[^>]*\/?>',
+                "",
+                fixed_content,
+                flags=re.IGNORECASE,
+            )
+
+            if fixed_content != post.content:
+                post.content = fixed_content
+                post.save(update_fields=["content"])
 
         if image_files:
             idx = 0
