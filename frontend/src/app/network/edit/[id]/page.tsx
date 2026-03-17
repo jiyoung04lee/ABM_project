@@ -296,9 +296,9 @@ function EditContent() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col h-screen pt-[1px] bg-white overflow-hidden">
       
-      <div className="sticky top-0 z-30 bg-white flex-shrink-0">
+      <div className="sticky top-[72px] z-30 bg-white flex-shrink-0">
         <div className="max-w-4xl mx-auto w-full px-6">
           <div className="flex items-center justify-between py-2.5">
             <div className="flex items-center gap-3">
