@@ -16,6 +16,8 @@ export default function HoverProfileCard({ name, grade, profileImage, userId, is
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
+  console.log("🔥 hover data:", { name, isNickname });
+
   useEffect(() => {
     api
       .get("users/me/")
