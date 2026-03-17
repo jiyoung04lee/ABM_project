@@ -148,7 +148,8 @@ function MessagesPageContent(){
     try {
       const res = await api.post("messages/start/", {
         user_id: userId,
-        nickname: nickname
+        nickname: nickname,
+        isNickname: !!nickname
       });
 
       const c = res.data;
