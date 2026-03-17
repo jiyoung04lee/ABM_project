@@ -39,7 +39,7 @@ export default function DepartmentPage() {
               [
                 { id: "intro", label: "학과 소개" },
                 { id: "graduation", label: "졸업 요건" },
-                { id: "glossary", label: "학과 용어집" },
+                { id: "glossary", label: "학회 소개집" },
                 { id: "curriculum", label: "커리큘럼" },
               ] as { id: TabId; label: string }[]
             ).map((tab) => (
@@ -246,7 +246,7 @@ export default function DepartmentPage() {
           </>
         )}
 
-        {/* 학과 용어집 */}
+        {/* 학회 소개집 */}
         {activeTab === "glossary" && (
           <div className="bg-white rounded-3xl p-8 shadow-sm">
             <div className="flex items-start gap-4 mb-6">
@@ -254,66 +254,15 @@ export default function DepartmentPage() {
                 <BookOpen className="w-7 h-7 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className="text-2xl font-bold mb-6">학과 용어집</h2>
+                <h2 className="text-2xl font-bold mb-6">학회 소개집</h2>
 
-                {/* AI */}
-                <div className="mb-8">
-                  <h3 className="text-xl font-bold mb-4 text-gray-900">AI (Artificial Intelligence)</h3>
-                  <div className="space-y-4">
-                    {[
-                      { term: "생성형 AI (Generative AI)", desc: "텍스트, 이미지, 코드 등 새로운 콘텐츠를 생성할 수 있는 인공지능 기술입니다.", color: "blue" },
-                      { term: "대규모 언어 모델 (Large Language Model, LLM)", desc: "방대한 텍스트 데이터를 학습하여 문장을 이해하고 생성하는 인공지능 모델입니다.", color: "indigo" },
-                      { term: "프롬프트 엔지니어링 (Prompt Engineering)", desc: "AI가 원하는 결과를 생성하도록 질문과 지시문을 설계·최적화하는 기법입니다.", color: "blue" },
-                      { term: "멀티모달 AI (Multimodal AI)", desc: "텍스트, 이미지, 음성 등 여러 형태의 데이터를 동시에 이해하고 처리하는 인공지능 기술입니다.", color: "indigo" },
-                      { term: "AI 에이전트 (AI Agent)", desc: "주어진 목표를 달성하기 위해 스스로 판단하고 행동을 수행하는 자율형 인공지능 시스템입니다.", color: "blue" },
-                      { term: "강화학습 (Reinforcement Learning)", desc: "보상과 벌점을 통해 최적의 행동을 학습하는 인공지능 학습 방법입니다.", color: "indigo" },
-                    ].map((item) => (
-                      <div key={item.term} className={`bg-gradient-to-r ${item.color === "blue" ? "from-blue-50 to-indigo-50 border-blue-600" : "from-indigo-50 to-blue-50 border-indigo-600"} rounded-2xl p-5 border-l-4`}>
-                        <h4 className={`font-bold mb-2 ${item.color === "blue" ? "text-blue-700" : "text-indigo-700"} text-lg`}>{item.term}</h4>
-                        <p className="text-gray-700 text-sm leading-relaxed">{item.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 데이터 */}
-                <div className="mb-8">
-                  <h3 className="text-xl font-bold mb-4 text-gray-900">데이터 (Data & Analytics)</h3>
-                  <div className="space-y-4">
-                    {[
-                      { term: "빅데이터 (Big Data)", desc: "기존 방식으로 처리하기 어려운 대규모·다양·고속 데이터 집합을 의미합니다.", color: "blue" },
-                      { term: "데이터 파이프라인 (Data Pipeline)", desc: "데이터 수집부터 저장, 분석까지의 전 과정을 자동으로 연결한 처리 구조입니다.", color: "indigo" },
-                      { term: "실시간 데이터 처리 (Real-time Data Processing)", desc: "데이터가 생성되는 즉시 분석·처리하여 빠른 의사결정을 가능하게 하는 기술입니다.", color: "blue" },
-                      { term: "데이터 마이닝 (Data Mining)", desc: "대규모 데이터에서 의미 있는 패턴과 인사이트를 추출하는 분석 기법입니다.", color: "indigo" },
-                      { term: "AutoML (Automated Machine Learning)", desc: "머신러닝 모델 선택과 학습 과정을 자동화하여 분석 효율을 높이는 기술입니다.", color: "blue" },
-                      { term: "데이터 시각화 (Data Visualization)", desc: "복잡한 데이터를 그래프와 차트로 표현하여 이해와 의사결정을 돕는 기법입니다.", color: "indigo" },
-                    ].map((item) => (
-                      <div key={item.term} className={`bg-gradient-to-r ${item.color === "blue" ? "from-blue-50 to-indigo-50 border-blue-600" : "from-indigo-50 to-blue-50 border-indigo-600"} rounded-2xl p-5 border-l-4`}>
-                        <h4 className={`font-bold mb-2 ${item.color === "blue" ? "text-blue-700" : "text-indigo-700"} text-lg`}>{item.term}</h4>
-                        <p className="text-gray-700 text-sm leading-relaxed">{item.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 비즈니스 */}
-                <div className="mb-8">
-                  <h3 className="text-xl font-bold mb-4 text-gray-900">비즈니스 (Business & Management)</h3>
-                  <div className="space-y-4">
-                    {[
-                      { term: "디지털 트랜스포메이션 (Digital Transformation)", desc: "디지털 기술을 활용해 기업의 전략, 조직, 업무 방식을 혁신하는 과정입니다.", color: "blue" },
-                      { term: "비즈니스 인텔리전스 (Business Intelligence, BI)", desc: "데이터 분석과 시각화를 통해 경영 의사결정을 지원하는 시스템과 도구입니다.", color: "indigo" },
-                      { term: "데이터 기반 의사결정 (Data-Driven Decision Making)", desc: "경험이 아닌 데이터 분석 결과를 바탕으로 전략과 결정을 수립하는 방식입니다.", color: "blue" },
-                      { term: "플랫폼 비즈니스 (Platform Business)", desc: "데이터와 기술을 기반으로 사용자와 공급자를 연결하는 비즈니스 모델입니다.", color: "indigo" },
-                      { term: "데이터 자산화 (Data Monetization)", desc: "기업이 보유한 데이터를 활용해 새로운 수익이나 가치를 창출하는 전략입니다.", color: "blue" },
-                      { term: "AI 비즈니스 전략 (AI Business Strategy)", desc: "인공지능 기술을 기업 경쟁력 강화와 신사업 창출에 활용하는 전략입니다.", color: "indigo" },
-                    ].map((item) => (
-                      <div key={item.term} className={`bg-gradient-to-r ${item.color === "blue" ? "from-blue-50 to-indigo-50 border-blue-600" : "from-indigo-50 to-blue-50 border-indigo-600"} rounded-2xl p-5 border-l-4`}>
-                        <h4 className={`font-bold mb-2 ${item.color === "blue" ? "text-blue-700" : "text-indigo-700"} text-lg`}>{item.term}</h4>
-                        <p className="text-gray-700 text-sm leading-relaxed">{item.desc}</p>
-                      </div>
-                    ))}
-                  </div>
+                <div className="max-w-4xl mx-auto">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/institute.jpg"
+                    alt="학회 소개집"
+                    className="w-full h-auto rounded-2xl shadow-sm"
+                  />
                 </div>
               </div>
             </div>
