@@ -26,7 +26,11 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def messages(self, request, pk=None):
         conversation = self.get_object()
 
-        messages = conversation.messages.all()
+        serializer = MessageSerializer(
+            messages,
+            many=True,
+            context={"request": request}
+        )
 
         # 상대방 메시지 자동 읽음 처리
         messages.filter(
@@ -142,11 +146,14 @@ class ConversationStartViewSet(viewsets.ViewSet):
     def create(self, request):
         user = request.user
         target_id = request.data.get("user_id")
-        target_nickname = request.data.get("nickname")  
-        
-        my_nickname = None
-        if target_nickname:
-            my_nickname = getattr(user, 'nickname', None) or user.name  
+        target_nickname = request.data.get("nickname")
+        is_nickname = request.data.get("isNickname", False)
+
+        if is_nickname:
+            my_nickname = getattr(user, "nickname", None) or user.name
+        else:
+            my_nickname = None
+            target_nickname = None 
 
         target_user = User.objects.get(id=target_id)
 
