@@ -6,7 +6,7 @@ User = get_user_model()
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender_name = serializers.CharField(source="sender.username", read_only=True)
+    sender_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -20,6 +20,30 @@ class MessageSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["sender", "is_read"]
+
+    def get_sender_name(self, obj):
+        request = self.context.get("request")
+        me = request.user
+        sender = obj.sender
+        conversation = obj.conversation
+
+        # 관리자
+        if getattr(sender, "is_staff", False):
+            return "관리자"
+
+        # 닉네임 채팅인 경우
+        if conversation.creator_nickname and conversation.target_nickname:
+
+            # 내가 creator인 경우
+            if sender == conversation.creator:
+                return conversation.creator_nickname or sender.name
+
+            # 상대가 creator인 경우
+            else:
+                return conversation.target_nickname or sender.name
+
+        # 일반 (실명)
+        return sender.name
 
 
 class ConversationSerializer(serializers.ModelSerializer):
