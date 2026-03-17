@@ -492,7 +492,7 @@ function WriteContent() {
       <div className="flex-1 overflow-y-auto px-6 max-w-4xl mx-auto w-full pb-20">
       {/* 카테고리 */}
 
-      <div className="mt-6 mb-4">
+      <div className="mt-12 mb-4">
 
         <select
           value={category ?? ""}
