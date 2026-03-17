@@ -35,7 +35,11 @@ class ConversationViewSet(viewsets.ModelViewSet):
             sender=request.user
         ).update(is_read=True)
 
-        serializer = MessageSerializer(messages, many=True)
+        serializer = MessageSerializer(
+            messages,
+            many=True,
+            context={"request": request}
+        )
 
         return Response(serializer.data)
 

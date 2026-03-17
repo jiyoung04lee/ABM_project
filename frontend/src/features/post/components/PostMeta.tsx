@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import HoverProfileCard from "./HoverProfileCard";
 
@@ -11,7 +12,7 @@ interface Props {
   createdAt: string;
   isAnonymous?: boolean;
   authorId?: number | null;
-  isNickname?: boolean; 
+  isNickname?: boolean;
 }
 
 export default function PostMeta({
@@ -24,6 +25,7 @@ export default function PostMeta({
   isNickname,
 }: Props) {
   const [myId, setMyId] = useState<number | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const savedId = localStorage.getItem("user_id");
@@ -31,9 +33,15 @@ export default function PostMeta({
   }, []);
 
   const displayName = isAnonymous ? "익명" : author ?? "알 수 없음";
-  
-  // 본인이 아니고, 익명도 아닐 때만 카드를 보여줌
-  const showCard = !isAnonymous && authorId && myId !== authorId;
+
+  const isCommunityMainPage = pathname === "/community";
+
+  // 본인이 아니고, 익명도 아니고, 커뮤니티 메인 페이지가 아닐 때만 카드 표시
+  const showCard =
+    !isAnonymous &&
+    !!authorId &&
+    myId !== authorId &&
+    !isCommunityMainPage;
 
   return (
     <div className="flex items-center gap-3 relative group">
@@ -54,7 +62,6 @@ export default function PostMeta({
           {new Date(createdAt).toLocaleDateString()}
         </div>
 
-        {/* Hover 카드 노출 조건 수정 */}
         {showCard && (
           <div className="hidden group-hover:block">
             <HoverProfileCard

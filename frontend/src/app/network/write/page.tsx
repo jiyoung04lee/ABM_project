@@ -206,7 +206,7 @@ function WriteContent() {
           />
           <img src="/icons/upload.svg" alt="upload" className="w-10 h-10" />
           <p className="mt-4 text-sm">클릭하여 파일 업로드</p>
-          <p className="text-xs mt-1">이미지 또는 PDF 파일 (최대 10MB)</p>
+          <p className="text-xs mt-1">이미지 (최대 10MB)</p>
         </label>
 
         {/* 이미지 미리보기 + 대표 선택(UI는 유지) */}
