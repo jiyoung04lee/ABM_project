@@ -322,9 +322,11 @@ function WriteContent() {
         </div>
       )}
       {/* 상단 헤더 */}
-      <div className="flex-shrink-0 bg-white z-10">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+      <div className="flex-shrink-0 bg-white z-10 border-b">
+        <div className="max-w-4xl mx-auto w-full">
 
+        {/* 상단 헤더 */}
+        <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <button onClick={() => router.back()}>
               <Image src="/icons/back.svg" alt="back" width={22} height={22} />
@@ -350,7 +352,7 @@ function WriteContent() {
 
         {/* 툴바 */}
         {editor && (
-          <div className="flex items-center gap-3 px-6 py-3 border-b">
+          <div className="flex items-center flex-wrap gap-1 px-4 py-2 border-t">
             {/* 이미지 삽입 */}
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -484,6 +486,7 @@ function WriteContent() {
           </div>
 
         )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 max-w-4xl mx-auto w-full pb-20">
