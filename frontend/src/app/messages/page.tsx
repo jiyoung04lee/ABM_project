@@ -352,6 +352,10 @@ function MessagesPageContent(){
                           isMe ? "items-end" : "items-start"
                         }`}
                       >
+                        <span className="text-[12px] text-gray-500 mb-1 px-1">
+                          {msg.sender_name}
+                        </span>
+                        
                         <div
                           className={`px-5 py-3 rounded-[18px] text-[14px] ${
                             isMe

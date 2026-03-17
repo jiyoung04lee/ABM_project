@@ -51,8 +51,80 @@ const FontSize = TextStyle.extend({
   },
 });
 
-function WriteContent() {
+/* ---------------- 이미지 압축 유틸 ---------------- */
 
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new window.Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("이미지 로드 실패"));
+    };
+
+    img.src = objectUrl;
+  });
+}
+
+function getResizedSize(
+  width: number,
+  height: number,
+  maxWidth: number,
+  maxHeight: number
+) {
+  let nextWidth = width;
+  let nextHeight = height;
+
+  if (nextWidth > maxWidth) {
+    const ratio = maxWidth / nextWidth;
+    nextWidth = Math.round(nextWidth * ratio);
+    nextHeight = Math.round(nextHeight * ratio);
+  }
+
+  if (nextHeight > maxHeight) {
+    const ratio = maxHeight / nextHeight;
+    nextWidth = Math.round(nextWidth * ratio);
+    nextHeight = Math.round(nextHeight * ratio);
+  }
+
+  return { width: nextWidth, height: nextHeight };
+}
+
+async function compressImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+
+  const img = await loadImage(file);
+  const { width, height } = getResizedSize(img.width, img.height, 1600, 1600);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas context 생성 실패");
+
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, "image/jpeg", 0.75);
+  });
+
+  if (!blob) throw new Error("이미지 압축 실패");
+
+  const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+  return new File([blob], `${fileNameWithoutExt}.jpg`, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}
+
+function WriteContent() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -102,25 +174,23 @@ function WriteContent() {
 
     editorProps: {
       handlePaste(view, event) {
-
-        const text = event.clipboardData?.getData("text")
+        const text = event.clipboardData?.getData("text");
 
         if (text && /(https?:\/\/[^\s]+)/.test(text)) {
-
-          event.preventDefault()
+          event.preventDefault();
 
           const node = view.state.schema.nodes.linkCard.create({
-            url: text
-          })
+            url: text,
+          });
 
-          const transaction = view.state.tr.replaceSelectionWith(node)
+          const transaction = view.state.tr.replaceSelectionWith(node);
 
-          view.dispatch(transaction)
+          view.dispatch(transaction);
 
-          return true
+          return true;
         }
 
-        return false
+        return false;
       },
     },
 
@@ -133,54 +203,63 @@ function WriteContent() {
 
   /* ---------------- 이미지 삽입 ---------------- */
 
-  const addImageFiles = (fileList: FileList | File[]) => {
+  const addImageFiles = async (fileList: FileList | File[]) => {
     if (!editor) return;
+
     const imageFiles = Array.from(fileList).filter((f) =>
       f.type.startsWith("image/")
     );
     if (imageFiles.length === 0) return;
 
-    imageFiles.forEach((file) => {
-      const url = URL.createObjectURL(file);
-      editor
-        .chain()
-        .focus()
-        .setImage({ src: url })
-        .createParagraphNear()
-        .run();
-      setFiles((prev) => [...prev, file]);
-      setPreviewImages((prev) => [...prev, url]);
-    });
+    try {
+      const compressedFiles = await Promise.all(
+        imageFiles.map((file) => compressImage(file))
+      );
 
-    if (mainImageIndex === null) {
-      setMainImageIndex(0);
+      compressedFiles.forEach((file) => {
+        const url = URL.createObjectURL(file);
+
+        editor
+          .chain()
+          .focus()
+          .setImage({ src: url })
+          .createParagraphNear()
+          .run();
+
+        setFiles((prev) => [...prev, file]);
+        setPreviewImages((prev) => [...prev, url]);
+      });
+
+      if (mainImageIndex === null) {
+        setMainImageIndex(0);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("이미지 처리 중 오류가 발생했습니다.");
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files;
     if (!fileList) return;
-    addImageFiles(fileList);
+    await addImageFiles(fileList);
     e.target.value = "";
   };
 
-  const handleImageDrop = (e: React.DragEvent) => {
+  const handleImageDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOver(false);
     if (!e.dataTransfer.files?.length) return;
-    addImageFiles(e.dataTransfer.files);
+    await addImageFiles(e.dataTransfer.files);
     e.dataTransfer.clearData();
   };
 
   /* ---------------- 카테고리 ---------------- */
 
   useEffect(() => {
-
     (async () => {
-
       try {
-
         const results = await fetchCategories(type);
 
         setCategories(results);
@@ -188,19 +267,15 @@ function WriteContent() {
         if (results.length > 0) {
           setCategory(String(results[0].id));
         }
-
       } catch (e) {
         console.error(e);
       }
-
     })();
-
   }, [type]);
 
   /* ---------------- 글 작성 ---------------- */
 
   const handleSubmit = async () => {
-
     if (submitting) return;
 
     if (!title.trim() || !content.trim()) {
@@ -224,7 +299,6 @@ function WriteContent() {
         return `<img${before}src="__BLOB_${idx}__"${after}>`;
       }
     );
-    // 실제로 사용한 void reference 방지
     void PLACEHOLDER_RE;
 
     const formData = new FormData();
@@ -236,7 +310,6 @@ function WriteContent() {
     formData.append("use_real_name", String(useRealName));
     formData.append("category", category);
 
-    // blob URL 순서와 files 배열 순서가 동일
     files.forEach((file) => {
       formData.append("new_files", file);
     });
@@ -246,7 +319,6 @@ function WriteContent() {
     }
 
     try {
-
       setSubmitting(true);
 
       const created = await createPost(formData);
@@ -289,21 +361,15 @@ function WriteContent() {
       alert("작성 완료");
 
       router.push(`/network?type=${type}`);
-
     } catch (err) {
-
       if (err instanceof AxiosError) {
         console.error(err.response?.data);
       }
 
       alert("작성 실패");
-
     } finally {
-
       setSubmitting(false);
-
     }
-
   };
 
   /* ---------------- UI ---------------- */
@@ -324,255 +390,238 @@ function WriteContent() {
       {/* 상단 헤더 */}
       <div className="sticky top-[72px] z-30 bg-white flex-shrink-0">
         <div className="max-w-4xl mx-auto w-full px-6 ">
+          {/* 상단 헤더 */}
+          <div className="flex items-center justify-between py-2.5">
+            <div className="flex items-center gap-3">
+              <button onClick={() => router.back()}>
+                <Image src="/icons/back.svg" alt="back" width={22} height={22} />
+              </button>
+              <span className="text-lg font-semibold">네트워크</span>
+            </div>
 
-        {/* 상단 헤더 */}
-        <div className="flex items-center justify-between py-2.5">
-          <div className="flex items-center gap-3">
-            <button onClick={() => router.back()}>
-              <Image src="/icons/back.svg" alt="back" width={22} height={22} />
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="bg-black text-white px-6 py-2 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {submitting && (
+                <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              )}
+              {submitting ? "게시 중..." : "완료"}
             </button>
-            <span className="text-lg font-semibold">네트워크</span>
           </div>
 
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="bg-black text-white px-6 py-2 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {submitting && (
-              <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            )}
-            {submitting ? "게시 중..." : "완료"}
-          </button>
-
-        </div>
-
-        {/* 툴바 */}
-        {editor && (
-          <div className="flex items-center flex-wrap gap-1 py-2 border-t border-b border-gray-200">
-            {/* 이미지 삽입 */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="px-2 py-1 hover:bg-gray-100 rounded"
-            >
-              <Image
+          {/* 툴바 */}
+          {editor && (
+            <div className="flex items-center flex-wrap gap-1 py-2 border-t border-b border-gray-200">
+              {/* 이미지 삽입 */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-2 py-1 hover:bg-gray-100 rounded"
+              >
+                <Image
                   src="/icons/image_upload.svg"
                   alt="upload"
                   width={22}
                   height={22}
+                />
+              </button>
+
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden"
               />
-            </button>
 
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-
-            <input
-              type="color"
-              onInput={(e) =>
+              <input
+                type="color"
+                onInput={(e) =>
                   editor
-                  ?.chain()
-                  .focus()
-                  .setColor((e.target as HTMLInputElement).value)
-                  .run()
-              }
-              className="w-6 h-6 border-none cursor-pointer"
-            />
+                    ?.chain()
+                    .focus()
+                    .setColor((e.target as HTMLInputElement).value)
+                    .run()
+                }
+                className="w-6 h-6 border-none cursor-pointer"
+              />
 
-            {/* 텍스트 스타일 */}
-            <select
-              onChange={(e) =>
-                editor
-                  ?.chain()
-                  .focus()
-                  .setMark("textStyle", { fontSize: e.target.value })
-                  .run()
-              }
-              className="border rounded px-2 py-1 text-sm"
-            >
-              <option value="14px">14</option>
-              <option value="16px">16</option>
-              <option value="18px">18</option>
-              <option value="24px">24</option>
-            </select>
-
-            <button 
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              className="p-3 hover:bg-gray-100 rounded">
-              <b>B</b>
-            </button>
-
-            <button 
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              className="p-3 hover:bg-gray-100 rounded">
-              <i>I</i>
-            </button>
-
-            <button 
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              className="p-3 hover:bg-gray-100 rounded">
-              <u>U</u>
-            </button>
-
-            <button 
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              className="p-3 hover:bg-gray-100 rounded">
-              <s>S</s>
-            </button>
-
-            <button
-              onClick={() => editor.chain().focus().setHorizontalRule().run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              ─
-            </button>
-
-            {/* 정렬 */}
-            <button
-              onClick={() => editor.chain().focus().setTextAlign("left").run()}
-              className="p-3 hover:bg-gray-100 rounded"
+              {/* 텍스트 스타일 */}
+              <select
+                onChange={(e) =>
+                  editor
+                    ?.chain()
+                    .focus()
+                    .setMark("textStyle", { fontSize: e.target.value })
+                    .run()
+                }
+                className="border rounded px-2 py-1 text-sm"
               >
-              <Image src="/icons/left.svg" alt="left" width={18} height={18} />
-            </button>
+                <option value="14px">14</option>
+                <option value="16px">16</option>
+                <option value="18px">18</option>
+                <option value="24px">24</option>
+              </select>
 
-            <button
-              onClick={() => editor.chain().focus().setTextAlign("center").run()}
-              className="p-3 hover:bg-gray-100 rounded"
+              <button
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                className="p-3 hover:bg-gray-100 rounded"
               >
-              <Image src="/icons/center.svg" alt="center" width={18} height={18} />
-            </button>
+                <b>B</b>
+              </button>
 
-            <button
-              onClick={() => editor.chain().focus().setTextAlign("right").run()}
-              className="p-3 hover:bg-gray-100 rounded"
+              <button
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                className="p-3 hover:bg-gray-100 rounded"
               >
-              <Image src="/icons/right.svg" alt="right" width={18} height={18} />
-            </button>
+                <i>I</i>
+              </button>
 
-            <button
-              onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              <Image src="/icons/both.svg" alt="justify" width={18} height={18} />
-            </button>
+              <button
+                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                className="p-3 hover:bg-gray-100 rounded"
+              >
+                <u>U</u>
+              </button>
 
-            {/* 링크 */}
-            <button
-            onClick={() => {
-              const url = prompt("링크를 입력하세요")
-              if (!url) return
-              editor
-                ?.chain()
-                .focus()
-                .insertContent({
-                  type: "linkCard",
-                  attrs: { url }
-                })
-                .run()
-              }
-            }
-            className="p-3 hover:bg-gray-100 rounded"
-          >
-            🔗
-          </button>
+              <button
+                onClick={() => editor.chain().focus().toggleStrike().run()}
+                className="p-3 hover:bg-gray-100 rounded"
+              >
+                <s>S</s>
+              </button>
 
-          </div>
+              <button
+                onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                className="p-3 hover:bg-gray-100 rounded"
+              >
+                ─
+              </button>
 
-        )}
+              {/* 정렬 */}
+              <button
+                onClick={() => editor.chain().focus().setTextAlign("left").run()}
+                className="p-3 hover:bg-gray-100 rounded"
+              >
+                <Image src="/icons/left.svg" alt="left" width={18} height={18} />
+              </button>
+
+              <button
+                onClick={() => editor.chain().focus().setTextAlign("center").run()}
+                className="p-3 hover:bg-gray-100 rounded"
+              >
+                <Image src="/icons/center.svg" alt="center" width={18} height={18} />
+              </button>
+
+              <button
+                onClick={() => editor.chain().focus().setTextAlign("right").run()}
+                className="p-3 hover:bg-gray-100 rounded"
+              >
+                <Image src="/icons/right.svg" alt="right" width={18} height={18} />
+              </button>
+
+              <button
+                onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+                className="p-3 hover:bg-gray-100 rounded"
+              >
+                <Image src="/icons/both.svg" alt="justify" width={18} height={18} />
+              </button>
+
+              {/* 링크 */}
+              <button
+                onClick={() => {
+                  const url = prompt("링크를 입력하세요");
+                  if (!url) return;
+                  editor
+                    ?.chain()
+                    .focus()
+                    .insertContent({
+                      type: "linkCard",
+                      attrs: { url },
+                    })
+                    .run();
+                }}
+                className="p-3 hover:bg-gray-100 rounded"
+              >
+                🔗
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 max-w-4xl mx-auto w-full pb-20">
-      {/* 카테고리 */}
+        {/* 카테고리 */}
+        <div className="mt-12 mb-4">
+          <select
+            value={category ?? ""}
+            onChange={(e) => setCategory(e.target.value)}
+            className="px-4 py-2 bg-gray-100 rounded-md text-sm outline-none"
+          >
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <div className="mt-12 mb-4">
-
-        <select
-          value={category ?? ""}
-          onChange={(e) => setCategory(e.target.value)}
-          className="px-4 py-2 bg-gray-100 rounded-md text-sm outline-none"
-        >
-
-          {categories.map((cat) => (
-
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-
-          ))}
-
-        </select>
-
-      </div>
-
-      {/* 제목 */}
-
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="제목을 입력하세요"
-        className="w-full text-3xl font-normal border-b pb-4 mb-6 outline-none placeholder-gray-300"
-      />
-
-      {/* 에디터 - 이미지 드래그 앤 드롭 지원 */}
-      <div
-        className={`min-h-[350px] mb-8 rounded-lg border-2 border-dashed transition-colors ${
-          isDraggingOver ? "border-blue-400 bg-blue-50/50" : "border-transparent"
-        }`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDraggingOver(true);
-        }}
-        onDragLeave={(e) => {
-          e.preventDefault();
-          setIsDraggingOver(false);
-        }}
-        onDrop={handleImageDrop}
-      >
-        <EditorContent
-          editor={editor}
-          className="outline-none w-full prose max-w-none"
-        />
-      </div>
-
-      {/* 실명 */}
-      <div className="flex items-center gap-2 mt-24 pt-4 pb-6 border-t border-gray-200">
+        {/* 제목 */}
         <input
-          type="checkbox"
-          id="use-real-name"
-          checked={useRealName}
-          onChange={() => setUseRealName((prev) => !prev)}
-          className="w-4 h-4 accent-[#2B7FFF]"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="제목을 입력하세요"
+          className="w-full text-3xl font-normal border-b pb-4 mb-6 outline-none placeholder-gray-300"
         />
-        <label htmlFor="use-real-name" className="text-sm text-gray-500 cursor-pointer">
-          실명으로 작성
-        </label>
-      </div>
 
-      </div>
+        {/* 에디터 - 이미지 드래그 앤 드롭 지원 */}
+        <div
+          className={`min-h-[350px] mb-8 rounded-lg border-2 border-dashed transition-colors ${
+            isDraggingOver ? "border-blue-400 bg-blue-50/50" : "border-transparent"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingOver(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setIsDraggingOver(false);
+          }}
+          onDrop={handleImageDrop}
+        >
+          <EditorContent
+            editor={editor}
+            className="outline-none w-full prose max-w-none"
+          />
+        </div>
 
+        {/* 실명 */}
+        <div className="flex items-center gap-2 mt-24 pt-4 pb-6 border-t border-gray-200">
+          <input
+            type="checkbox"
+            id="use-real-name"
+            checked={useRealName}
+            onChange={() => setUseRealName((prev) => !prev)}
+            className="w-4 h-4 accent-[#2B7FFF]"
+          />
+          <label htmlFor="use-real-name" className="text-sm text-gray-500 cursor-pointer">
+            실명으로 작성
+          </label>
+        </div>
+      </div>
     </div>
-
   );
-
 }
 
 export default function WritePage() {
-
   return (
-
     <Suspense fallback={<div className="p-10">로딩...</div>}>
       <WriteContent />
     </Suspense>
-
   );
-
 }
