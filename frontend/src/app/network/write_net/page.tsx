@@ -322,167 +322,169 @@ function WriteContent() {
         </div>
       )}
       {/* 상단 헤더 */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="sticky top-0 z-50 bg-white">
+        <div className="flex items-center justify-between mb-6">
 
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.back()}>
-            <Image src="/icons/back.svg" alt="back" width={22} height={22} />
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.back()}>
+              <Image src="/icons/back.svg" alt="back" width={22} height={22} />
+            </button>
+            <span className="text-lg font-semibold">네트워크</span>
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="bg-black text-white px-6 py-2 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {submitting && (
+              <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {submitting ? "게시 중..." : "완료"}
           </button>
-          <span className="text-lg font-semibold">네트워크</span>
+
         </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="bg-black text-white px-6 py-2 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {submitting && (
-            <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          )}
-          {submitting ? "게시 중..." : "완료"}
-        </button>
+        {/* 툴바 */}
+        {editor && (
+          <div className="flex items-center gap-3 border-b py-3 text-gray-700 text-sm">
+            {/* 이미지 삽입 */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-2 py-1 hover:bg-gray-100 rounded"
+            >
+              <Image
+                  src="/icons/image_upload.svg"
+                  alt="upload"
+                  width={22}
+                  height={22}
+              />
+            </button>
 
-      </div>
-
-      {/* 툴바 */}
-      {editor && (
-        <div className="flex items-center gap-3 border-b py-3 text-gray-700 text-sm">
-          {/* 이미지 삽입 */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="px-2 py-1 hover:bg-gray-100 rounded"
-          >
-            <Image
-                src="/icons/image_upload.svg"
-                alt="upload"
-                width={22}
-                height={22}
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              className="hidden"
             />
-          </button>
 
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            onChange={handleImageUpload}
-            className="hidden"
-          />
+            <input
+              type="color"
+              onInput={(e) =>
+                  editor
+                  ?.chain()
+                  .focus()
+                  .setColor((e.target as HTMLInputElement).value)
+                  .run()
+              }
+              className="w-6 h-6 border-none cursor-pointer"
+            />
 
-          <input
-            type="color"
-            onInput={(e) =>
+            {/* 텍스트 스타일 */}
+            <select
+              onChange={(e) =>
                 editor
-                ?.chain()
-                .focus()
-                .setColor((e.target as HTMLInputElement).value)
-                .run()
-            }
-            className="w-6 h-6 border-none cursor-pointer"
-          />
+                  ?.chain()
+                  .focus()
+                  .setMark("textStyle", { fontSize: e.target.value })
+                  .run()
+              }
+              className="border rounded px-2 py-1 text-sm"
+            >
+              <option value="14px">14</option>
+              <option value="16px">16</option>
+              <option value="18px">18</option>
+              <option value="24px">24</option>
+            </select>
 
-          {/* 텍스트 스타일 */}
-          <select
-            onChange={(e) =>
+            <button 
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              className="p-3 hover:bg-gray-100 rounded">
+              <b>B</b>
+            </button>
+
+            <button 
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              className="p-3 hover:bg-gray-100 rounded">
+              <i>I</i>
+            </button>
+
+            <button 
+              onClick={() => editor.chain().focus().toggleUnderline().run()}
+              className="p-3 hover:bg-gray-100 rounded">
+              <u>U</u>
+            </button>
+
+            <button 
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+              className="p-3 hover:bg-gray-100 rounded">
+              <s>S</s>
+            </button>
+
+            <button
+              onClick={() => editor.chain().focus().setHorizontalRule().run()}
+              className="p-3 hover:bg-gray-100 rounded"
+            >
+              ─
+            </button>
+
+            {/* 정렬 */}
+            <button
+              onClick={() => editor.chain().focus().setTextAlign("left").run()}
+              className="p-3 hover:bg-gray-100 rounded"
+              >
+              <Image src="/icons/left.svg" alt="left" width={18} height={18} />
+            </button>
+
+            <button
+              onClick={() => editor.chain().focus().setTextAlign("center").run()}
+              className="p-3 hover:bg-gray-100 rounded"
+              >
+              <Image src="/icons/center.svg" alt="center" width={18} height={18} />
+            </button>
+
+            <button
+              onClick={() => editor.chain().focus().setTextAlign("right").run()}
+              className="p-3 hover:bg-gray-100 rounded"
+              >
+              <Image src="/icons/right.svg" alt="right" width={18} height={18} />
+            </button>
+
+            <button
+              onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+              className="p-3 hover:bg-gray-100 rounded"
+            >
+              <Image src="/icons/both.svg" alt="justify" width={18} height={18} />
+            </button>
+
+            {/* 링크 */}
+            <button
+            onClick={() => {
+              const url = prompt("링크를 입력하세요")
+              if (!url) return
               editor
                 ?.chain()
                 .focus()
-                .setMark("textStyle", { fontSize: e.target.value })
+                .insertContent({
+                  type: "linkCard",
+                  attrs: { url }
+                })
                 .run()
+              }
             }
-            className="border rounded px-2 py-1 text-sm"
-          >
-            <option value="14px">14</option>
-            <option value="16px">16</option>
-            <option value="18px">18</option>
-            <option value="24px">24</option>
-          </select>
-
-          <button 
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className="p-3 hover:bg-gray-100 rounded">
-            <b>B</b>
-          </button>
-
-          <button 
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            className="p-3 hover:bg-gray-100 rounded">
-            <i>I</i>
-          </button>
-
-          <button 
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className="p-3 hover:bg-gray-100 rounded">
-            <u>U</u>
-          </button>
-
-          <button 
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            className="p-3 hover:bg-gray-100 rounded">
-            <s>S</s>
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
             className="p-3 hover:bg-gray-100 rounded"
           >
-            ─
+            🔗
           </button>
 
-          {/* 정렬 */}
-          <button
-            onClick={() => editor.chain().focus().setTextAlign("left").run()}
-            className="p-3 hover:bg-gray-100 rounded"
-            >
-            <Image src="/icons/left.svg" alt="left" width={18} height={18} />
-          </button>
+          </div>
 
-          <button
-            onClick={() => editor.chain().focus().setTextAlign("center").run()}
-            className="p-3 hover:bg-gray-100 rounded"
-            >
-            <Image src="/icons/center.svg" alt="center" width={18} height={18} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().setTextAlign("right").run()}
-            className="p-3 hover:bg-gray-100 rounded"
-            >
-            <Image src="/icons/right.svg" alt="right" width={18} height={18} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-            className="p-3 hover:bg-gray-100 rounded"
-          >
-            <Image src="/icons/both.svg" alt="justify" width={18} height={18} />
-          </button>
-
-          {/* 링크 */}
-          <button
-          onClick={() => {
-            const url = prompt("링크를 입력하세요")
-            if (!url) return
-            editor
-              ?.chain()
-              .focus()
-              .insertContent({
-                type: "linkCard",
-                attrs: { url }
-              })
-              .run()
-            }
-          }
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          🔗
-        </button>
-
-        </div>
-
-      )}
+        )}
+      </div>
 
       {/* 카테고리 */}
 
