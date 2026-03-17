@@ -299,6 +299,11 @@ export default function NetworkDetailPage() {
         {post.title}
       </h1>
 
+      {post.type === "qa" ? (
+        <div className="whitespace-pre-line text-[15px] font-normal text-[#364153] mb-6">
+          {post.content ?? ""}
+        </div>
+      ) : (
       <div
         className="text-[15px] text-[#364153] mb-6 leading-relaxed [&>p]:mb-4 [&_li>p]:mb-4 [&>p:empty]:h-4 [&_li>p:empty]:h-4 [&>h2]:mt-6 [&>hr]:my-6"
         dangerouslySetInnerHTML={{
@@ -362,6 +367,7 @@ export default function NetworkDetailPage() {
           })(),
         }}
       />
+      )}
 
       <div className="flex justify-end mt-8">
         <button
