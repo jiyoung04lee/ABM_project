@@ -15,9 +15,7 @@ interface Props {
 export default function HoverProfileCard({ name, grade, profileImage, userId, isNickname }: Props) {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-
-  console.log("🔥 hover data:", { name, isNickname });
-
+  
   useEffect(() => {
     api
       .get("users/me/")
