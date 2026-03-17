@@ -309,7 +309,7 @@ function WriteContent() {
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="max-w-4xl mx-auto px-6 pt-10 pb-6 flex flex-col min-h-screen relative">
+    <div className="h-[100dvh] flex flex-col overflow-hidden">
       {submitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white rounded-2xl px-8 py-6 shadow-xl flex flex-col items-center gap-3">
@@ -322,8 +322,8 @@ function WriteContent() {
         </div>
       )}
       {/* 상단 헤더 */}
-      <div className="sticky top-0 z-50 bg-white">
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 bg-white z-50">
+        <div className="flex items-center justify-between px-6 py-4 border-b">
 
           <div className="flex items-center gap-3">
             <button onClick={() => router.back()}>
@@ -350,7 +350,7 @@ function WriteContent() {
 
         {/* 툴바 */}
         {editor && (
-          <div className="flex items-center gap-3 border-b py-3 text-gray-700 text-sm">
+          <div className="flex items-center gap-3 px-6 py-3 border-b">
             {/* 이미지 삽입 */}
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -486,6 +486,7 @@ function WriteContent() {
         )}
       </div>
 
+      <div className="flex-1 overflow-y-auto px-6 max-w-4xl mx-auto w-full">
       {/* 카테고리 */}
 
       <div className="mt-6 mb-4">
@@ -551,6 +552,8 @@ function WriteContent() {
         <label htmlFor="use-real-name" className="text-sm text-gray-500 cursor-pointer">
           실명으로 작성
         </label>
+      </div>
+
       </div>
 
     </div>
