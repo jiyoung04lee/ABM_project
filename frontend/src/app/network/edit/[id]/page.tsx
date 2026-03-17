@@ -295,9 +295,9 @@ function EditContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen pt-0 bg-white overflow-hidden">
+    <div className="flex flex-col h-screen pt-[1px] bg-white ">
       
-      <div className="sticky top-0 z-30 bg-white flex-shrink-0">
+      <div className="sticky top-[72px] z-30 bg-white flex-shrink-0">
         <div className="max-w-4xl mx-auto w-full px-6">
           <div className="flex items-center justify-between py-2.5">
             <div className="flex items-center gap-3">
@@ -317,7 +317,7 @@ function EditContent() {
 
           {editor && (
             <div className="flex items-center flex-wrap gap-1 py-2 border-t border-b border-gray-200">
-
+            
             {/* 이미지 업로드 */}
             <button
               onClick={() => fileInputRef.current?.click()}
