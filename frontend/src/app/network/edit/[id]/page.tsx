@@ -297,163 +297,166 @@ function EditContent() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 pt-10 flex flex-col min-h-screen">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.back()}>
-            <Image src="/icons/back.svg" alt="back" width={22} height={22} />
+      
+      <div className="sticky top-0 z-50 bg-white">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.back()}>
+              <Image src="/icons/back.svg" alt="back" width={22} height={22} />
+            </button>
+            <span className="text-lg font-semibold">네트워크 글 수정</span>
+          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="bg-black text-white px-6 py-2 rounded-md text-sm"
+          >
+            {submitting ? "수정 중..." : "완료"}
           </button>
-          <span className="text-lg font-semibold">네트워크 글 수정</span>
         </div>
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="bg-black text-white px-6 py-2 rounded-md text-sm"
-        >
-          {submitting ? "수정 중..." : "완료"}
-        </button>
-      </div>
 
-      {editor && (
-        <div className="flex items-center gap-3 border-b py-3 text-gray-700 text-sm">
+        {editor && (
+          <div className="flex items-center gap-3 border-b py-3 text-gray-700 text-sm">
 
-        {/* 이미지 업로드 */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
-        >
-          <Image
-            src="/icons/image_upload.svg"
-            alt="upload"
-            width={22}
-            height={22}
+          {/* 이미지 업로드 */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-2 py-1 hover:bg-gray-100 rounded"
+          >
+            <Image
+              src="/icons/image_upload.svg"
+              alt="upload"
+              width={22}
+              height={22}
+            />
+          </button>
+
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            className="hidden"
           />
-        </button>
 
-        <input
-          type="file"
-          accept="image/*"
-          ref={fileInputRef}
-          onChange={handleImageUpload}
-          className="hidden"
-        />
+          {/* 색상 */}
+          <input
+            type="color"
+            onInput={(e) =>
+              editor
+                ?.chain()
+                .focus()
+                .setColor((e.target as HTMLInputElement).value)
+                .run()
+            }
+            className="w-6 h-6 border-none cursor-pointer"
+          />
 
-        {/* 색상 */}
-        <input
-          type="color"
-          onInput={(e) =>
-            editor
-              ?.chain()
-              .focus()
-              .setColor((e.target as HTMLInputElement).value)
-              .run()
-          }
-          className="w-6 h-6 border-none cursor-pointer"
-        />
+          {/* 글씨 크기 */}
+          <select
+            onChange={(e) =>
+              editor
+                ?.chain()
+                .focus()
+                .setMark("textStyle", { fontSize: e.target.value })
+                .run()
+            }
+            className="border rounded px-2 py-1 text-sm"
+          >
+            <option value="14px">14</option>
+            <option value="16px">16</option>
+            <option value="18px">18</option>
+            <option value="24px">24</option>
+          </select>
 
-        {/* 글씨 크기 */}
-        <select
-          onChange={(e) =>
-            editor
-              ?.chain()
-              .focus()
-              .setMark("textStyle", { fontSize: e.target.value })
-              .run()
-          }
-          className="border rounded px-2 py-1 text-sm"
-        >
-          <option value="14px">14</option>
-          <option value="16px">16</option>
-          <option value="18px">18</option>
-          <option value="24px">24</option>
-        </select>
+          {/* 텍스트 스타일 */}
+          <button
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            <b>B</b>
+          </button>
 
-        {/* 텍스트 스타일 */}
-        <button
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          <b>B</b>
-        </button>
+          <button
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            <i>I</i>
+          </button>
 
-        <button
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          <i>I</i>
-        </button>
+          <button
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            <u>U</u>
+          </button>
 
-        <button
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          <u>U</u>
-        </button>
+          <button
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            <s>S</s>
+          </button>
 
-        <button
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          <s>S</s>
-        </button>
+          {/* 구분선 */}
+          <button
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            ─
+          </button>
 
-        {/* 구분선 */}
-        <button
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          ─
-        </button>
+          {/* 정렬 */}
+          <button
+            onClick={() => editor.chain().focus().setTextAlign("left").run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            <Image src="/icons/left.svg" alt="left" width={18} height={18} />
+          </button>
 
-        {/* 정렬 */}
-        <button
-          onClick={() => editor.chain().focus().setTextAlign("left").run()}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          <Image src="/icons/left.svg" alt="left" width={18} height={18} />
-        </button>
+          <button
+            onClick={() => editor.chain().focus().setTextAlign("center").run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            <Image src="/icons/center.svg" alt="center" width={18} height={18} />
+          </button>
 
-        <button
-          onClick={() => editor.chain().focus().setTextAlign("center").run()}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          <Image src="/icons/center.svg" alt="center" width={18} height={18} />
-        </button>
+          <button
+            onClick={() => editor.chain().focus().setTextAlign("right").run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            <Image src="/icons/right.svg" alt="right" width={18} height={18} />
+          </button>
 
-        <button
-          onClick={() => editor.chain().focus().setTextAlign("right").run()}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          <Image src="/icons/right.svg" alt="right" width={18} height={18} />
-        </button>
+          <button
+            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            <Image src="/icons/both.svg" alt="justify" width={18} height={18} />
+          </button>
 
-        <button
-          onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          <Image src="/icons/both.svg" alt="justify" width={18} height={18} />
-        </button>
+          {/* 링크 */}
+          <button
+            onClick={() => {
+              const url = prompt("링크를 입력하세요")
+              if (!url) return
+              editor
+                ?.chain()
+                .focus()
+                .insertContent({
+                  type: "linkCard",
+                  attrs: { url }
+                })
+                .run()
+            }}
+            className="p-3 hover:bg-gray-100 rounded"
+          >
+            🔗
+          </button>
 
-        {/* 링크 */}
-        <button
-          onClick={() => {
-            const url = prompt("링크를 입력하세요")
-            if (!url) return
-            editor
-              ?.chain()
-              .focus()
-              .insertContent({
-                type: "linkCard",
-                attrs: { url }
-              })
-              .run()
-          }}
-          className="p-3 hover:bg-gray-100 rounded"
-        >
-          🔗
-        </button>
-
+        </div>
+        )}
       </div>
-      )}
 
       <div className="mt-6 mb-4">
         <select
