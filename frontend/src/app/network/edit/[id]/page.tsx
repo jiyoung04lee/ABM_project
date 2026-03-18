@@ -5,11 +5,7 @@ import { Suspense } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import {
-  fetchPostDetail,
-  fetchCategories,
-  updatePost,
-} from "@/shared/api/network";
+import { fetchPostDetail, fetchCategories, updatePost } from "@/shared/api/network";
 import { API_BASE } from "@/shared/api/api";
 
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -17,8 +13,6 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
-import ImageExtension from "@tiptap/extension-image";
-import ResizeImage from "tiptap-extension-resize-image";
 import Dropcursor from "@tiptap/extension-dropcursor";
 import Gapcursor from "@tiptap/extension-gapcursor";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -26,6 +20,7 @@ import Color from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import { LinkCard } from "@/features/network/ui/LinkCard";
+import ResizableImage from "@/shared/editor/ResizableImage";
 
 type NetworkType = "student" | "graduate" | "qa";
 
@@ -36,6 +31,16 @@ interface Category {
   slug: string;
 }
 
+interface NewImageEntry {
+  file: File;
+  url: string; // blob URL
+}
+
+interface ExistingImageEntry {
+  id: number;
+  url: string; // 서버 URL
+}
+
 const FontSize = TextStyle.extend({
   addAttributes() {
     return {
@@ -43,18 +48,23 @@ const FontSize = TextStyle.extend({
         default: null,
         parseHTML: (element) => element.style.fontSize,
         renderHTML: (attributes) => {
-          if (!attributes.fontSize) {
-            return {};
-          }
-
-          return {
-            style: `font-size: ${attributes.fontSize}`,
-          };
+          if (!attributes.fontSize) return {};
+          return { style: `font-size: ${attributes.fontSize}` };
         },
       },
     };
   },
 });
+
+function extractImageSrcs(html: string): string[] {
+  const srcs: string[] = [];
+  const re = /<img[^>]*\ssrc="([^"]+)"[^>]*\/?>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    srcs.push(m[1]);
+  }
+  return srcs;
+}
 
 function EditContent() {
   const router = useRouter();
@@ -69,8 +79,10 @@ function EditContent() {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [useRealName, setUseRealName] = useState(false);
 
-  const [newFiles, setNewFiles] = useState<File[]>([]);
-  const [existingFileIds, setExistingFileIds] = useState<number[]>([]);
+  // 기존 서버 이미지: id + url 로 관리 (삭제 버튼 클릭 시 목록에서 제거)
+  const [existingImages, setExistingImages] = useState<ExistingImageEntry[]>([]);
+  // 새로 업로드하는 이미지: file + blob url 로 관리
+  const [newImages, setNewImages] = useState<NewImageEntry[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -79,49 +91,68 @@ function EditContent() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // onDelete ref: 에디터 재생성 없이 항상 최신 콜백 유지
+  const onDeleteRef = useRef<(src: string) => void>(() => {});
+  useEffect(() => {
+    onDeleteRef.current = (src: string) => {
+      if (src.startsWith("blob:")) {
+        // 새로 업로드한 이미지 삭제
+        setNewImages((prev) => prev.filter((img) => img.url !== src));
+        URL.revokeObjectURL(src);
+      } else {
+        // 기존 서버 이미지 삭제 (저장 시 existing_files 에서 빠짐)
+        setExistingImages((prev) => prev.filter((img) => img.url !== src));
+      }
+    };
+  }, []);
+
+  /* ---------------- TipTap Editor ---------------- */
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       HorizontalRule,
       LinkCard,
-      Link.configure({
-        openOnClick: true,
-        autolink: true,
-        linkOnPaste: true,
-      }),
+      Link.configure({ openOnClick: true, autolink: true, linkOnPaste: true }),
+      Underline,
       Gapcursor,
       Dropcursor,
       FontSize,
-      Color.configure({
-        types: ["textStyle"],
+      Color.configure({ types: ["textStyle"] }),
+      ResizableImage.configure({
+        HTMLAttributes: { class: "editor-image" },
+        onDelete: (src) => onDeleteRef.current(src),
       }),
-      ImageExtension.configure({
-        inline: false,
-        allowBase64: true,
-        HTMLAttributes: {
-          class: "editor-image",
-        },
-      }),
-      ResizeImage,
-      TextAlign.configure({
-        types: ["heading", "paragraph"],
-      }),
-      Placeholder.configure({
-        placeholder: "내용을 입력하세요",
-      }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Placeholder.configure({ placeholder: "내용을 입력하세요" }),
     ],
-
     content: "",
     immediatelyRender: false,
     onUpdate: ({ editor: e }) => {
-      setContent(e.getHTML());
+      const html = e.getHTML();
+      setContent(html);
+
+      // 에디터에서 직접 삭제/이동한 이미지까지 상태 동기화
+      const orderedSrcs = extractImageSrcs(html);
+      const srcSet = new Set(orderedSrcs);
+
+      setNewImages((prev) => {
+        const next = prev.filter((img) => srcSet.has(img.url));
+        const removed = prev.filter((img) => !srcSet.has(img.url));
+        removed.forEach((img) => {
+          if (img.url.startsWith("blob:")) URL.revokeObjectURL(img.url);
+        });
+        return next;
+      });
+
+      setExistingImages((prev) => prev.filter((img) => srcSet.has(img.url)));
     },
     onSelectionUpdate: ({ editor: e }) => {
-      const attrs = e.getAttributes("textStyle");
-      setCurrentFontSize(attrs.fontSize || "16px");
+      setCurrentFontSize(e.getAttributes("textStyle").fontSize || "16px");
     },
   });
 
+  /* ---------------- 글 불러오기 ---------------- */
   useEffect(() => {
     (async () => {
       try {
@@ -132,46 +163,51 @@ function EditContent() {
         setUseRealName(post.use_real_name ?? false);
 
         if (post.category) setCategory(String(post.category));
-        if (post.files) {
-          setExistingFileIds(post.files.map((f) => f.id));
-        }
 
-        let contentToSet = post.content ?? "";
+        // 기존 이미지: { id, url } 형태로 변환
         if (post.files?.length) {
           const base = API_BASE.replace(/\/$/, "");
-          const imageFiles = post.files
+          const imgs: ExistingImageEntry[] = post.files
             .filter((f: { file_type: string }) => f.file_type === "image")
-            .sort((a: { order: number }, b: { order: number }) => a.order - b.order);
-          imageFiles.forEach((f: { file: string }, idx: number) => {
-            const raw = f.file ?? "";
-            const realUrl =
-              raw && (raw.startsWith("http://") || raw.startsWith("https://"))
-                ? raw
-                : raw
-                  ? `${base}${raw.startsWith("/") ? raw : `/${raw}`}`
-                  : "";
-            if (realUrl)
-              contentToSet = contentToSet.replace(
-                new RegExp(`src="__BLOB_${idx}__"`, "g"),
-                `src="${realUrl}"`
-              );
+            .sort((a: { order: number }, b: { order: number }) => a.order - b.order)
+            .map((f: { id: number; file: string }) => {
+              const raw = f.file ?? "";
+              const url =
+                raw.startsWith("http://") || raw.startsWith("https://")
+                  ? raw
+                  : raw ? `${base}${raw.startsWith("/") ? raw : `/${raw}`}` : "";
+              return { id: f.id, url };
+            })
+            .filter((img: ExistingImageEntry) => img.url);
+          setExistingImages(imgs);
+
+          // 본문의 __BLOB_N__ 을 실제 서버 URL 로 치환
+          let contentToSet = post.content ?? "";
+          imgs.forEach((img: ExistingImageEntry, idx: number) => {
+            contentToSet = contentToSet.replace(
+              new RegExp(`src="__BLOB_${idx}__"`, "g"),
+              `src="${img.url}"`
+            );
           });
+          setContent(contentToSet);
+          if (editor) editor.commands.setContent(contentToSet);
+        } else {
+          setContent(post.content ?? "");
+          if (editor) editor.commands.setContent(post.content ?? "");
         }
-        setContent(contentToSet);
-        if (editor) {
-          editor.commands.setContent(contentToSet);
-        }
+
         setLoaded(true);
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, editor]);
 
+  // editor 준비 후 content 재주입 (타이밍 보정)
   useEffect(() => {
     if (loaded && editor && content && !editor.getHTML().includes("<img")) {
       editor.commands.setContent(content);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, editor]);
 
   useEffect(() => {
@@ -181,29 +217,22 @@ function EditContent() {
     })();
   }, [postType]);
 
+  /* ---------------- 이미지 삽입 ---------------- */
+
   const addImageFiles = (fileList: FileList | File[]) => {
     if (!editor) return;
-    const imageFiles = Array.from(fileList).filter((f) =>
-      f.type.startsWith("image/")
-    );
+    const imageFiles = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
     if (imageFiles.length === 0) return;
-
     imageFiles.forEach((file) => {
       const url = URL.createObjectURL(file);
-      editor
-        .chain()
-        .focus()
-        .setImage({ src: url })
-        .createParagraphNear()
-        .run();
-      setNewFiles((prev) => [...prev, file]);
+      editor.chain().focus().setImage({ src: url }).createParagraphNear().run();
+      setNewImages((prev) => [...prev, { file, url }]);
     });
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = e.target.files;
-    if (!fileList) return;
-    addImageFiles(fileList);
+    if (!e.target.files) return;
+    addImageFiles(e.target.files);
     e.target.value = "";
   };
 
@@ -216,29 +245,29 @@ function EditContent() {
     e.dataTransfer.clearData();
   };
 
+  /* ---------------- 저장 ---------------- */
+
   const handleSubmit = async () => {
     if (submitting) return;
-    if (!title.trim() || !content.trim()) {
-      alert("제목과 내용을 입력해주세요.");
-      return;
-    }
-    if (!category) {
-      alert("카테고리를 선택해주세요.");
-      return;
-    }
+    if (!title.trim() || !content.trim()) { alert("제목과 내용을 입력해주세요."); return; }
+    if (!category) { alert("카테고리를 선택해주세요."); return; }
 
     setSubmitting(true);
 
     try {
-      const blobUrls: string[] = [];
+      // 1) HTML에서 blob URL을 등장 순서대로 수집하면서 플레이스홀더로 교체 (순서 버그 수정)
+      const orderedBlobUrls: string[] = [];
+      let blobIdx = 0;
       let contentToSave = content.replace(
         /<img([^>]*?)src="(blob:[^"]+)"([^>]*?)\/?>/gi,
-        (_match, before, blobUrl, after) => {
-          const idx = blobUrls.length;
-          blobUrls.push(blobUrl);
-          return `<img${before}src="__BLOB_${idx}__"${after}>`;
+        (_m, before: string, blobUrl: string, after: string) => {
+          orderedBlobUrls.push(blobUrl);
+          return `<img${before}src="__BLOB_${blobIdx++}__"${after}>`;
         }
       );
+
+      // 2) blob URL → File 매핑
+      const blobToFile = new Map<string, File>(newImages.map((img) => [img.url, img.file]));
 
       const formData = new FormData();
       formData.append("type", postType);
@@ -248,50 +277,40 @@ function EditContent() {
       formData.append("use_real_name", String(useRealName));
       formData.append("category", category);
 
-      existingFileIds.forEach((id) => {
-        formData.append("existing_files", String(id));
-      });
-      newFiles.forEach((file) => {
-        formData.append("new_files", file);
+      // 3) 유지할 기존 이미지 id (삭제된 것은 제외됨)
+      existingImages.forEach((img) => formData.append("existing_files", String(img.id)));
+
+      // 4) 새 이미지: HTML 등장 순서대로 (순서 버그 핵심 수정)
+      orderedBlobUrls.forEach((blobUrl) => {
+        const file = blobToFile.get(blobUrl);
+        if (file) formData.append("new_files", file);
       });
 
       const updated = await updatePost(postId, formData);
 
-      if (blobUrls.length > 0 && updated.files && updated.files.length > 0) {
-        const imageFiles = updated.files
-          .filter((f: any) => f.file_type === "image")
-          .sort((a: any, b: any) => a.order - b.order);
+      // 6) 업로드된 새 이미지 URL 로 __BLOB_N__ 치환 (2차 patch)
+      if (orderedBlobUrls.length > 0 && updated.files?.length) {
         const base = API_BASE.replace(/\/$/, "");
-
-        const newImageFiles = imageFiles.filter(
-          (f: any) => !existingFileIds.includes(f.id)
-        );
+        const existingIds = new Set(existingImages.map((img) => img.id));
+        const uploadedFiles = updated.files
+          .filter((f: { file_type: string }) => f.file_type === "image")
+          .filter((f: { id: number }) => !existingIds.has(f.id))
+          .sort((a: { order: number }, b: { order: number }) => a.order - b.order);
 
         let fixedContent = contentToSave;
-        blobUrls.forEach((_, idx) => {
-          const raw = newImageFiles[idx]?.file ?? "";
+        orderedBlobUrls.forEach((_, idx) => {
+          const raw = uploadedFiles[idx]?.file ?? "";
           const realUrl = raw
-            ? raw.startsWith("http://") || raw.startsWith("https://")
-              ? raw
-              : `${base}${raw.startsWith("/") ? raw : `/${raw}`}`
+            ? raw.startsWith("http://") || raw.startsWith("https://") ? raw : `${base}${raw.startsWith("/") ? raw : `/${raw}`}`
             : "";
-          fixedContent = fixedContent.replace(
-            `src="__BLOB_${idx}__"`,
-            `src="${realUrl}"`
-          );
+          fixedContent = fixedContent.replace(`src="__BLOB_${idx}__"`, `src="${realUrl}"`);
         });
-
-        fixedContent = fixedContent.replace(
-          /<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi,
-          ""
-        );
+        fixedContent = fixedContent.replace(/<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi, "");
 
         if (fixedContent !== contentToSave) {
           const patchData = new FormData();
           patchData.append("content", fixedContent);
-          updated.files.forEach((f: any) => {
-            patchData.append("existing_files", String(f.id));
-          });
+          updated.files.forEach((f: { id: number }) => patchData.append("existing_files", String(f.id)));
           await updatePost(postId, patchData);
         }
       }
@@ -307,8 +326,20 @@ function EditContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen pt-[1px] bg-white ">
-      
+    <div className="flex flex-col h-screen pt-[1px] bg-white">
+      {submitting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl px-8 py-6 shadow-xl flex flex-col items-center gap-3">
+            <svg className="animate-spin h-8 w-8 text-[#2B7FFF]" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <p className="text-sm font-semibold text-gray-700">수정 중입니다...</p>
+          </div>
+        </div>
+      )}
+
+      {/* 상단 헤더 */}
       <div className="sticky top-[72px] z-30 bg-white flex-shrink-0">
         <div className="max-w-4xl mx-auto w-full px-6">
           <div className="flex items-center justify-between py-2.5">
@@ -321,172 +352,81 @@ function EditContent() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="bg-black text-white px-6 py-2 rounded-md text-sm"
+              className="bg-black text-white px-6 py-2 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "수정 중..." : "완료"}
             </button>
           </div>
 
+          {/* 툴바 */}
           {editor && (
             <div className="flex items-center flex-wrap gap-1 py-2 border-t border-b border-gray-200">
-            
-            {/* 이미지 업로드 */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="px-2 py-1 hover:bg-gray-100 rounded"
-            >
-              <Image
-                src="/icons/image_upload.svg"
-                alt="upload"
-                width={22}
-                height={22}
+              <button onClick={() => fileInputRef.current?.click()} className="px-2 py-1 hover:bg-gray-100 rounded">
+                <Image src="/icons/image_upload.svg" alt="upload" width={22} height={22} />
+              </button>
+              <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" multiple />
+
+              <input
+                type="color"
+                onInput={(e) => editor?.chain().focus().setColor((e.target as HTMLInputElement).value).run()}
+                className="w-6 h-6 border-none cursor-pointer"
               />
-            </button>
 
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+              <select
+                value={currentFontSize}
+                onChange={(e) => { setCurrentFontSize(e.target.value); editor?.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run(); }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="14px">14</option>
+                <option value="16px">16</option>
+                <option value="18px">18</option>
+                <option value="24px">24</option>
+              </select>
 
-            {/* 색상 */}
-            <input
-              type="color"
-              onInput={(e) =>
-                editor
-                  ?.chain()
-                  .focus()
-                  .setColor((e.target as HTMLInputElement).value)
-                  .run()
-              }
-              className="w-6 h-6 border-none cursor-pointer"
-            />
+              <button onClick={() => editor.chain().focus().toggleBold().run()} className="p-3 hover:bg-gray-100 rounded"><b>B</b></button>
+              <button onClick={() => editor.chain().focus().toggleItalic().run()} className="p-3 hover:bg-gray-100 rounded"><i>I</i></button>
+              <button onClick={() => editor.chain().focus().toggleUnderline().run()} className="p-3 hover:bg-gray-100 rounded"><u>U</u></button>
+              <button onClick={() => editor.chain().focus().toggleStrike().run()} className="p-3 hover:bg-gray-100 rounded"><s>S</s></button>
+              <button onClick={() => editor.chain().focus().setHorizontalRule().run()} className="p-3 hover:bg-gray-100 rounded">─</button>
 
-            {/* 글씨 크기 */}
-            <select
-              value={currentFontSize}
-              onChange={(e) => {
-                setCurrentFontSize(e.target.value);
-                editor
-                  ?.chain()
-                  .focus()
-                  .setMark("textStyle", { fontSize: e.target.value })
-                  .run();
-              }}
-              className="border rounded px-2 py-1 text-sm"
-            >
-              <option value="14px">14</option>
-              <option value="16px">16</option>
-              <option value="18px">18</option>
-              <option value="24px">24</option>
-            </select>
+              <button onClick={() => editor.chain().focus().setTextAlign("left").run()} className="p-3 hover:bg-gray-100 rounded">
+                <Image src="/icons/left.svg" alt="left" width={18} height={18} />
+              </button>
+              <button onClick={() => editor.chain().focus().setTextAlign("center").run()} className="p-3 hover:bg-gray-100 rounded">
+                <Image src="/icons/center.svg" alt="center" width={18} height={18} />
+              </button>
+              <button onClick={() => editor.chain().focus().setTextAlign("right").run()} className="p-3 hover:bg-gray-100 rounded">
+                <Image src="/icons/right.svg" alt="right" width={18} height={18} />
+              </button>
+              <button onClick={() => editor.chain().focus().setTextAlign("justify").run()} className="p-3 hover:bg-gray-100 rounded">
+                <Image src="/icons/both.svg" alt="justify" width={18} height={18} />
+              </button>
 
-            {/* 텍스트 스타일 */}
-            <button
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              <b>B</b>
-            </button>
-
-            <button
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              <i>I</i>
-            </button>
-
-            <button
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              <u>U</u>
-            </button>
-
-            <button
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              <s>S</s>
-            </button>
-
-            {/* 구분선 */}
-            <button
-              onClick={() => editor.chain().focus().setHorizontalRule().run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              ─
-            </button>
-
-            {/* 정렬 */}
-            <button
-              onClick={() => editor.chain().focus().setTextAlign("left").run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              <Image src="/icons/left.svg" alt="left" width={18} height={18} />
-            </button>
-
-            <button
-              onClick={() => editor.chain().focus().setTextAlign("center").run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              <Image src="/icons/center.svg" alt="center" width={18} height={18} />
-            </button>
-
-            <button
-              onClick={() => editor.chain().focus().setTextAlign("right").run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              <Image src="/icons/right.svg" alt="right" width={18} height={18} />
-            </button>
-
-            <button
-              onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              <Image src="/icons/both.svg" alt="justify" width={18} height={18} />
-            </button>
-
-            {/* 링크 */}
-            <button
-              onClick={() => {
-                const url = prompt("링크를 입력하세요")
-                if (!url) return
-                editor
-                  ?.chain()
-                  .focus()
-                  .insertContent({
-                    type: "linkCard",
-                    attrs: { url }
-                  })
-                  .run()
-              }}
-              className="p-3 hover:bg-gray-100 rounded"
-            >
-              🔗
-            </button>
-
-          </div>
+              <button
+                onClick={() => {
+                  const url = prompt("링크를 입력하세요");
+                  if (!url) return;
+                  editor?.chain().focus().insertContent({ type: "linkCard", attrs: { url } }).run();
+                }}
+                className="p-3 hover:bg-gray-100 rounded"
+              >
+                🔗
+              </button>
+            </div>
           )}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         <div className="px-6 max-w-4xl mx-auto w-full pb-20">
+          {/* 카테고리 */}
           <div className="mt-12 mb-4">
-            <select
-              value={category ?? ""}
-              onChange={(e) => setCategory(e.target.value)}
-              className="px-4 py-2 bg-gray-100 rounded-md text-sm outline-none"
-            >
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
+            <select value={category ?? ""} onChange={(e) => setCategory(e.target.value)} className="px-4 py-2 bg-gray-100 rounded-md text-sm outline-none">
+              {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
             </select>
           </div>
 
+          {/* 제목 */}
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -494,6 +434,7 @@ function EditContent() {
             className="w-full text-3xl font-normal border-b pb-4 mb-6 outline-none placeholder-gray-300"
           />
 
+          {/* 에디터 */}
           <div
             className={`min-h-[350px] mb-8 rounded-lg border-2 border-dashed transition-colors ${
               isDraggingOver ? "border-blue-400 bg-blue-50/50" : "border-transparent"
@@ -505,6 +446,7 @@ function EditContent() {
             <EditorContent editor={editor} className="outline-none w-full prose max-w-none" />
           </div>
 
+          {/* 실명 */}
           <div className="flex items-center gap-2 mt-24 pt-4 pb-6 border-t border-gray-200">
             <input
               type="checkbox"
@@ -513,9 +455,7 @@ function EditContent() {
               onChange={() => setUseRealName((prev) => !prev)}
               className="w-4 h-4 accent-[#2B7FFF]"
             />
-            <label htmlFor="use-real-name" className="text-sm text-gray-500 cursor-pointer">
-              실명으로 작성
-            </label>
+            <label htmlFor="use-real-name" className="text-sm text-gray-500 cursor-pointer">실명으로 작성</label>
           </div>
         </div>
       </div>
