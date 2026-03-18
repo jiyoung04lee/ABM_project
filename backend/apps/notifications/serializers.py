@@ -32,7 +32,10 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     # 자동 메시지 생성
     def get_display_message(self, obj):
-        actor = obj.actor.nickname if obj.actor else "관리자"
+        if obj.type == "ADMIN_NOTICE":
+            return f"📢 관리자 공지: {obj.message}"
+
+        actor = obj.actor.nickname if obj.actor else "익명"
 
         if obj.type == "POST_LIKE":
             return f"{actor}님이 회원님의 게시글을 좋아합니다."
@@ -45,9 +48,6 @@ class NotificationSerializer(serializers.ModelSerializer):
 
         if obj.type == "COMMENT_LIKE":
             return f"{actor}님이 회원님의 댓글을 좋아합니다."
-
-        if obj.type == "ADMIN_NOTICE":
-            return f"📢 관리자 공지: {obj.message}"
 
         return "새로운 알림이 있습니다."
 
