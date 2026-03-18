@@ -293,19 +293,61 @@ function WriteContent() {
     if (type === "qa") return;
     if (!isDirty) return;
     if (!title.trim() && isContentEmpty(content)) return;
-    if (content.includes('src="blob:')) return;
 
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
 
     autoSaveTimerRef.current = setTimeout(async () => {
       try {
+        let savedContent = content;
+        const uploadedIds: number[] = [];
+
+        // blob이 있으면 업로드 후 교체
+        if (content.includes('src="blob:')) {
+          const blobToUrl = new Map<string, string>();
+          const blobUrls: string[] = [];
+          content.replace(/<img[^>]*src="(blob:[^"]+)"[^>]*\/?>/gi, (_, src) => {
+            if (!blobUrls.includes(src)) blobUrls.push(src);
+            return _;
+          });
+
+          const blobToFile = new Map<string, File>(newImages.map((img) => [img.url, img.file]));
+
+          await Promise.all(
+            blobUrls.map(async (blobUrl) => {
+              const file = blobToFile.get(blobUrl);
+              if (!file) return;
+              const result = await uploadDraftImage(file);
+              blobToUrl.set(blobUrl, result.url);
+              uploadedIds.push(result.id);
+              // newImages 업데이트
+              setNewImages((prev) => prev.map((img) =>
+                img.url === blobUrl ? { ...img, url: result.url, postFileId: result.id } : img
+              ));
+            })
+          );
+
+          savedContent = content.replace(
+            /<img([^>]*?)src="(blob:[^"]+)"([^>]*?)\/?>/gi,
+            (_m, before, blobUrl, after) => {
+              const realUrl = blobToUrl.get(blobUrl) ?? blobUrl;
+              return `<img${before}src="${realUrl}"${after}>`;
+            }
+          );
+
+          // 에디터 content도 업데이트
+          if (editor) editor.commands.setContent(savedContent);
+          setContent(savedContent);
+        }
+
+        const existingIds = newImages
+          .filter((img) => img.postFileId)
+          .map((img) => img.postFileId as number);
+
         await saveDraft({
           type: type as "student" | "graduate",
           title,
-          content,
-          image_ids: newImages
-            .filter((img) => img.postFileId)
-            .map((img) => img.postFileId as number),
+          content: savedContent,
+          image_ids: [...existingIds, ...uploadedIds],
         });
         justSavedRef.current = true;
         setIsDirty(false);
@@ -319,7 +361,7 @@ function WriteContent() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [title, content, isDirty, type, newImages]);
+  }, [title, content, isDirty, type, newImages, editor]);
 
   /* ---------------- 이탈 경고 ---------------- */
   useEffect(() => {
@@ -470,21 +512,29 @@ function WriteContent() {
     // 4) 썸네일 처리
     if (mainImageUrl !== null) {
       if (mainImageUrl.startsWith("blob:")) {
-        // 새로 추가한 이미지 → blob 기준 인덱스
         const thumbIdx = orderedBlobUrls.indexOf(mainImageUrl);
-        if (thumbIdx !== -1) formData.append("thumbnail_index", String(thumbIdx));
+        if (thumbIdx !== -1) {
+          const existingCount = newImages.filter(
+            (img) => !img.url.startsWith("blob:") && img.postFileId
+          ).length;
+          formData.append("thumbnail_index", String(existingCount + thumbIdx));
+        }
       } else {
-        // 복원된 이미지 → URL에서 fetch해서 파일로 변환 후 업로드
-        try {
-          const res = await fetch(mainImageUrl);
-          const blob = await res.blob();
-          const file = new File([blob], "thumbnail.jpg", { type: blob.type });
-          // new_files 맨 앞에 추가하고 thumbnail_index = 0
-          // 단, content에 이미 포함된 이미지라 new_files에 추가하면 안 됨
-          // → thumbnail만 별도로 처리
-          formData.append("thumbnail_file", file);
-        } catch (e) {
-          console.error("썸네일 변환 실패", e);
+        // 복원된 이미지 → postFileId로 existing_files에서 인덱스 찾기
+        const existingImgs = newImages.filter((img) => !img.url.startsWith("blob:") && img.postFileId);
+        const thumbExistingIdx = existingImgs.findIndex((img) => img.url === mainImageUrl);
+        if (thumbExistingIdx !== -1) {
+          formData.append("thumbnail_index", String(thumbExistingIdx));
+        } else {
+          // fallback: fetch로 파일 변환
+          try {
+            const res = await fetch(mainImageUrl);
+            const blob = await res.blob();
+            const file = new File([blob], "thumbnail.jpg", { type: blob.type });
+            formData.append("thumbnail_file", file);
+          } catch (e) {
+            console.error("썸네일 변환 실패", e);
+          }
         }
       }
     }
