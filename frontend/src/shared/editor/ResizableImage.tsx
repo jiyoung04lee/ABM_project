@@ -1,8 +1,8 @@
 "use client";
 
-import { Node, mergeAttributes } from "@tiptap/core";
+import Image from "@tiptap/extension-image";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
-import React, { useRef, useCallback, useEffect } from "react";
+import React, { useRef, useCallback } from "react";
 
 /* ─────────────────────────────────────────────
    ResizableImage NodeView (삭제 버튼 + 리사이즈 핸들 통합)
@@ -122,14 +122,10 @@ export interface ResizableImageOptions {
   onDelete?: (src: string) => void;
 }
 
-const ResizableImage = Node.create<ResizableImageOptions>({
-  name: "image",
-  group: "block",
-  atom: true,
-  draggable: true,
-
+const ResizableImage = Image.extend<ResizableImageOptions>({
   addOptions() {
     return {
+      ...this.parent?.(),
       HTMLAttributes: {},
       onDelete: undefined,
     };
@@ -137,19 +133,9 @@ const ResizableImage = Node.create<ResizableImageOptions>({
 
   addAttributes() {
     return {
-      src: { default: null },
-      alt: { default: null },
-      title: { default: null },
+      ...this.parent?.(),
       width: { default: null },
     };
-  },
-
-  parseHTML() {
-    return [{ tag: "img[src]" }];
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return ["img", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)];
   },
 
   addNodeView() {
