@@ -105,6 +105,8 @@ class PostFile(models.Model):
         Post,
         on_delete=models.CASCADE,
         related_name="files",
+        null=True,  
+        blank=True, 
     )
 
     file = models.FileField(upload_to="network/posts/")
