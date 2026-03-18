@@ -24,28 +24,32 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
   const startW = useRef(0);
 
   const handleResizeStart = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
       isResizing.current = true;
       startX.current = e.clientX;
       startW.current = imgRef.current?.offsetWidth ?? 300;
 
-      const onMouseMove = (moveEvt: MouseEvent) => {
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+
+      const onPointerMove = (moveEvt: PointerEvent) => {
         if (!isResizing.current) return;
         const delta = moveEvt.clientX - startX.current;
         const newW = Math.max(80, startW.current + delta);
         updateAttributes({ width: `${newW}px` });
       };
 
-      const onMouseUp = () => {
+      const onPointerUp = () => {
         isResizing.current = false;
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", onPointerUp);
+        window.removeEventListener("pointercancel", onPointerUp);
       };
 
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
+      window.addEventListener("pointercancel", onPointerUp);
     },
     [updateAttributes]
   );
@@ -68,7 +72,6 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
       as="span"
       className="inline-block relative group"
       style={{ width: typeof width === "number" ? `${width}px` : width }}
-      data-drag-handle
     >
       <img
         ref={imgRef}
@@ -98,13 +101,14 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
       </button>
 
       {/* 리사이즈 핸들 - 우하단 */}
-      {selected && (
-        <span
-          onMouseDown={handleResizeStart}
-          className="absolute bottom-1 right-1 w-4 h-4 bg-white border-2 border-[#2B7FFF] rounded-sm cursor-se-resize z-10"
-          style={{ userSelect: "none" }}
-        />
-      )}
+      <span
+        onPointerDown={handleResizeStart}
+        className={[
+          "absolute bottom-1 right-1 w-4 h-4 bg-white border-2 border-[#2B7FFF] rounded-sm cursor-se-resize z-10 transition-opacity",
+          selected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+        ].join(" ")}
+        style={{ userSelect: "none" }}
+      />
     </NodeViewWrapper>
   );
 }
