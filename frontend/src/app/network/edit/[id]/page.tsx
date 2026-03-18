@@ -87,6 +87,8 @@ function EditContent() {
   const [newImages, setNewImages] = useState<NewImageEntry[]>([]);
   // 썸네일: src(URL)로 추적 (서버 URL 또는 blob URL)
   const [thumbnailSrc, setThumbnailSrc] = useState<ThumbnailSrc | null>(null);
+  // 최초 로딩 시점의 썸네일. 이 값과 달라질 때만 thumbnail_index를 전송(서버 불필요 재생성 방지)
+  const [initialThumbnailSrc, setInitialThumbnailSrc] = useState<ThumbnailSrc | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -192,7 +194,9 @@ function EditContent() {
             })
             .filter((img: ExistingImageEntry) => img.url);
           setExistingImages(imgs);
-          if (imgs.length > 0) setThumbnailSrc(imgs[0].url);
+          const initialThumb = imgs.length > 0 ? imgs[0].url : null;
+          setThumbnailSrc(initialThumb);
+          setInitialThumbnailSrc(initialThumb);
 
           // 본문의 __BLOB_N__ 을 실제 서버 URL 로 치환
           let contentToSet = post.content ?? "";
@@ -207,6 +211,8 @@ function EditContent() {
         } else {
           setContent(post.content ?? "");
           if (editor) editor.commands.setContent(post.content ?? "");
+          setThumbnailSrc(null);
+          setInitialThumbnailSrc(null);
         }
 
         setLoaded(true);
@@ -301,7 +307,8 @@ function EditContent() {
       });
 
       // 5) 썸네일 인덱스 전송 (이미지들: 기존 이미지들 + 새 이미지들 순서 기준)
-      if (thumbnailSrc) {
+      const thumbnailChanged = thumbnailSrc !== initialThumbnailSrc;
+      if (thumbnailSrc && thumbnailChanged) {
         const existingIdx = existingImages.findIndex((img) => img.url === thumbnailSrc);
         if (existingIdx !== -1) {
           formData.append("thumbnail_index", String(existingIdx));
