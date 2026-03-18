@@ -34,6 +34,7 @@ interface Category {
 interface ImageEntry {
   file: File;
   url: string; // blob URL
+  postFileId?: number;
 }
 
 const FontSize = TextStyle.extend({
@@ -127,7 +128,7 @@ function WriteContent() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [pendingDraft, setPendingDraft] = useState<{ title: string; content: string } | null>(null);
+  const [pendingDraft, setPendingDraft] = useState<{ title: string; content: string; image_ids: number[] } | null>(null);
 
   const draftCheckedRef = useRef(false);
   const justSavedRef = useRef(false);
@@ -254,7 +255,7 @@ function WriteContent() {
       try {
         const draft = await fetchDraft(type as "student" | "graduate");
         if (!draft) return;
-        setPendingDraft({ title: draft.title, content: draft.content });
+        setPendingDraft({ title: draft.title, content: draft.content, image_ids: draft.image_ids ?? [] });
         setShowRestoreModal(true);
       } catch (e) { console.error(e); }
     })();
@@ -266,6 +267,20 @@ function WriteContent() {
     setTitle(pendingDraft.title);
     editor.commands.setContent(pendingDraft.content);
     setContent(pendingDraft.content);
+
+    const srcs = extractImageSrcs(pendingDraft.content);
+    const imageIds = pendingDraft.image_ids ?? [];  // ← 추가
+
+    const restoredImages = srcs
+      .filter((src) => !src.startsWith("blob:"))
+      .map((src, idx) => ({
+        file: new File([], src),
+        url: src,
+        postFileId: imageIds[idx],  // ← 추가: id 매핑
+      }));
+    setNewImages(restoredImages);
+    setMainImageUrl(restoredImages[0]?.url ?? null);
+
     setIsDirty(false);
     setShowRestoreModal(false);
     setPendingDraft(null);
@@ -284,7 +299,14 @@ function WriteContent() {
 
     autoSaveTimerRef.current = setTimeout(async () => {
       try {
-        await saveDraft({ type: type as "student" | "graduate", title, content });
+        await saveDraft({
+          type: type as "student" | "graduate",
+          title,
+          content,
+          image_ids: newImages
+            .filter((img) => img.postFileId)
+            .map((img) => img.postFileId as number),
+        });
         justSavedRef.current = true;
         setIsDirty(false);
         setTimeout(() => { justSavedRef.current = false; }, 500);
@@ -297,7 +319,7 @@ function WriteContent() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [title, content, isDirty, type]);
+  }, [title, content, isDirty, type, newImages]);
 
   /* ---------------- 이탈 경고 ---------------- */
   useEffect(() => {
@@ -321,6 +343,8 @@ function WriteContent() {
       setSubmitting(true);
 
       let savedContent = content;
+      const blobToResult = new Map<string, { url: string; id: number }>();
+      const uploadedIds: number[] = [];
 
       // blob URL이 있으면 서버에 업로드 후 실제 URL로 교체
       if (content.includes('src="blob:')) {
@@ -335,14 +359,24 @@ function WriteContent() {
 
         // blob URL → File → 서버 업로드
         const blobToFile = new Map<string, File>(newImages.map((img) => [img.url, img.file]));
+
         await Promise.all(
           blobUrls.map(async (blobUrl) => {
             const file = blobToFile.get(blobUrl);
             if (!file) return;
-            const realUrl = await uploadDraftImage(file);
-            blobToUrl.set(blobUrl, realUrl);
+            const result = await uploadDraftImage(file);  // 이제 { url, id } 반환
+            blobToResult.set(blobUrl, result);
+            blobToUrl.set(blobUrl, result.url);
+            uploadedIds.push(result.id);
           })
         );
+
+        // content 교체 후, newImages에 postFileId 업데이트
+        setNewImages((prev) => prev.map((img) => {
+          const result = blobToResult.get(img.url);
+          if (!result) return img;
+          return { ...img, url: result.url, postFileId: result.id };
+        }));
 
         // content 내 blob URL을 실제 URL로 교체
         savedContent = content.replace(
@@ -354,7 +388,16 @@ function WriteContent() {
         );
       }
 
-      await saveDraft({ type: type as "student" | "graduate", title, content: savedContent });
+      const existingIds = newImages
+        .filter((img) => img.postFileId)
+        .map((img) => img.postFileId as number);
+
+      await saveDraft({
+        type: type as "student" | "graduate",
+        title,
+        content: savedContent,
+        image_ids: [...existingIds, ...uploadedIds], // ← 로컬 변수 사용
+      });
       justSavedRef.current = true;
       setIsDirty(false);
       setTimeout(() => { justSavedRef.current = false; }, 500);
@@ -419,10 +462,31 @@ function WriteContent() {
       if (file) formData.append("new_files", file);
     });
 
-    // 4) 썸네일 인덱스: mainImageUrl 이 HTML 에서 몇 번째 blob인지
+    // 임시저장에서 불러온 이미지(PostFile id 있음)를 existing_files로 전달
+    newImages
+      .filter((img) => !img.url.startsWith("blob:") && img.postFileId)
+      .forEach((img) => formData.append("existing_files", String(img.postFileId)));
+
+    // 4) 썸네일 처리
     if (mainImageUrl !== null) {
-      const thumbIdx = orderedBlobUrls.indexOf(mainImageUrl);
-      if (thumbIdx !== -1) formData.append("thumbnail_index", String(thumbIdx));
+      if (mainImageUrl.startsWith("blob:")) {
+        // 새로 추가한 이미지 → blob 기준 인덱스
+        const thumbIdx = orderedBlobUrls.indexOf(mainImageUrl);
+        if (thumbIdx !== -1) formData.append("thumbnail_index", String(thumbIdx));
+      } else {
+        // 복원된 이미지 → URL에서 fetch해서 파일로 변환 후 업로드
+        try {
+          const res = await fetch(mainImageUrl);
+          const blob = await res.blob();
+          const file = new File([blob], "thumbnail.jpg", { type: blob.type });
+          // new_files 맨 앞에 추가하고 thumbnail_index = 0
+          // 단, content에 이미 포함된 이미지라 new_files에 추가하면 안 됨
+          // → thumbnail만 별도로 처리
+          formData.append("thumbnail_file", file);
+        } catch (e) {
+          console.error("썸네일 변환 실패", e);
+        }
+      }
     }
 
     try {

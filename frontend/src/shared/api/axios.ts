@@ -15,10 +15,26 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// api.interceptors.response.use(
+//   (response) => response,
+//   (error) => {
+//     if (error.response?.status === 401) {
+//       localStorage.removeItem("access_token");
+//       localStorage.removeItem("refresh_token");
+//       localStorage.removeItem("user_id");
+//       window.location.replace("/login");
+//     }
+//     return Promise.reject(error);
+//   }
+// );
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // me/ 요청 실패는 무시 (비로그인 상태에서 정상)
+      if (error.config?.url?.includes("users/me/")) {
+        return Promise.reject(error);
+      }
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("user_id");

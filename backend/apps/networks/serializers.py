@@ -282,6 +282,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         write_only=True,
     )
     thumbnail_index = serializers.IntegerField(required=False, write_only=True)
+    thumbnail_file = serializers.ImageField(required=False, write_only=True)
     files = PostFileSerializer(many=True, read_only=True)
 
     class Meta:
@@ -299,6 +300,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "clear_files",
             "new_files",
             "thumbnail_index",
+            "thumbnail_file",
             "files",
         ]
 
@@ -340,12 +342,20 @@ class PostCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # create에서는 기존 파일 유지/전체삭제 플래그를 사용하지 않는다.
         # (update에서만 의미가 있음) 모델 생성 kwargs로 넘어가면 TypeError가 난다.
-        validated_data.pop("existing_files", None)
+        existing_file_ids = validated_data.pop("existing_files", [])
         validated_data.pop("clear_files", None)
         new_files = validated_data.pop("new_files", [])
         thumbnail_index = validated_data.pop("thumbnail_index", None)
+        thumbnail_file = validated_data.pop("thumbnail_file", None)
 
         post = Post.objects.create(**validated_data)
+
+        # 임시저장 이미지(post=None)를 이 post에 연결
+        if existing_file_ids:
+            PostFile.objects.filter(
+                id__in=existing_file_ids,
+                post__isnull=True
+            ).update(post=post)
 
         image_files = []
         for index, file in enumerate(new_files):
@@ -405,6 +415,14 @@ class PostCreateSerializer(serializers.ModelSerializer):
             _, thumb_source = image_files[idx]
             thumb_file = make_thumbnail(thumb_source)
             if thumb_file:
+                post.thumbnail.save(thumb_file.name, thumb_file, save=True)
+
+        # thumbnail_file이 있으면 새 파일로 썸네일 생성 (기존 thumbnail_index보다 우선)
+        if thumbnail_file:
+            thumb_file = make_thumbnail(thumbnail_file)
+            if thumb_file:
+                if post.thumbnail:
+                    post.thumbnail.delete(save=False)
                 post.thumbnail.save(thumb_file.name, thumb_file, save=True)
 
         return post
@@ -567,5 +585,5 @@ class DraftSerializer(serializers.ModelSerializer):
     class Meta:
         model = Draft
         ref_name = "NetworkDraftSerializer"
-        fields = ["id", "type", "title", "content", "updated_at"]
+        fields = ["id", "type", "title", "content", "image_ids", "updated_at"]
         read_only_fields = ["id", "updated_at"]

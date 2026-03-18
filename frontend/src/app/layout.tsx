@@ -11,6 +11,10 @@ const GTM_ID = "GTM-P86CBNT5";
 export const metadata: Metadata = {
   title: "AIVE",
   description: "AI빅데이터융합경영학과 학생들을 위한 정보 아카이브",
+  icons: {
+    icon: "/favicon.ico",          
+    apple: "/icons/apple-touch-icon.png",
+  },
   openGraph: {
     title: "AIVE",
     description: "AI빅데이터융합경영학과 학생들을 위한 정보 아카이브",
