@@ -13,6 +13,7 @@ type ResizableImageAttrs = {
   width?: string | number | null;
   alt?: string | null;
   title?: string | null;
+  align?: "left" | "center" | "right" | null;
 };
 
 function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: string) => void }) {
@@ -23,10 +24,18 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
   const startX = useRef(0);
   const startW = useRef(0);
 
+  const handleAlign = useCallback(
+    (align: "left" | "center" | "right") => {
+      updateAttributes({ align });
+    },
+    [updateAttributes]
+  );
+
   const handleResizeStart = useCallback(
     (e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      const dir = (e.currentTarget as HTMLElement).dataset.dir ?? "right";
       isResizing.current = true;
       startX.current = e.clientX;
       startW.current = imgRef.current?.offsetWidth ?? 300;
@@ -35,7 +44,10 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
 
       const onPointerMove = (moveEvt: PointerEvent) => {
         if (!isResizing.current) return;
-        const delta = moveEvt.clientX - startX.current;
+        const delta =
+          dir === "left"
+            ? startX.current - moveEvt.clientX
+            : moveEvt.clientX - startX.current;
         const newW = Math.max(80, startW.current + delta);
         updateAttributes({ width: `${newW}px` });
       };
@@ -66,6 +78,7 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
   );
 
   const width = attrs.width ?? "auto";
+  const align = attrs.align ?? "left";
 
   return (
     <NodeViewWrapper
@@ -81,6 +94,8 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
         style={{
           width: "100%",
           display: "block",
+          marginLeft: align === "center" || align === "right" ? "auto" : undefined,
+          marginRight: align === "center" ? "auto" : undefined,
           outline: selected ? "2px solid #2B7FFF" : "none",
           borderRadius: 4,
         }}
@@ -100,15 +115,74 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
         </svg>
       </button>
 
-      {/* 리사이즈 핸들 - 우하단 */}
-      <span
-        onPointerDown={handleResizeStart}
+      {/* 이미지 정렬 툴바 (이미지 상단 중앙) */}
+      <div
         className={[
-          "absolute bottom-1 right-1 w-4 h-4 bg-white border-2 border-[#2B7FFF] rounded-sm cursor-se-resize z-10 transition-opacity",
-          selected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+          "absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/70 text-white text-[11px] shadow-sm transition-all",
+          selected ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none -translate-y-1",
         ].join(" ")}
-        style={{ userSelect: "none" }}
-      />
+      >
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleAlign("left");
+          }}
+          className={[
+            "px-2 py-0.5 rounded-full flex items-center gap-1",
+            align === "left" ? "bg-white text-black" : "text-gray-200 hover:bg-white/10",
+          ].join(" ")}
+        >
+          <span>좌</span>
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleAlign("center");
+          }}
+          className={[
+            "px-2 py-0.5 rounded-full flex items-center gap-1",
+            align === "center" ? "bg-white text-black" : "text-gray-200 hover:bg-white/10",
+          ].join(" ")}
+        >
+          <span>중</span>
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleAlign("right");
+          }}
+          className={[
+            "px-2 py-0.5 rounded-full flex items-center gap-1",
+            align === "right" ? "bg-white text-black" : "text-gray-200 hover:bg-white/10",
+          ].join(" ")}
+        >
+          <span>우</span>
+        </button>
+      </div>
+
+      {/* 리사이즈 핸들 - 4 코너 (투명, 넓은 터치 영역) */}
+      {(
+        [
+          { key: "nw", pos: "top-0 left-0", cursor: "cursor-nwse-resize", dir: "left" as const },
+          { key: "ne", pos: "top-0 right-0", cursor: "cursor-nesw-resize", dir: "right" as const },
+          { key: "sw", pos: "bottom-0 left-0", cursor: "cursor-nesw-resize", dir: "left" as const },
+          { key: "se", pos: "bottom-0 right-0", cursor: "cursor-nwse-resize", dir: "right" as const },
+        ] as const
+      ).map((h) => (
+        <span
+          key={h.key}
+          data-dir={h.dir}
+          onPointerDown={handleResizeStart}
+          className={["absolute w-5 h-5 z-10", h.pos, h.cursor].join(" ")}
+          style={{ userSelect: "none", background: "transparent" }}
+        />
+      ))}
     </NodeViewWrapper>
   );
 }
