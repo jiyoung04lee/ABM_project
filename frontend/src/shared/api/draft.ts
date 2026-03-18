@@ -28,3 +28,13 @@ export async function saveDraft(payload: {
 export async function deleteDraft(type: "student" | "graduate"): Promise<void> {
   await api.delete("/networks/drafts/", { params: { type } });
 }
+
+// 이미지 단독 업로드 (임시저장용)
+export async function uploadDraftImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("image", file);
+  const { data } = await api.post<{ url: string }>("/networks/images/upload/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.url;
+}
