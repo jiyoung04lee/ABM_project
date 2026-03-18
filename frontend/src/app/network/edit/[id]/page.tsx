@@ -17,6 +17,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
+import ImageExtension from "@tiptap/extension-image";
 import ResizeImage from "tiptap-extension-resize-image";
 import Dropcursor from "@tiptap/extension-dropcursor";
 import Gapcursor from "@tiptap/extension-gapcursor";
@@ -93,6 +94,13 @@ function EditContent() {
       FontSize,
       Color.configure({
         types: ["textStyle"],
+      }),
+      ImageExtension.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: "editor-image",
+        },
       }),
       ResizeImage,
       TextAlign.configure({
@@ -182,7 +190,7 @@ function EditContent() {
 
     imageFiles.forEach((file) => {
       const url = URL.createObjectURL(file);
-      (editor as any)
+      editor
         .chain()
         .focus()
         .setImage({ src: url })
