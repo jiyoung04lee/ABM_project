@@ -272,14 +272,22 @@ class PostViewSet(ModelViewSet):
         # 활동 점수 +2
         add_score(request.user, 2)
 
-        # 알림 생성
+        # 알림 생성 (익명 댓글이면 actor 노출 금지)
         parent_id = request.data.get("parent")
-        actor = request.user
+        actor = (
+            request.user
+            if (not comment.is_anonymous or request.user.is_staff)
+            else None
+        )
 
         # 대댓글이면 부모 댓글 작성자에게 알림
         if parent_id:
             parent_comment = Comment.objects.filter(pk=parent_id).first()
-            if parent_comment and parent_comment.author and parent_comment.author != actor:
+            if (
+                parent_comment
+                and parent_comment.author
+                and parent_comment.author != request.user
+            ):
                 Notification.objects.create(
                     recipient=parent_comment.author,
                     actor=actor,
@@ -288,7 +296,7 @@ class PostViewSet(ModelViewSet):
                     network_comment=comment,
                 )
         # 일반 댓글이면 게시글 작성자에게 알림
-        elif post.author and post.author != actor:
+        elif post.author and post.author != request.user:
             Notification.objects.create(
                 recipient=post.author,
                 actor=actor,

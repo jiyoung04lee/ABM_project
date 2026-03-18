@@ -234,12 +234,18 @@ class PostViewSet(ModelViewSet):
         comment.is_anonymous = request.data.get("is_anonymous", False)
         comment.save()
 
+        actor = (
+            request.user
+            if (not comment.is_anonymous or request.user.is_staff)
+            else None
+        )
+
         if comment.parent:
             # 대댓글이면 부모 댓글 작성자에게 알림
             if comment.parent.author != request.user:
                 Notification.objects.create(
                     recipient=comment.parent.author,
-                    actor=request.user,
+                    actor=actor,
                     type="COMMENT_REPLY",
                     post=post,
                     comment=comment
@@ -249,7 +255,7 @@ class PostViewSet(ModelViewSet):
             if post.author != request.user:
                 Notification.objects.create(
                     recipient=post.author,
-                    actor=request.user,
+                    actor=actor,
                     type="POST_COMMENT",
                     post=post,
                     comment=comment
