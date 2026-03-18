@@ -1,28 +1,23 @@
 "use client";
 
 import Image from "@tiptap/extension-image";
-import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
+import { ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import React, { useRef, useCallback } from "react";
 
 /* ─────────────────────────────────────────────
    ResizableImage NodeView (삭제 버튼 + 리사이즈 핸들 통합)
 ───────────────────────────────────────────────*/
 
-interface ResizableImageComponentProps {
-  node: {
-    attrs: { src: string; width?: string | number; alt?: string; title?: string };
-  };
-  updateAttributes: (attrs: Record<string, unknown>) => void;
-  deleteNode: () => void;
-  selected: boolean;
-}
+type ResizableImageAttrs = {
+  src?: string;
+  width?: string | number | null;
+  alt?: string | null;
+  title?: string | null;
+};
 
-function ResizableImageComponent({
-  node,
-  updateAttributes,
-  deleteNode,
-  selected,
-}: ResizableImageComponentProps) {
+function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: string) => void }) {
+  const { node, updateAttributes, deleteNode, selected, onDelete } = props;
+  const attrs = node.attrs as ResizableImageAttrs;
   const imgRef = useRef<HTMLImageElement>(null);
   const isResizing = useRef(false);
   const startX = useRef(0);
@@ -59,12 +54,14 @@ function ResizableImageComponent({
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      const src = String(attrs.src ?? "");
+      if (src && onDelete) onDelete(src);
       deleteNode();
     },
-    [deleteNode]
+    [deleteNode, onDelete, attrs.src]
   );
 
-  const width = node.attrs.width ?? "auto";
+  const width = attrs.width ?? "auto";
 
   return (
     <NodeViewWrapper
@@ -75,9 +72,9 @@ function ResizableImageComponent({
     >
       <img
         ref={imgRef}
-        src={node.attrs.src}
-        alt={node.attrs.alt ?? ""}
-        title={node.attrs.title ?? ""}
+        src={String(attrs.src ?? "")}
+        alt={String(attrs.alt ?? "")}
+        title={String(attrs.title ?? "")}
         style={{
           width: "100%",
           display: "block",
@@ -140,21 +137,7 @@ const ResizableImage = Image.extend<ResizableImageOptions>({
 
   addNodeView() {
     const onDelete = this.options.onDelete;
-
-    return ReactNodeViewRenderer((props: ResizableImageComponentProps) => {
-      const wrappedDeleteNode = () => {
-        const src = props.node.attrs.src as string;
-        if (onDelete) onDelete(src);
-        props.deleteNode();
-      };
-
-      return (
-        <ResizableImageComponent
-          {...props}
-          deleteNode={wrappedDeleteNode}
-        />
-      );
-    });
+    return ReactNodeViewRenderer((props) => <ResizableImageComponent {...props} onDelete={onDelete} />);
   },
 });
 
