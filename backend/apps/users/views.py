@@ -539,6 +539,16 @@ class KakaoLoginView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        if user.is_multi_major and not user.multi_major_approved:
+            return Response(
+                {
+                    "needs_profile": False,
+                    "multi_major_pending": True,
+                    "message": "다부전공 승인 대기 중입니다.",
+                },
+                status=status.HTTP_200_OK,
+            )
+
         refresh = RefreshToken.for_user(user)
 
         return Response(

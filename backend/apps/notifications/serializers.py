@@ -4,7 +4,7 @@ from .models import Notification
 
 class NotificationSerializer(serializers.ModelSerializer):
     actor_name = serializers.CharField(source="actor.nickname", read_only=True)
-    post_title = serializers.CharField(source="post.title", read_only=True)
+    post_title = serializers.SerializerMethodField()
 
     # 이동용 URL
     redirect_url = serializers.SerializerMethodField()
@@ -15,7 +15,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "type",
-            "display_message",  
+            "display_message",
             "redirect_url",
             "actor_name",
             "post_title",
@@ -23,9 +23,15 @@ class NotificationSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    # 자동 메시지 생성 
-    def get_display_message(self, obj):
+    def get_post_title(self, obj):
+        if obj.post:
+            return getattr(obj.post, "title", None)
+        if obj.network_post:
+            return getattr(obj.network_post, "title", None)
+        return None
 
+    # 자동 메시지 생성
+    def get_display_message(self, obj):
         actor = obj.actor.nickname if obj.actor else "관리자"
 
         if obj.type == "POST_LIKE":
@@ -46,16 +52,26 @@ class NotificationSerializer(serializers.ModelSerializer):
         return "새로운 알림이 있습니다."
 
     def get_redirect_url(self, obj):
-
-        # 댓글 관련 알림이면 댓글 위치로 이동
+        # 커뮤니티 댓글 관련 알림이면 댓글 위치로 이동
         if obj.comment and obj.post:
             return f"/community/{obj.post.id}#comment-{obj.comment.id}"
 
-        # 게시글 관련 알림이면 게시글로 이동
+        # 커뮤니티 게시글 관련 알림이면 게시글로 이동
         if obj.post:
             return f"/community/{obj.post.id}"
 
-        # 관리자 공지는 공지 페이지로 이동 
+        # 네트워크 댓글 관련 알림이면 댓글 위치로 이동
+        if obj.network_comment and obj.network_post:
+            return (
+                f"/network/{obj.network_post.id}"
+                f"#comment-{obj.network_comment.id}"
+            )
+
+        # 네트워크 게시글 관련 알림이면 게시글로 이동
+        if obj.network_post:
+            return f"/network/{obj.network_post.id}"
+
+        # 관리자 공지는 공지 페이지로 이동
         if obj.type == "ADMIN_NOTICE":
             return "/notifications"
 

@@ -17,7 +17,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
-import ImageExtension from "@tiptap/extension-image";
+import ResizeImage from "tiptap-extension-resize-image";
 import Dropcursor from "@tiptap/extension-dropcursor";
 import Gapcursor from "@tiptap/extension-gapcursor";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -74,6 +74,7 @@ function EditContent() {
   const [submitting, setSubmitting] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [currentFontSize, setCurrentFontSize] = useState("16px");
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -93,13 +94,7 @@ function EditContent() {
       Color.configure({
         types: ["textStyle"],
       }),
-      ImageExtension.configure({
-        inline: false,
-        allowBase64: true,
-        HTMLAttributes: {
-          class: "editor-image",
-        },
-      }),
+      ResizeImage,
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
@@ -112,6 +107,10 @@ function EditContent() {
     immediatelyRender: false,
     onUpdate: ({ editor: e }) => {
       setContent(e.getHTML());
+    },
+    onSelectionUpdate: ({ editor: e }) => {
+      const attrs = e.getAttributes("textStyle");
+      setCurrentFontSize(attrs.fontSize || "16px");
     },
   });
 
@@ -183,7 +182,12 @@ function EditContent() {
 
     imageFiles.forEach((file) => {
       const url = URL.createObjectURL(file);
-      editor.chain().focus().setImage({ src: url }).createParagraphNear().run();
+      (editor as any)
+        .chain()
+        .focus()
+        .setImage({ src: url })
+        .createParagraphNear()
+        .run();
       setNewFiles((prev) => [...prev, file]);
     });
   };
@@ -354,13 +358,15 @@ function EditContent() {
 
             {/* 글씨 크기 */}
             <select
-              onChange={(e) =>
+              value={currentFontSize}
+              onChange={(e) => {
+                setCurrentFontSize(e.target.value);
                 editor
                   ?.chain()
                   .focus()
                   .setMark("textStyle", { fontSize: e.target.value })
-                  .run()
-              }
+                  .run();
+              }}
               className="border rounded px-2 py-1 text-sm"
             >
               <option value="14px">14</option>
