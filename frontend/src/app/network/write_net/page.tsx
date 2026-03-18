@@ -3,9 +3,10 @@
 import { AxiosError } from "axios";
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { createPost, fetchCategories } from "@/shared/api/network";
+import { fetchDraft, saveDraft, deleteDraft } from "@/shared/api/draft";
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -123,6 +124,13 @@ async function compressImage(file: File): Promise<File> {
   });
 }
 
+/* ---------------- 빈 내용 체크 유틸 ---------------- */ 
+function isContentEmpty(html: string): boolean {
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return (div.textContent ?? "").trim().replace(/\u00A0/g, "") === "";
+}
+
 function WriteContent() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -143,6 +151,18 @@ function WriteContent() {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // 임시저장 상태
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false); 
+  const [isDirty, setIsDirty] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [showOverwriteModal, setShowOverwriteModal] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<{ title: string; content: string } | null>(null);
+
+  // race condition 방지용 플래그
+  const draftCheckedRef = useRef(false); // 재진입 체크 1회만
+  const justSavedRef = useRef(false);    // 임시저장 직후 이탈 경고 방지
 
   /* ---------------- TipTap Editor ---------------- */
 
@@ -197,6 +217,7 @@ function WriteContent() {
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       setContent(editor.getHTML());
+      setIsDirty(true);
     },
   });
 
@@ -254,8 +275,107 @@ function WriteContent() {
     e.dataTransfer.clearData();
   };
 
-  /* ---------------- 카테고리 ---------------- */
+  /* ---------------- 재진입 시 draft 복원 ---------------- */
+  useEffect(() => {
+    if (!editor || draftCheckedRef.current) return;  // ← 이 줄만 변경
+    if (type === "qa") return;
 
+    draftCheckedRef.current = true;
+
+    (async () => {
+      try {
+        const draft = await fetchDraft(type as "student" | "graduate");
+        if (!draft) return;
+        setPendingDraft({ title: draft.title, content: draft.content });
+        setShowRestoreModal(true);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, type]);
+
+  const handleRestoreConfirm = () => {
+    if (!pendingDraft || !editor) return;
+    setTitle(pendingDraft.title);
+    editor.commands.setContent(pendingDraft.content);
+    setContent(pendingDraft.content);
+    setIsDirty(false);
+    setShowRestoreModal(false);
+    setPendingDraft(null);
+  };
+
+  const handleRestoreCancel = () => {
+    setShowRestoreModal(false);
+    setPendingDraft(null);
+  };
+
+  /* ---------------- 이탈 경고 ---------------- */
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty && !justSavedRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
+  /* ---------------- 임시저장 ---------------- */
+
+  const executeSave = useCallback(async () => {
+    if (type === "qa") return;
+    if (!title.trim() || isContentEmpty(content)) {
+      alert("제목과 내용을 입력해야 임시저장할 수 있습니다.");
+      return;
+    }
+    if (content.includes('src="blob:')) {
+      alert("이미지가 아직 업로드 중입니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+    try {
+      setIsSavingDraft(true);
+      setSubmitting(true);  // 게시 중 오버레이 재사용
+      await saveDraft({ type: type as "student" | "graduate", title, content });
+      justSavedRef.current = true;
+      setIsDirty(false);
+      setTimeout(() => { justSavedRef.current = false; }, 500);
+      router.push(`/network?type=${type}`);  // 네트워크 페이지로 이동
+    } catch (e) {
+      console.error(e);
+      alert("임시저장에 실패했습니다.");
+      setIsSavingDraft(false);
+      setSubmitting(false);
+    }
+  }, [type, title, content, router]);
+
+  const handleDraftSave = useCallback(async () => {
+    if (draftSaving) return;
+    if (type === "qa") return;
+    if (!title.trim() || isContentEmpty(content)) {
+      alert("제목과 내용을 입력해야 임시저장할 수 있습니다.");
+      return;
+    }
+    try {
+      const existing = await fetchDraft(type as "student" | "graduate");
+      if (existing) {
+        setShowOverwriteModal(true);
+      } else {
+        await executeSave();
+      }
+    } catch (e) {
+      console.error(e);
+      await executeSave();
+    }
+  }, [draftSaving, type, title, content, executeSave]);
+
+  const handleOverwriteConfirm = async () => {
+    setShowOverwriteModal(false);
+    await executeSave();
+  };
+
+  /* ---------------- 카테고리 ---------------- */
   useEffect(() => {
     (async () => {
       try {
@@ -314,13 +434,22 @@ function WriteContent() {
     }
 
     try {
+      setIsSavingDraft(false);
       setSubmitting(true);
 
       await createPost(formData);
 
+      if (type !== "qa") {
+        try {
+          await deleteDraft(type as "student" | "graduate");
+        } catch (e) {
+          console.error("draft 삭제 실패 (무시)", e);
+        }
+      }
+      setIsDirty(false);
       alert("작성 완료");
-
       router.push(`/network?type=${type}`);
+
     } catch (err) {
       if (err instanceof AxiosError) {
         console.error(err.response?.data);
@@ -332,8 +461,6 @@ function WriteContent() {
     }
   };
 
-  /* ---------------- UI ---------------- */
-
   return (
     <div className="flex flex-col h-screen pt-[1px] bg-white ">
       {submitting && (
@@ -343,7 +470,58 @@ function WriteContent() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <p className="text-sm font-semibold text-gray-700">게시물을 업로드하고 있습니다...</p>
+            <p className="text-sm font-semibold text-gray-700">
+              {isSavingDraft ? "임시저장 중입니다..." : "게시물을 업로드하고 있습니다..."}
+            </p>
+          </div>
+        </div>
+      )}
+      {/* draft 불러오기 모달 */}
+      {showRestoreModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl px-8 py-7 shadow-xl flex flex-col items-center gap-4 min-w-[280px]">
+            <p className="text-sm font-semibold text-gray-800 text-center">
+              임시저장된 글이 있습니다.<br />불러올까요?
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={handleRestoreCancel}
+                className="flex-1 py-2 rounded-md border border-gray-200 text-sm text-gray-500 hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleRestoreConfirm}
+                className="flex-1 py-2 rounded-md bg-black text-white text-sm hover:bg-gray-800"
+              >
+                불러오기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 덮어쓰기 확인 모달 */}
+      {showOverwriteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl px-8 py-7 shadow-xl flex flex-col items-center gap-4 min-w-[280px]">
+            <p className="text-sm font-semibold text-gray-800 text-center">
+              기존 임시저장 글을 덮어쓸까요?
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setShowOverwriteModal(false)}
+                className="flex-1 py-2 rounded-md border border-gray-200 text-sm text-gray-500 hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleOverwriteConfirm}
+                className="flex-1 py-2 rounded-md bg-black text-white text-sm hover:bg-gray-800"
+              >
+                덮어쓰기
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -359,19 +537,37 @@ function WriteContent() {
               <span className="text-lg font-semibold">네트워크</span>
             </div>
 
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="bg-black text-white px-6 py-2 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {submitting && (
-                <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
+            {/* 완료 버튼을 div로 감싸고 임시저장 버튼 앞에 추가 */}
+            <div className="flex items-center gap-2">
+              {type !== "qa" && (
+                <button
+                  onClick={handleDraftSave}
+                  disabled={draftSaving}
+                  className="px-4 py-2 rounded-md text-sm text-gray-500 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  {draftSaving && (
+                    <svg className="animate-spin h-3.5 w-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  )}
+                  임시저장
+                </button>
               )}
-              {submitting ? "게시 중..." : "완료"}
-            </button>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="bg-black text-white px-6 py-2 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {submitting && (
+                  <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                )}
+                {submitting ? "게시 중..." : "완료"}
+              </button>
+            </div>
           </div>
 
           {/* 툴바 */}
@@ -533,7 +729,7 @@ function WriteContent() {
         {/* 제목 */}
         <input
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => { setTitle(e.target.value); setIsDirty(true); }}
           placeholder="제목을 입력하세요"
           className="w-full text-3xl font-normal border-b pb-4 mb-6 outline-none placeholder-gray-300"
         />

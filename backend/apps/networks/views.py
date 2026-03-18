@@ -6,6 +6,7 @@ from django.core.cache import cache
 from math import ceil
 
 from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
@@ -19,13 +20,14 @@ from rest_framework.decorators import action
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-from .models import Post, Comment, Reaction, CommentReaction, Category
+from .models import Post, Comment, Reaction, CommentReaction, Category, Draft
 from .serializers import (
     PostListSerializer,
     PostDetailSerializer,
     PostCreateSerializer,
     CommentSerializer,
     CategorySerializer,
+    DraftSerializer,
 )
 from .permissions import IsAuthorOrReadOnly
 from logs.utils import (
@@ -482,3 +484,51 @@ class CommentViewSet(ModelViewSet):
         Comment.objects.filter(pk=comment.pk).update(like_count=F("like_count") + 1)
         comment.refresh_from_db(fields=["like_count"])
         return Response({"liked": True, "like_count": comment.like_count})
+
+# 임시저장
+class DraftView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """내 draft 조회"""
+        post_type = request.query_params.get("type")
+        if post_type not in ("student", "graduate"):
+            return Response(
+                {"detail": "type 파라미터가 필요합니다. (student | graduate)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        draft = Draft.objects.filter(
+            author=request.user, type=post_type
+        ).first()
+        if not draft:
+            return Response(None, status=status.HTTP_200_OK)
+        return Response(DraftSerializer(draft).data)
+
+    def post(self, request):
+        """저장 / 덮어쓰기 (upsert)"""
+        post_type = request.data.get("type")
+        if post_type not in ("student", "graduate"):
+            return Response(
+                {"detail": "type이 올바르지 않습니다. (student | graduate)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        draft, _ = Draft.objects.update_or_create(
+            author=request.user,
+            type=post_type,
+            defaults={
+                "title": request.data.get("title", ""),
+                "content": request.data.get("content", ""),
+            },
+        )
+        return Response(DraftSerializer(draft).data, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        """글 작성 완료 시 draft 삭제"""
+        post_type = request.query_params.get("type")
+        if post_type not in ("student", "graduate"):
+            return Response(
+                {"detail": "type 파라미터가 필요합니다. (student | graduate)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        Draft.objects.filter(author=request.user, type=post_type).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
