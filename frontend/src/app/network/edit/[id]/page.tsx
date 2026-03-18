@@ -182,7 +182,12 @@ function EditContent() {
 
     imageFiles.forEach((file) => {
       const url = URL.createObjectURL(file);
-      editor.chain().focus().setImage({ src: url }).createParagraphNear().run();
+      (editor as any)
+        .chain()
+        .focus()
+        .setImage({ src: url })
+        .createParagraphNear()
+        .run();
       setNewFiles((prev) => [...prev, file]);
     });
   };
