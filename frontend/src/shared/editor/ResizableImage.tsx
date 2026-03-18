@@ -13,6 +13,7 @@ type ResizableImageAttrs = {
   width?: string | number | null;
   alt?: string | null;
   title?: string | null;
+  align?: "left" | "center" | "right" | null;
 };
 
 function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: string) => void }) {
@@ -22,6 +23,13 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
   const isResizing = useRef(false);
   const startX = useRef(0);
   const startW = useRef(0);
+
+  const handleAlign = useCallback(
+    (align: "left" | "center" | "right") => {
+      updateAttributes({ align });
+    },
+    [updateAttributes]
+  );
 
   const handleResizeStart = useCallback(
     (e: React.PointerEvent) => {
@@ -70,6 +78,7 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
   );
 
   const width = attrs.width ?? "auto";
+  const align = attrs.align ?? "left";
 
   return (
     <NodeViewWrapper
@@ -85,6 +94,8 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
         style={{
           width: "100%",
           display: "block",
+          marginLeft: align === "center" || align === "right" ? "auto" : undefined,
+          marginRight: align === "center" ? "auto" : undefined,
           outline: selected ? "2px solid #2B7FFF" : "none",
           borderRadius: 4,
         }}
@@ -103,6 +114,57 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
+
+      {/* 이미지 정렬 툴바 (이미지 상단 중앙) */}
+      <div
+        className={[
+          "absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/70 text-white text-[11px] shadow-sm transition-all",
+          selected ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none -translate-y-1",
+        ].join(" ")}
+      >
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleAlign("left");
+          }}
+          className={[
+            "px-2 py-0.5 rounded-full flex items-center gap-1",
+            align === "left" ? "bg-white text-black" : "text-gray-200 hover:bg-white/10",
+          ].join(" ")}
+        >
+          <span>좌</span>
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleAlign("center");
+          }}
+          className={[
+            "px-2 py-0.5 rounded-full flex items-center gap-1",
+            align === "center" ? "bg-white text-black" : "text-gray-200 hover:bg-white/10",
+          ].join(" ")}
+        >
+          <span>중</span>
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleAlign("right");
+          }}
+          className={[
+            "px-2 py-0.5 rounded-full flex items-center gap-1",
+            align === "right" ? "bg-white text-black" : "text-gray-200 hover:bg-white/10",
+          ].join(" ")}
+        >
+          <span>우</span>
+        </button>
+      </div>
 
       {/* 리사이즈 핸들 - 4 코너 (투명, 넓은 터치 영역) */}
       {(
