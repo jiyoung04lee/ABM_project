@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { createPost, fetchCategories } from "@/shared/api/network";
-import { fetchDraft, saveDraft, deleteDraft } from "@/shared/api/draft";
+import { fetchDraft, saveDraft, deleteDraft, uploadDraftImage } from "@/shared/api/draft";
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -127,11 +127,11 @@ function WriteContent() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [showOverwriteModal, setShowOverwriteModal] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<{ title: string; content: string } | null>(null);
 
   const draftCheckedRef = useRef(false);
   const justSavedRef = useRef(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // onDelete는 ref로 들고 있어서 에디터 재생성 없이 항상 최신 콜백 유지
   const onDeleteRef = useRef<(src: string) => void>(() => {});
@@ -273,6 +273,32 @@ function WriteContent() {
 
   const handleRestoreCancel = () => { setShowRestoreModal(false); setPendingDraft(null); };
 
+  /* ---------------- 자동저장 (debounce) ---------------- */
+  useEffect(() => {
+    if (type === "qa") return;
+    if (!isDirty) return;
+    if (!title.trim() && isContentEmpty(content)) return;
+    if (content.includes('src="blob:')) return;
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
+    autoSaveTimerRef.current = setTimeout(async () => {
+      try {
+        await saveDraft({ type: type as "student" | "graduate", title, content });
+        justSavedRef.current = true;
+        setIsDirty(false);
+        setTimeout(() => { justSavedRef.current = false; }, 500);
+        console.log("자동저장 완료");
+      } catch (e) {
+        console.error("자동저장 실패", e);
+      }
+    }, 3000);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [title, content, isDirty, type]);
+
   /* ---------------- 이탈 경고 ---------------- */
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -286,16 +312,49 @@ function WriteContent() {
 
   const executeSave = useCallback(async () => {
     if (type === "qa") return;
-    if (!title.trim() || isContentEmpty(content)) {
+    if (!title.trim() && isContentEmpty(content)) {
       alert("제목과 내용을 입력해야 임시저장할 수 있습니다."); return;
     }
-    if (content.includes('src="blob:')) {
-      alert("이미지가 아직 업로드 중입니다. 잠시 후 다시 시도해주세요."); return;
-    }
+
     try {
       setIsSavingDraft(true);
       setSubmitting(true);
-      await saveDraft({ type: type as "student" | "graduate", title, content });
+
+      let savedContent = content;
+
+      // blob URL이 있으면 서버에 업로드 후 실제 URL로 교체
+      if (content.includes('src="blob:')) {
+        const blobToUrl = new Map<string, string>();
+
+        // blob URL 수집
+        const blobUrls: string[] = [];
+        content.replace(/<img[^>]*src="(blob:[^"]+)"[^>]*\/?>/gi, (_, src) => {
+          if (!blobUrls.includes(src)) blobUrls.push(src);
+          return _;
+        });
+
+        // blob URL → File → 서버 업로드
+        const blobToFile = new Map<string, File>(newImages.map((img) => [img.url, img.file]));
+        await Promise.all(
+          blobUrls.map(async (blobUrl) => {
+            const file = blobToFile.get(blobUrl);
+            if (!file) return;
+            const realUrl = await uploadDraftImage(file);
+            blobToUrl.set(blobUrl, realUrl);
+          })
+        );
+
+        // content 내 blob URL을 실제 URL로 교체
+        savedContent = content.replace(
+          /<img([^>]*?)src="(blob:[^"]+)"([^>]*?)\/?>/gi,
+          (_m, before, blobUrl, after) => {
+            const realUrl = blobToUrl.get(blobUrl) ?? blobUrl;
+            return `<img${before}src="${realUrl}"${after}>`;
+          }
+        );
+      }
+
+      await saveDraft({ type: type as "student" | "graduate", title, content: savedContent });
       justSavedRef.current = true;
       setIsDirty(false);
       setTimeout(() => { justSavedRef.current = false; }, 500);
@@ -306,24 +365,12 @@ function WriteContent() {
       setIsSavingDraft(false);
       setSubmitting(false);
     }
-  }, [type, title, content, router]);
+  }, [type, title, content, newImages, router]);
 
   const handleDraftSave = useCallback(async () => {
-    if (draftSaving || type === "qa") return;
-    if (!title.trim() || isContentEmpty(content)) {
-      alert("제목과 내용을 입력해야 임시저장할 수 있습니다."); return;
-    }
-    try {
-      const existing = await fetchDraft(type as "student" | "graduate");
-      if (existing) setShowOverwriteModal(true);
-      else await executeSave();
-    } catch { await executeSave(); }
-  }, [draftSaving, type, title, content, executeSave]);
-
-  const handleOverwriteConfirm = async () => {
-    setShowOverwriteModal(false);
+    if (draftSaving) return;
     await executeSave();
-  };
+  }, [draftSaving, executeSave]);
 
   /* ---------------- 카테고리 ---------------- */
   useEffect(() => {
@@ -423,19 +470,6 @@ function WriteContent() {
             <div className="flex gap-3 w-full">
               <button onClick={handleRestoreCancel} className="flex-1 py-2 rounded-md border border-gray-200 text-sm text-gray-500 hover:bg-gray-50">취소</button>
               <button onClick={handleRestoreConfirm} className="flex-1 py-2 rounded-md bg-black text-white text-sm hover:bg-gray-800">불러오기</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 덮어쓰기 확인 모달 */}
-      {showOverwriteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl px-8 py-7 shadow-xl flex flex-col items-center gap-4 min-w-[280px]">
-            <p className="text-sm font-semibold text-gray-800 text-center">기존 임시저장 글을 덮어쓸까요?</p>
-            <div className="flex gap-3 w-full">
-              <button onClick={() => setShowOverwriteModal(false)} className="flex-1 py-2 rounded-md border border-gray-200 text-sm text-gray-500 hover:bg-gray-50">취소</button>
-              <button onClick={handleOverwriteConfirm} className="flex-1 py-2 rounded-md bg-black text-white text-sm hover:bg-gray-800">덮어쓰기</button>
             </div>
           </div>
         </div>

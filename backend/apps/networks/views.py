@@ -20,7 +20,7 @@ from rest_framework.decorators import action
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-from .models import Post, Comment, Reaction, CommentReaction, Category, Draft
+from .models import Post, PostFile, Comment, Reaction, CommentReaction, Category, Draft
 from .serializers import (
     PostListSerializer,
     PostDetailSerializer,
@@ -583,3 +583,25 @@ class DraftView(APIView):
             )
         Draft.objects.filter(author=request.user, type=post_type).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ImageUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        file = request.FILES.get("image")
+        if not file:
+            return Response(
+                {"detail": "이미지 파일이 필요합니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # PostFile 재사용해서 저장
+        post_file = PostFile.objects.create(
+            post=None,  # draft 이미지는 post 없이 저장
+            file=file,
+            file_type="image",
+            order=0,
+        )
+
+        url = request.build_absolute_uri(post_file.file.url)
+        return Response({"url": url}, status=status.HTTP_200_OK)
