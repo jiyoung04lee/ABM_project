@@ -10,7 +10,7 @@ class Category(models.Model):
     ]
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, db_index=True)
     name = models.CharField(max_length=50)
-    # ✅ 탭마다 같은 slug(예: intern)를 쓰려면 unique=True면 터짐 → 복합 유니크로 변경
+    # 탭마다 같은 slug(예: intern)를 쓰려면 unique=True면 터짐 → 복합 유니크로 변경
     slug = models.SlugField()
 
     class Meta:
@@ -198,3 +198,35 @@ class CommentReaction(models.Model):
                 name="unique_network_comment_user_reaction",
             )
         ]
+        
+# Draft (임시저장)
+class Draft(models.Model):
+    TYPE_CHOICES = (
+        ("student", "재학생"),
+        ("graduate", "졸업생"),
+    )
+
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="network_drafts",
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        db_index=True,
+    )
+    title = models.CharField(max_length=200)
+    content = models.TextField()  # HTML 전체 그대로 저장 (이미지 URL 포함)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["author", "type"],
+                name="unique_network_draft_author_type",
+            )
+        ]
+
+    def __str__(self):
+        return f"[Draft] {self.author} - {self.type} : {self.title}"
