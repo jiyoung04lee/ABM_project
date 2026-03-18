@@ -33,9 +33,16 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
             created_at__lt=thirty_days_ago
         ).delete()
 
-        return Notification.objects.filter(
-            recipient=self.request.user
-        ).select_related("actor", "post", "comment")
+        return (
+            Notification.objects.filter(recipient=self.request.user)
+            .select_related(
+                "actor",
+                "post",
+                "comment",
+                "network_post",
+                "network_comment",
+            )
+        )
 
     # 읽지 않은 개수
     @action(detail=False, methods=["get"])
