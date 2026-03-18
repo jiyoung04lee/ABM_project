@@ -417,6 +417,7 @@ class PostViewSet(ModelViewSet):
                 additional_pages = ceil(remaining / PAGE_SIZE)
                 total_pages = 1 + additional_pages
 
+
         # 페이지 범위를 벗어나면 빈 결과 반환
         if total_pages == 0 or page > total_pages:
             page_posts = normal_posts.none()
