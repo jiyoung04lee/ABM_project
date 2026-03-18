@@ -338,6 +338,10 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        # create에서는 기존 파일 유지/전체삭제 플래그를 사용하지 않는다.
+        # (update에서만 의미가 있음) 모델 생성 kwargs로 넘어가면 TypeError가 난다.
+        validated_data.pop("existing_files", None)
+        validated_data.pop("clear_files", None)
         new_files = validated_data.pop("new_files", [])
         thumbnail_index = validated_data.pop("thumbnail_index", None)
 
