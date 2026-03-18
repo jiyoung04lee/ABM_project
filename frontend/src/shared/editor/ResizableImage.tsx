@@ -27,6 +27,7 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
     (e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      const dir = (e.currentTarget as HTMLElement).dataset.dir ?? "right";
       isResizing.current = true;
       startX.current = e.clientX;
       startW.current = imgRef.current?.offsetWidth ?? 300;
@@ -35,7 +36,10 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
 
       const onPointerMove = (moveEvt: PointerEvent) => {
         if (!isResizing.current) return;
-        const delta = moveEvt.clientX - startX.current;
+        const delta =
+          dir === "left"
+            ? startX.current - moveEvt.clientX
+            : moveEvt.clientX - startX.current;
         const newW = Math.max(80, startW.current + delta);
         updateAttributes({ width: `${newW}px` });
       };
@@ -100,15 +104,23 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
         </svg>
       </button>
 
-      {/* 리사이즈 핸들 - 우하단 */}
-      <span
-        onPointerDown={handleResizeStart}
-        className={[
-          "absolute bottom-1 right-1 w-4 h-4 bg-white border-2 border-[#2B7FFF] rounded-sm cursor-se-resize z-10 transition-opacity",
-          selected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-        ].join(" ")}
-        style={{ userSelect: "none" }}
-      />
+      {/* 리사이즈 핸들 - 4 코너 (투명, 넓은 터치 영역) */}
+      {(
+        [
+          { key: "nw", pos: "top-0 left-0", cursor: "cursor-nwse-resize", dir: "left" as const },
+          { key: "ne", pos: "top-0 right-0", cursor: "cursor-nesw-resize", dir: "right" as const },
+          { key: "sw", pos: "bottom-0 left-0", cursor: "cursor-nesw-resize", dir: "left" as const },
+          { key: "se", pos: "bottom-0 right-0", cursor: "cursor-nwse-resize", dir: "right" as const },
+        ] as const
+      ).map((h) => (
+        <span
+          key={h.key}
+          data-dir={h.dir}
+          onPointerDown={handleResizeStart}
+          className={["absolute w-5 h-5 z-10", h.pos, h.cursor].join(" ")}
+          style={{ userSelect: "none", background: "transparent" }}
+        />
+      ))}
     </NodeViewWrapper>
   );
 }
