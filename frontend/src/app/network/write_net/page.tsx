@@ -223,7 +223,7 @@ function WriteContent() {
       compressedFiles.forEach((file) => {
         const url = URL.createObjectURL(file);
 
-        editor
+        (editor as any)
           .chain()
           .focus()
           .setImage({ src: url })
