@@ -111,7 +111,6 @@ function WriteContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [category, setCategory] = useState<string | null>(null);
   const [content, setContent] = useState("");
-  const [useRealName, setUseRealName] = useState(false);
 
   // 이미지: { file, url(blob) } 배열로 통합 관리
   const [newImages, setNewImages] = useState<ImageEntry[]>([]);
@@ -364,7 +363,7 @@ function WriteContent() {
     formData.append("title", title);
     formData.append("content", contentWithPlaceholders);
     formData.append("is_anonymous", "false");
-    formData.append("use_real_name", String(useRealName));
+    formData.append("use_real_name", "false");
     formData.append("category", category);
 
     // 3) HTML 등장 순서대로 new_files 추가 (순서 버그 핵심 수정)
@@ -615,17 +614,6 @@ function WriteContent() {
           </div>
         )}
 
-        {/* 실명 */}
-        <div className="flex items-center gap-2 mt-24 pt-4 pb-6 border-t border-gray-200">
-          <input
-            type="checkbox"
-            id="use-real-name"
-            checked={useRealName}
-            onChange={() => setUseRealName((prev) => !prev)}
-            className="w-4 h-4 accent-[#2B7FFF]"
-          />
-          <label htmlFor="use-real-name" className="text-sm text-gray-500 cursor-pointer">실명으로 작성</label>
-        </div>
       </div>
     </div>
   );
