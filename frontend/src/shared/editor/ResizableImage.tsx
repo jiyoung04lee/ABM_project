@@ -211,7 +211,9 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
             {/* 실제 눈에 보이는 작은 점 */}
             <span
               className={[
-                "w-2.5 h-2.5 rounded-full bg-white border-2 border-[#2B7FFF] transition-opacity",
+                // border는 box-model에 영향을 줘서 "꼭짓점에서 떠 보이는" 착시를 만들 수 있어요.
+                // ring은 레이아웃을 건드리지 않기 때문에 점 위치를 더 정확히 보이게 합니다.
+                "w-2 h-2 rounded-full bg-white ring-2 ring-[#2B7FFF] transition-opacity",
                 selected ? "opacity-100" : "opacity-0 group-hover:opacity-80",
               ].join(" ")}
               style={{ pointerEvents: "none" }}
