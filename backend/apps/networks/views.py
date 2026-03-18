@@ -326,7 +326,7 @@ class PostViewSet(ModelViewSet):
             CommentSerializer(comment, context={"request": request}).data
         )
 
-    MAX_PINNED = 3
+    MAX_PINNED = 6
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminUser])
     def pin(self, request, pk=None):
