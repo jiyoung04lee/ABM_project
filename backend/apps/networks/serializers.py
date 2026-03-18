@@ -275,6 +275,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True,
     )
+    clear_files = serializers.BooleanField(required=False, write_only=True)
     new_files = serializers.ListField(
         child=serializers.FileField(),
         required=False,
@@ -295,6 +296,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "use_real_name",
             "category",
             "existing_files",
+            "clear_files",
             "new_files",
             "thumbnail_index",
             "files",
@@ -405,15 +407,33 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        thumbnail_index = validated_data.pop("thumbnail_index", None)
         existing_ids = validated_data.pop("existing_files", None)
+        clear_files = validated_data.pop("clear_files", False)
         new_files = validated_data.pop("new_files", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        if existing_ids is not None:
-            instance.files.exclude(id__in=existing_ids).delete()
+        if clear_files:
+            files_to_delete = list(instance.files.all())
+        elif existing_ids is not None:
+            # 방어: existing_files가 빈 리스트([])로 들어온 경우
+            # '전부 삭제'로 오해하지 않고 파일 변경 없음으로 처리한다.
+            if len(existing_ids) == 0:
+                files_to_delete = []
+            else:
+                files_to_delete = list(
+                    instance.files.exclude(id__in=existing_ids)
+                )
+        else:
+            files_to_delete = []
+
+        for post_file in files_to_delete:
+            if post_file.file:
+                post_file.file.delete(save=False)
+            post_file.delete()
 
         if new_files:
             current_count = instance.files.count()
@@ -424,17 +444,29 @@ class PostCreateSerializer(serializers.ModelSerializer):
                     "image" if content_type.startswith("image/") else "pdf"
                 )
 
-            PostFile.objects.create(
-                post=instance,
-                file=file,
-                file_type=file_type,
-                order=current_count + index,
-            )
+                PostFile.objects.create(
+                    post=instance,
+                    file=file,
+                    file_type=file_type,
+                    order=current_count + index,
+                )
 
-        first_image = instance.files.filter(file_type="image").first()
-        if first_image and first_image.file:
-            thumb_file = make_thumbnail(first_image.file)
+        image_files = list(instance.files.filter(file_type="image"))
+        selected_image = None
+
+        if (
+            thumbnail_index is not None
+            and 0 <= thumbnail_index < len(image_files)
+        ):
+            selected_image = image_files[thumbnail_index]
+        elif image_files:
+            selected_image = image_files[0]
+
+        if selected_image and selected_image.file:
+            thumb_file = make_thumbnail(selected_image.file)
             if thumb_file:
+                if instance.thumbnail:
+                    instance.thumbnail.delete(save=False)
                 instance.thumbnail.save(
                     thumb_file.name,
                     thumb_file,
@@ -505,8 +537,9 @@ class CommentSerializer(serializers.ModelSerializer):
             data["author"] = None
 
         return data
-    
-# 임시저장 
+
+
+# 임시저장
 class DraftSerializer(serializers.ModelSerializer):
     class Meta:
         model = Draft
