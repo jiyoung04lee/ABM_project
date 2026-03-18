@@ -141,6 +141,7 @@ function WriteContent() {
 
   const [submitting, setSubmitting] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [currentFontSize, setCurrentFontSize] = useState("16px");
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -197,6 +198,10 @@ function WriteContent() {
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       setContent(editor.getHTML());
+    },
+    onSelectionUpdate: ({ editor }) => {
+      const attrs = editor.getAttributes("textStyle");
+      setCurrentFontSize(attrs.fontSize || "16px");
     },
   });
 
@@ -412,13 +417,15 @@ function WriteContent() {
 
               {/* 텍스트 스타일 */}
               <select
-                onChange={(e) =>
+                value={currentFontSize}
+                onChange={(e) => {
+                  setCurrentFontSize(e.target.value);
                   editor
                     ?.chain()
                     .focus()
                     .setMark("textStyle", { fontSize: e.target.value })
-                    .run()
-                }
+                    .run();
+                }}
                 className="border rounded px-2 py-1 text-sm"
               >
                 <option value="14px">14</option>

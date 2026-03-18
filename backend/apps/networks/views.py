@@ -41,6 +41,8 @@ from apps.users.utils_score import (
     add_comment_like_score,
     remove_comment_like_score,
 )
+from apps.notifications.models import Notification
+
 
 class CategoryViewSet(ReadOnlyModelViewSet):
     serializer_class = CategorySerializer
@@ -194,10 +196,12 @@ class PostViewSet(ModelViewSet):
         if reaction:
             reaction.delete()
 
-            # 좋아요 취소시 점수 차감 
+            # 좋아요 취소시 점수 차감
             remove_post_like_score(user, post.id)
 
-            Post.objects.filter(pk=post.pk).update(like_count=F("like_count") - 1)
+            Post.objects.filter(pk=post.pk).update(
+                like_count=F("like_count") - 1
+            )
             post.refresh_from_db(fields=["like_count"])
             if post.like_count < 0:
                 Post.objects.filter(pk=post.pk).update(like_count=0)
@@ -206,8 +210,17 @@ class PostViewSet(ModelViewSet):
 
         Reaction.objects.create(post=post, user=user)
 
-        # 좋아요 점수 
+        # 좋아요 점수
         add_post_like_score(user, post.id)
+
+        # 게시글 작성자에게 좋아요 알림 (본인 좋아요는 제외)
+        if post.author and post.author != user:
+            Notification.objects.create(
+                recipient=post.author,
+                actor=user,
+                type="POST_LIKE",
+                network_post=post,
+            )
 
         Post.objects.filter(pk=post.pk).update(like_count=F("like_count") + 1)
         post.refresh_from_db(fields=["like_count"])
@@ -234,7 +247,9 @@ class PostViewSet(ModelViewSet):
             .prefetch_related("replies__author")
         )
         serializer = CommentSerializer(
-            comments, many=True, context={"request": request}
+            comments,
+            many=True,
+            context={"request": request},
         )
         return Response(serializer.data)
 
@@ -242,7 +257,10 @@ class PostViewSet(ModelViewSet):
     def add_comment(self, request, pk=None):
         post = self.get_object()
 
-        serializer = CommentSerializer(data=request.data, context={"request": request})
+        serializer = CommentSerializer(
+            data=request.data,
+            context={"request": request},
+        )
         serializer.is_valid(raise_exception=True)
 
         comment = serializer.save(
@@ -253,6 +271,31 @@ class PostViewSet(ModelViewSet):
 
         # 활동 점수 +2
         add_score(request.user, 2)
+
+        # 알림 생성
+        parent_id = request.data.get("parent")
+        actor = request.user
+
+        # 대댓글이면 부모 댓글 작성자에게 알림
+        if parent_id:
+            parent_comment = Comment.objects.filter(pk=parent_id).first()
+            if parent_comment and parent_comment.author and parent_comment.author != actor:
+                Notification.objects.create(
+                    recipient=parent_comment.author,
+                    actor=actor,
+                    type="COMMENT_REPLY",
+                    network_post=post,
+                    network_comment=comment,
+                )
+        # 일반 댓글이면 게시글 작성자에게 알림
+        elif post.author and post.author != actor:
+            Notification.objects.create(
+                recipient=post.author,
+                actor=actor,
+                type="POST_COMMENT",
+                network_post=post,
+                network_comment=comment,
+            )
 
         Post.objects.filter(pk=post.pk).update(
             comment_count=F("comment_count") + 1

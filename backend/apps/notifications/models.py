@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 
-# Create your models here.
+
 class Notification(models.Model):
 
     TYPE_CHOICES = [
@@ -15,7 +15,7 @@ class Notification(models.Model):
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="notifications"
+        related_name="notifications",
     )
 
     actor = models.ForeignKey(
@@ -23,23 +23,39 @@ class Notification(models.Model):
         on_delete=models.CASCADE,
         related_name="acted_notifications",
         null=True,
-        blank=True
+        blank=True,
     )
 
     type = models.CharField(max_length=30, choices=TYPE_CHOICES)
 
+    # 커뮤니티 게시글 / 댓글
     post = models.ForeignKey(
         "community.Post",
         on_delete=models.CASCADE,
         null=True,
-        blank=True
+        blank=True,
     )
-
     comment = models.ForeignKey(
         "community.Comment",
         on_delete=models.CASCADE,
         null=True,
-        blank=True
+        blank=True,
+    )
+
+    # 네트워크 게시글 / 댓글
+    network_post = models.ForeignKey(
+        "networks.Post",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="notifications",
+    )
+    network_comment = models.ForeignKey(
+        "networks.Comment",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="notifications",
     )
 
     message = models.TextField(blank=True)

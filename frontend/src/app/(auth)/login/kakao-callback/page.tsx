@@ -56,6 +56,11 @@ function KakaoCallbackContent() {
           return;
         }
 
+        if (data.multi_major_pending) {
+          window.location.href = "/onboarding/multi-major-pending";
+          return;
+        }
+
         if (data.tokens?.access) {
           localStorage.setItem("access_token", data.tokens.access);
           if (data.tokens.refresh) {
