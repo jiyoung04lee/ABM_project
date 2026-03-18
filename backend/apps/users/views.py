@@ -627,7 +627,7 @@ class CompleteProfileView(generics.GenericAPIView):
     
 
 # 제외할 닉네임 목록
-EXCLUDED_NICKNAMES = {"이지영", "윤성철", "김승혁"}
+EXCLUDED_NICKNAMES = {"wldud", "김만덕", "닉네임"}
 # 순위 불러 오기 
 @api_view(["GET"])
 @permission_classes([AllowAny])
