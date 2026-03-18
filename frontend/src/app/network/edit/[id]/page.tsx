@@ -371,7 +371,7 @@ function EditContent() {
         <div className="max-w-4xl mx-auto w-full px-6">
           <div className="flex items-center justify-between py-2.5">
             <div className="flex items-center gap-3">
-              <button onClick={() => router.back()}>
+              <button onClick={() => router.push(`/network?type=${postType}`)}>
                 <Image src="/icons/back.svg" alt="back" width={22} height={22} />
               </button>
               <span className="text-lg font-semibold">네트워크 글 수정</span>
