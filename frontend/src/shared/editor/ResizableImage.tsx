@@ -54,10 +54,12 @@ function IconAlignRight({ active }: { active: boolean }) {
 
 /* ── 코너 핸들 ── */
 const HANDLES = [
-  { key: "nw", cls: "top-0 left-0", cursor: "cursor-nwse-resize", dir: "left"  as const },
-  { key: "ne", cls: "top-0 right-0", cursor: "cursor-nesw-resize", dir: "right" as const },
-  { key: "sw", cls: "bottom-0 left-0", cursor: "cursor-nesw-resize", dir: "left"  as const },
-  { key: "se", cls: "bottom-0 right-0", cursor: "cursor-nwse-resize", dir: "right" as const },
+  // 핸들(span)은 w-8/h-8라서, 꼭짓점의 "모서리"에 붙이면 점(중심)이 안쪽으로 들어가 보입니다.
+  // 그래서 각 코너에서 점의 중심이 정확히 이미지 꼭짓점에 오도록 translate 보정합니다.
+  { key: "nw", cls: "top-0 left-0 -translate-x-1/2 -translate-y-1/2", cursor: "cursor-nwse-resize", dir: "left"  as const },
+  { key: "ne", cls: "top-0 right-0 translate-x-1/2 -translate-y-1/2", cursor: "cursor-nesw-resize", dir: "right" as const },
+  { key: "sw", cls: "bottom-0 left-0 -translate-x-1/2 translate-y-1/2", cursor: "cursor-nesw-resize", dir: "left"  as const },
+  { key: "se", cls: "bottom-0 right-0 translate-x-1/2 translate-y-1/2", cursor: "cursor-nwse-resize", dir: "right" as const },
 ] as const;
 
 /* ── 컴포넌트 ── */
