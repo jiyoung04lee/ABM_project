@@ -343,7 +343,7 @@ function EditContent() {
       }
 
       alert("수정 완료");
-      router.push(`/network/${postId}`);
+      router.push(`/network?type=${postType}`);
     } catch (err) {
       if (err instanceof AxiosError) console.error(err.response?.data);
       alert("수정 실패");
@@ -514,17 +514,6 @@ function EditContent() {
             </div>
           )}
 
-          {/* 실명 */}
-          <div className="flex items-center gap-2 mt-24 pt-4 pb-6 border-t border-gray-200">
-            <input
-              type="checkbox"
-              id="use-real-name"
-              checked={useRealName}
-              onChange={() => setUseRealName((prev) => !prev)}
-              className="w-4 h-4 accent-[#2B7FFF]"
-            />
-            <label htmlFor="use-real-name" className="text-sm text-gray-500 cursor-pointer">실명으로 작성</label>
-          </div>
         </div>
       </div>
     </div>
