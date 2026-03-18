@@ -588,8 +588,15 @@ function NetworkPageContent() {
     }
   };
 
-  const handleCardClick = (id: number) => {
-    if (!isLoggedIn) {
+  // const handleCardClick = (id: number) => {
+  //   if (!isLoggedIn) {
+  //     router.push("/login?from=network&reason=detail");
+  //     return;
+  //   }
+  //   router.push(`/network/${id}`);
+  // };
+  const handleCardClick = (id: number, isPinned?: boolean) => {
+    if (!isLoggedIn && !isPinned) {
       router.push("/login?from=network&reason=detail");
       return;
     }
@@ -807,7 +814,8 @@ function NetworkPageContent() {
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => handleCardClick(p.id)}
+                      // onClick={() => handleCardClick(p.id)}
+                      onClick={() => handleCardClick(p.id, p.is_pinned)}
                       className="w-full bg-white rounded-xl border border-gray-200 px-7 py-6 text-left shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:border-[#2563EB] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all cursor-pointer"
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -896,7 +904,8 @@ function NetworkPageContent() {
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => handleCardClick(p.id)}
+                      // onClick={() => handleCardClick(p.id)}
+                      onClick={() => handleCardClick(p.id, p.is_pinned)}
                       className="group flex flex-col bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#2563EB] hover:shadow-xl transition-all duration-300 text-left cursor-pointer"
                     >
                       {/* 썸네일 */}

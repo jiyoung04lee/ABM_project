@@ -136,7 +136,12 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
       {/* 이미지 래퍼 (핸들/툴바는 이 안에 배치) */}
       <div
         className="relative inline-block"
-        style={{ width: typeof width === "number" ? `${width}px` : width, maxWidth: "100%" }}
+        style={{
+          width: typeof width === "number" ? `${width}px` : width,
+          maxWidth: "100%",
+          outline: selected ? "2px solid #2B7FFF" : "none",  
+          borderRadius: 4,
+        }}
       >
         <img
           ref={imgRef}
@@ -146,17 +151,16 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
           style={{
             width: "100%",
             display: "block",
-            outline: selected ? "2px solid #2B7FFF" : "none",
             borderRadius: 4,
           }}
           draggable={false}
         />
 
-        {/* 삭제 버튼 */}
+        {/* 삭제 버튼 — 이제 div 기준이라 안에 들어감 */}
         <button
           type="button"
           onMouseDown={handleDelete}
-          className="absolute top-2 right-2 z-20 flex items-center justify-center w-7 h-7 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+          className="absolute top-2 right-2 z-10 flex items-center justify-center w-6 h-6 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
           aria-label="이미지 삭제"
           title="이미지 삭제"
         >
@@ -168,7 +172,7 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
         {/* 정렬 툴바 (선택 시 이미지 상단 중앙) */}
         <div
           className={[
-            "absolute -top-9 left-1/2 -translate-x-1/2 z-20 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/75 shadow-md transition-all duration-150",
+            "absolute -top-12 left-1/2 -translate-x-1/2 z-20 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/75 shadow-md transition-all duration-150",
             selected ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
           ].join(" ")}
         >
@@ -209,7 +213,7 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
             style={{ userSelect: "none" }}
           >
             {/* 실제 눈에 보이는 작은 점 */}
-            <span
+            {/* <span
               className={[
                 // border는 box-model에 영향을 줘서 "꼭짓점에서 떠 보이는" 착시를 만들 수 있어요.
                 // ring은 레이아웃을 건드리지 않기 때문에 점 위치를 더 정확히 보이게 합니다.
@@ -217,7 +221,7 @@ function ResizableImageComponent(props: NodeViewProps & { onDelete?: (src: strin
                 selected ? "opacity-100" : "opacity-0 group-hover:opacity-80",
               ].join(" ")}
               style={{ pointerEvents: "none" }}
-            />
+            /> */}
           </span>
         ))}
       </div>

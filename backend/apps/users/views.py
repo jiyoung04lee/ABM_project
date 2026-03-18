@@ -625,6 +625,9 @@ class CompleteProfileView(generics.GenericAPIView):
             status=status.HTTP_200_OK,
         )
     
+
+# 제외할 닉네임 목록
+EXCLUDED_NICKNAMES = {"이지영", "윤성철", "김승혁"}
 # 순위 불러 오기 
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -633,6 +636,8 @@ def top_active_users(request):
     grade1 = (
         User.objects
         .filter(user_type="student", grade=1)
+        .exclude(nickname__in=EXCLUDED_NICKNAMES) 
+        .exclude(is_staff=True)    
         .order_by("-score")
         .first()
     )
@@ -640,6 +645,8 @@ def top_active_users(request):
     grade2 = (
         User.objects
         .filter(user_type="student", grade=2)
+        .exclude(nickname__in=EXCLUDED_NICKNAMES) 
+        .exclude(is_staff=True)   
         .order_by("-score")
         .first()
     )
@@ -648,6 +655,8 @@ def top_active_users(request):
         User.objects
         .filter(user_type="student")
         .filter(Q(grade=3) | Q(grade=4))
+        .exclude(nickname__in=EXCLUDED_NICKNAMES) 
+        .exclude(is_staff=True)   
         .order_by("-score")
         .first()
     )

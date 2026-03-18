@@ -569,6 +569,7 @@ class DraftView(APIView):
             defaults={
                 "title": request.data.get("title", ""),
                 "content": request.data.get("content", ""),
+                "image_ids": request.data.get("image_ids", []),
             },
         )
         return Response(DraftSerializer(draft).data, status=status.HTTP_200_OK)
@@ -604,4 +605,4 @@ class ImageUploadView(APIView):
         )
 
         url = request.build_absolute_uri(post_file.file.url)
-        return Response({"url": url}, status=status.HTTP_200_OK)
+        return Response({"url": url, "id": post_file.id}, status=status.HTTP_200_OK)
