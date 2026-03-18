@@ -41,6 +41,8 @@ interface ExistingImageEntry {
   url: string; // 서버 URL
 }
 
+type ThumbnailSrc = string;
+
 const FontSize = TextStyle.extend({
   addAttributes() {
     return {
@@ -83,6 +85,8 @@ function EditContent() {
   const [existingImages, setExistingImages] = useState<ExistingImageEntry[]>([]);
   // 새로 업로드하는 이미지: file + blob url 로 관리
   const [newImages, setNewImages] = useState<NewImageEntry[]>([]);
+  // 썸네일: src(URL)로 추적 (서버 URL 또는 blob URL)
+  const [thumbnailSrc, setThumbnailSrc] = useState<ThumbnailSrc | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -103,6 +107,7 @@ function EditContent() {
         // 기존 서버 이미지 삭제 (저장 시 existing_files 에서 빠짐)
         setExistingImages((prev) => prev.filter((img) => img.url !== src));
       }
+      setThumbnailSrc((prev) => (prev === src ? null : prev));
     };
   }, []);
 
@@ -146,6 +151,13 @@ function EditContent() {
       });
 
       setExistingImages((prev) => prev.filter((img) => srcSet.has(img.url)));
+      setThumbnailSrc((prev) => {
+        if (prev && srcSet.has(prev)) return prev;
+        // 서버 URL 우선, 없으면 blob 중 첫 번째
+        const firstServer = orderedSrcs.find((s) => !s.startsWith("blob:"));
+        const firstBlob = orderedSrcs.find((s) => s.startsWith("blob:"));
+        return firstServer ?? firstBlob ?? null;
+      });
     },
     onSelectionUpdate: ({ editor: e }) => {
       setCurrentFontSize(e.getAttributes("textStyle").fontSize || "16px");
@@ -180,6 +192,7 @@ function EditContent() {
             })
             .filter((img: ExistingImageEntry) => img.url);
           setExistingImages(imgs);
+          if (imgs.length > 0) setThumbnailSrc(imgs[0].url);
 
           // 본문의 __BLOB_N__ 을 실제 서버 URL 로 치환
           let contentToSet = post.content ?? "";
@@ -226,6 +239,7 @@ function EditContent() {
     imageFiles.forEach((file) => {
       const url = URL.createObjectURL(file);
       editor.chain().focus().setImage({ src: url }).createParagraphNear().run();
+      setThumbnailSrc((prev) => prev ?? url);
       setNewImages((prev) => [...prev, { file, url }]);
     });
   };
@@ -285,6 +299,19 @@ function EditContent() {
         const file = blobToFile.get(blobUrl);
         if (file) formData.append("new_files", file);
       });
+
+      // 5) 썸네일 인덱스 전송 (이미지들: 기존 이미지들 + 새 이미지들 순서 기준)
+      if (thumbnailSrc) {
+        const existingIdx = existingImages.findIndex((img) => img.url === thumbnailSrc);
+        if (existingIdx !== -1) {
+          formData.append("thumbnail_index", String(existingIdx));
+        } else {
+          const newIdx = orderedBlobUrls.indexOf(thumbnailSrc);
+          if (newIdx !== -1) {
+            formData.append("thumbnail_index", String(existingImages.length + newIdx));
+          }
+        }
+      }
 
       const updated = await updatePost(postId, formData);
 
@@ -445,6 +472,47 @@ function EditContent() {
           >
             <EditorContent editor={editor} className="outline-none w-full prose max-w-none" />
           </div>
+
+          {/* 썸네일 선택 (수정) */}
+          {(existingImages.length > 0 || newImages.length > 0) && (
+            <div className="mb-10 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="flex items-end justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">썸네일 선택</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    대표 이미지로 사용할 사진을 클릭하세요.
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400">{thumbnailSrc ? "선택됨" : "미선택"}</p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {[...existingImages.map((i) => i.url), ...newImages.map((i) => i.url)].map((src) => {
+                  const selected = thumbnailSrc === src;
+                  return (
+                    <button
+                      key={src}
+                      type="button"
+                      onClick={() => setThumbnailSrc(src)}
+                      className={[
+                        "relative w-20 h-20 rounded-lg overflow-hidden border-2 transition flex-shrink-0",
+                        selected ? "border-[#2B7FFF] ring-2 ring-[#2B7FFF]/30" : "border-gray-200 hover:border-gray-400",
+                      ].join(" ")}
+                      aria-pressed={selected}
+                      aria-label="썸네일로 선택"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt="" className="w-full h-full object-cover" />
+                      {selected && (
+                        <span className="absolute left-1.5 top-1.5 text-[11px] font-semibold text-white bg-[#2B7FFF] px-2 py-0.5 rounded">
+                          썸네일
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* 실명 */}
           <div className="flex items-center gap-2 mt-24 pt-4 pb-6 border-t border-gray-200">
