@@ -512,30 +512,26 @@ function WriteContent() {
     // 4) 썸네일 처리
     if (mainImageUrl !== null) {
       if (mainImageUrl.startsWith("blob:")) {
+        // 새 이미지 → existing 개수 + blob 인덱스
+        const existingCount = newImages.filter(
+          (img) => !img.url.startsWith("blob:") && img.postFileId
+        ).length;
         const thumbIdx = orderedBlobUrls.indexOf(mainImageUrl);
         if (thumbIdx !== -1) {
-          const existingCount = newImages.filter(
-            (img) => !img.url.startsWith("blob:") && img.postFileId
-          ).length;
           formData.append("thumbnail_index", String(existingCount + thumbIdx));
         }
       } else {
-        // 복원된 이미지 → postFileId로 existing_files에서 인덱스 찾기
-        const existingImgs = newImages.filter((img) => !img.url.startsWith("blob:") && img.postFileId);
-        const thumbExistingIdx = existingImgs.findIndex((img) => img.url === mainImageUrl);
+        // 복원된 이미지 → existing 기준 인덱스
+        const existingImgs = newImages.filter(
+          (img) => !img.url.startsWith("blob:") && img.postFileId
+        );
+        const thumbExistingIdx = existingImgs.findIndex(
+          (img) => img.url === mainImageUrl
+        );
         if (thumbExistingIdx !== -1) {
           formData.append("thumbnail_index", String(thumbExistingIdx));
-        } else {
-          // fallback: fetch로 파일 변환
-          try {
-            const res = await fetch(mainImageUrl);
-            const blob = await res.blob();
-            const file = new File([blob], "thumbnail.jpg", { type: blob.type });
-            formData.append("thumbnail_file", file);
-          } catch (e) {
-            console.error("썸네일 변환 실패", e);
-          }
         }
+        // fallback 제거 — thumbnail_file fetch는 CORS 문제로 배포 환경에서 실패
       }
     }
 

@@ -405,25 +405,28 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 post.content = fixed_content
                 post.save(update_fields=["content"])
 
-        if image_files:
+        # existing + new 합쳐서 전체 image_files 기준으로 인덱싱
+        all_image_files = list(
+            post.files.filter(file_type="image").order_by("id")
+        )
+
+        if thumbnail_file:
+            # thumbnail_file 우선
+            thumb_file = make_thumbnail(thumbnail_file)
+            if thumb_file:
+                post.thumbnail.save(thumb_file.name, thumb_file, save=True)
+        elif all_image_files:
             idx = 0
             if (
                 thumbnail_index is not None
-                and 0 <= thumbnail_index < len(image_files)
+                and 0 <= thumbnail_index < len(all_image_files)
             ):
                 idx = thumbnail_index
-            _, thumb_source = image_files[idx]
-            thumb_file = make_thumbnail(thumb_source)
-            if thumb_file:
-                post.thumbnail.save(thumb_file.name, thumb_file, save=True)
-
-        # thumbnail_file이 있으면 새 파일로 썸네일 생성 (기존 thumbnail_index보다 우선)
-        if thumbnail_file:
-            thumb_file = make_thumbnail(thumbnail_file)
-            if thumb_file:
-                if post.thumbnail:
-                    post.thumbnail.delete(save=False)
-                post.thumbnail.save(thumb_file.name, thumb_file, save=True)
+            selected = all_image_files[idx]
+            if selected.file:
+                thumb_file = make_thumbnail(selected.file)
+                if thumb_file:
+                    post.thumbnail.save(thumb_file.name, thumb_file, save=True)
 
         return post
 
