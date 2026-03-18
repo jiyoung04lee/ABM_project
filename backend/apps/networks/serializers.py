@@ -8,7 +8,7 @@ from io import BytesIO
 import os
 import re
 
-from .models import Post, PostFile, Comment, Category
+from .models import Post, PostFile, Comment, Category, Draft
 
 
 def make_thumbnail(uploaded_file, size=(600, 338)):
@@ -505,3 +505,11 @@ class CommentSerializer(serializers.ModelSerializer):
             data["author"] = None
 
         return data
+    
+# 임시저장 
+class DraftSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Draft
+        ref_name = "NetworkDraftSerializer"
+        fields = ["id", "type", "title", "content", "updated_at"]
+        read_only_fields = ["id", "updated_at"]
