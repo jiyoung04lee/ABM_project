@@ -171,6 +171,8 @@ function EditContent() {
     (async () => {
       try {
         const post = await fetchPostDetail(postId);
+        console.log("post.files:", post.files);      // ← 추가
+        console.log("post.thumbnail:", post.thumbnail);
         setTitle(post.title);
         setPostType(post.type);
         setIsAnonymous(post.is_anonymous);
@@ -308,7 +310,7 @@ function EditContent() {
 
       // 5) 썸네일 인덱스 전송 (이미지들: 기존 이미지들 + 새 이미지들 순서 기준)
       const thumbnailChanged = thumbnailSrc !== initialThumbnailSrc;
-      if (thumbnailSrc && thumbnailChanged) {
+      if (thumbnailSrc) {
         const existingIdx = existingImages.findIndex((img) => img.url === thumbnailSrc);
         if (existingIdx !== -1) {
           formData.append("thumbnail_index", String(existingIdx));

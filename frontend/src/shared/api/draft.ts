@@ -5,6 +5,7 @@ export interface Draft {
   type: "student" | "graduate";
   title: string;
   content: string;
+  image_ids: number[]; 
   updated_at: string;
 }
 
@@ -19,6 +20,7 @@ export async function saveDraft(payload: {
   type: "student" | "graduate";
   title: string;
   content: string;
+  image_ids?: number[]; 
 }): Promise<Draft> {
   const { data } = await api.post("/networks/drafts/", payload);
   return data;
@@ -30,11 +32,11 @@ export async function deleteDraft(type: "student" | "graduate"): Promise<void> {
 }
 
 // 이미지 단독 업로드 (임시저장용)
-export async function uploadDraftImage(file: File): Promise<string> {
+export async function uploadDraftImage(file: File): Promise<{ url: string; id: number }> {
   const formData = new FormData();
   formData.append("image", file);
-  const { data } = await api.post<{ url: string }>("/networks/images/upload/", formData, {
+  const { data } = await api.post<{ url: string; id: number }>("/networks/images/upload/", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return data.url;
+  return data;
 }

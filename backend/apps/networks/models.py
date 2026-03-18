@@ -220,6 +220,7 @@ class Draft(models.Model):
     )
     title = models.CharField(max_length=200)
     content = models.TextField()  # HTML 전체 그대로 저장 (이미지 URL 포함)
+    image_ids = models.JSONField(default=list, blank=True) 
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
