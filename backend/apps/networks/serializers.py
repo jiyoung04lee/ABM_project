@@ -357,6 +357,14 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 post__isnull=True
             ).update(post=post)
 
+            # order 재정렬 (임시저장 시 order=0으로 고정돼 있어서)
+            existing_files_qs = post.files.filter(
+                id__in=existing_file_ids
+            ).order_by("id")
+            for i, pf in enumerate(existing_files_qs):
+                pf.order = i
+                pf.save(update_fields=["order"])
+
         image_files = []
         for index, file in enumerate(new_files):
             content_type = getattr(file, "content_type", "")
@@ -462,14 +470,11 @@ class PostCreateSerializer(serializers.ModelSerializer):
             post_file.delete()
 
         if new_files:
-            current_count = instance.files.count()
+            current_count = PostFile.objects.filter(post=instance).count()
 
             for index, file in enumerate(new_files):
                 content_type = getattr(file, "content_type", "")
-                file_type = (
-                    "image" if content_type.startswith("image/") else "pdf"
-                )
-
+                file_type = "image" if content_type.startswith("image/") else "pdf"
                 PostFile.objects.create(
                     post=instance,
                     file=file,
@@ -477,7 +482,38 @@ class PostCreateSerializer(serializers.ModelSerializer):
                     order=current_count + index,
                 )
 
-        image_files = list(instance.files.filter(file_type="image"))
+            # content placeholder 치환도 같은 블록 안에서
+            if instance.content:
+                request = self.context.get("request")
+                fixed_content = instance.content
+
+                new_image_files = list(
+                    instance.files
+                    .filter(file_type="image", order__gte=current_count)
+                    .order_by("order")
+                )
+
+                for i, file_obj in enumerate(new_image_files):
+                    if not file_obj.file:
+                        continue
+                    url = file_obj.file.url
+                    if not str(url).startswith(("http://", "https://")) and request:
+                        url = request.build_absolute_uri(url)
+                    placeholder = f'src="__BLOB_{i}__"'
+                    fixed_content = fixed_content.replace(placeholder, f'src="{url}"')
+
+                fixed_content = re.sub(
+                    r'<img[^>]*src="__BLOB_\d+__"[^>]*\/?>',
+                    "",
+                    fixed_content,
+                    flags=re.IGNORECASE,
+                )
+
+                if fixed_content != instance.content:
+                    instance.content = fixed_content
+                    instance.save(update_fields=["content"])
+
+        image_files = list(instance.files.filter(file_type="image").order_by("order"))
         should_regenerate_thumbnail = (
             thumbnail_index is not None
             or bool(files_to_delete)
