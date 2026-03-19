@@ -133,6 +133,7 @@ function WriteContent() {
   const draftCheckedRef = useRef(false);
   const justSavedRef = useRef(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInternalUpdateRef = useRef(false);
 
   // onDelete는 ref로 들고 있어서 에디터 재생성 없이 항상 최신 콜백 유지
   const onDeleteRef = useRef<(src: string) => void>(() => {});
@@ -185,6 +186,11 @@ function WriteContent() {
       const html = e.getHTML();
       setContent(html);
       setIsDirty(true);
+
+      if (isInternalUpdateRef.current) {
+        isInternalUpdateRef.current = false;
+        return;
+      }
 
       // 에디터에서 이미지가 직접 삭제/이동될 수 있으므로 상태를 HTML 기준으로 동기화
       const orderedSrcs = extractImageSrcs(html);
@@ -319,12 +325,21 @@ function WriteContent() {
               const result = await uploadDraftImage(file);
               blobToUrl.set(blobUrl, result.url);
               uploadedIds.push(result.id);
-              // newImages 업데이트
-              setNewImages((prev) => prev.map((img) =>
-                img.url === blobUrl ? { ...img, url: result.url, postFileId: result.id } : img
-              ));
             })
           );
+
+          // newImages 한번에 업데이트
+          setNewImages((prev) => prev.map((img) => {
+            const newUrl = blobToUrl.get(img.url);
+            if (!newUrl) return img;
+            const id = uploadedIds[blobUrls.indexOf(img.url)];
+            return { ...img, url: newUrl, postFileId: id };
+          }));
+
+          setMainImageUrl((prev) => {
+            if (!prev) return prev;
+            return blobToUrl.get(prev) ?? prev;
+          });
 
           savedContent = content.replace(
             /<img([^>]*?)src="(blob:[^"]+)"([^>]*?)\/?>/gi,
@@ -334,10 +349,10 @@ function WriteContent() {
             }
           );
 
-          // 에디터 content도 업데이트
-          if (editor) editor.commands.setContent(savedContent);
-          setContent(savedContent);
-        }
+          isInternalUpdateRef.current = true;
+            if (editor) editor.commands.setContent(savedContent);
+            setContent(savedContent);
+          }
 
         const existingIds = newImages
           .filter((img) => img.postFileId)
