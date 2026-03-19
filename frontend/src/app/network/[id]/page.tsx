@@ -433,9 +433,16 @@ export default function NetworkDetailPage() {
                   <div className="mt-3 flex items-center gap-3 text-sm text-[#6A7282]">
                     <button
                       onClick={() => handleCommentLike(comment.id)}
-                      className="flex items-center gap-1"
+                      className={`flex items-center gap-1 transition-colors ${
+                        comment.is_liked ? "text-[#2B7FFF]" : "text-[#6A7282]"
+                      }`}
                     >
-                      <Image src="/icons/good.svg" alt="like" width={16} height={16} />
+                      <Image
+                        src={comment.is_liked ? "/icons/good-blue.svg" : "/icons/good.svg"}
+                        alt="like"
+                        width={16}
+                        height={16}
+                      />
                       <span>{comment.like_count}</span>
                     </button>
 
@@ -500,8 +507,18 @@ export default function NetworkDetailPage() {
                       </p>
 
                       <div className="mt-2 flex gap-3 text-xs text-[#6A7282] items-center">
-                        <button onClick={() => handleCommentLike(reply.id)} className="flex items-center gap-1">
-                          <Image src="/icons/good.svg" alt="like" width={14} height={14} />
+                        <button
+                          onClick={() => handleCommentLike(reply.id)}
+                          className={`flex items-center gap-1 transition-colors ${
+                            reply.is_liked ? "text-[#2B7FFF]" : "text-[#6A7282]"
+                          }`}
+                        >
+                          <Image
+                            src={reply.is_liked ? "/icons/good-blue.svg" : "/icons/good.svg"}
+                            alt="like"
+                            width={14}
+                            height={14}
+                          />
                           <span>{reply.like_count}</span>
                         </button>
 
