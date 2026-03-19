@@ -253,14 +253,22 @@ export default function DepartmentPage() {
               <div className="w-14 h-14 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
                 <BookOpen className="w-7 h-7 text-white" />
               </div>
+
               <div className="flex-1">
                 <h2 className="text-2xl font-bold mb-6">학회 소개집</h2>
 
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-4xl mx-auto flex flex-col gap-6">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/images/institute.jpg"
-                    alt="학회 소개집"
+                    src="/images/ins_image_XAI.png"
+                    alt="학회 소개집 1"
+                    className="w-full h-auto rounded-2xl shadow-sm"
+                  />
+
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/ins_image_DA"
+                    alt="학회 소개집 2"
                     className="w-full h-auto rounded-2xl shadow-sm"
                   />
                 </div>
