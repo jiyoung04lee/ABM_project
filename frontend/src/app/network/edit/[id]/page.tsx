@@ -171,8 +171,6 @@ function EditContent() {
     (async () => {
       try {
         const post = await fetchPostDetail(postId);
-        console.log("post.files:", post.files);      // ← 추가
-        console.log("post.thumbnail:", post.thumbnail);
         setTitle(post.title);
         setPostType(post.type);
         setIsAnonymous(post.is_anonymous);
@@ -299,8 +297,13 @@ function EditContent() {
       formData.append("use_real_name", String(useRealName));
       formData.append("category", category);
 
-      // 3) 유지할 기존 이미지 id (삭제된 것은 제외됨)
-      existingImages.forEach((img) => formData.append("existing_files", String(img.id)));
+      // 3) 유지할 기존 이미지 id 빈 배열이어도 명시적으로 전송
+      if (existingImages.length > 0) {
+        existingImages.forEach((img) => formData.append("existing_files", String(img.id)));
+      } else {
+        // 기존 이미지 전부 삭제된 경우 → clear_files로 명시
+        formData.append("clear_files", "true");
+      }
 
       // 4) 새 이미지: HTML 등장 순서대로 (순서 버그 핵심 수정)
       orderedBlobUrls.forEach((blobUrl) => {
@@ -308,48 +311,29 @@ function EditContent() {
         if (file) formData.append("new_files", file);
       });
 
-      // 5) 썸네일 인덱스 전송 (이미지들: 기존 이미지들 + 새 이미지들 순서 기준)
-      const thumbnailChanged = thumbnailSrc !== initialThumbnailSrc;
+      // 5) 썸네일 인덱스 전송 
       if (thumbnailSrc) {
         const existingIdx = existingImages.findIndex((img) => img.url === thumbnailSrc);
         if (existingIdx !== -1) {
+          // 기존 이미지가 썸네일
           formData.append("thumbnail_index", String(existingIdx));
         } else {
-          const newIdx = orderedBlobUrls.indexOf(thumbnailSrc);
+          // 새 이미지가 썸네일 — orderedBlobUrls 우선, 없으면 newImages 기준으로 fallback
+          let newIdx = orderedBlobUrls.indexOf(thumbnailSrc);
+          if (newIdx === -1) {
+            // thumbnailSrc가 content에 없는 경우 (onUpdate 타이밍 이슈) → newImages 기준
+            newIdx = newImages.findIndex((img) => img.url === thumbnailSrc);
+          }
           if (newIdx !== -1) {
             formData.append("thumbnail_index", String(existingImages.length + newIdx));
+          } else if (orderedBlobUrls.length > 0) {
+            // 그래도 못 찾으면 새 이미지 첫 번째를 썸네일로
+            formData.append("thumbnail_index", String(existingImages.length));
           }
         }
       }
 
       const updated = await updatePost(postId, formData);
-
-      // 6) 업로드된 새 이미지 URL 로 __BLOB_N__ 치환 (2차 patch)
-      if (orderedBlobUrls.length > 0 && updated.files?.length) {
-        const base = API_BASE.replace(/\/$/, "");
-        const existingIds = new Set(existingImages.map((img) => img.id));
-        const uploadedFiles = updated.files
-          .filter((f: { file_type: string }) => f.file_type === "image")
-          .filter((f: { id: number }) => !existingIds.has(f.id))
-          .sort((a: { order: number }, b: { order: number }) => a.order - b.order);
-
-        let fixedContent = contentToSave;
-        orderedBlobUrls.forEach((_, idx) => {
-          const raw = uploadedFiles[idx]?.file ?? "";
-          const realUrl = raw
-            ? raw.startsWith("http://") || raw.startsWith("https://") ? raw : `${base}${raw.startsWith("/") ? raw : `/${raw}`}`
-            : "";
-          fixedContent = fixedContent.replace(`src="__BLOB_${idx}__"`, `src="${realUrl}"`);
-        });
-        fixedContent = fixedContent.replace(/<img[^>]*src="__BLOB_\d+__"[^>]*\/?>/gi, "");
-
-        if (fixedContent !== contentToSave) {
-          const patchData = new FormData();
-          patchData.append("content", fixedContent);
-          updated.files.forEach((f: { id: number }) => patchData.append("existing_files", String(f.id)));
-          await updatePost(postId, patchData);
-        }
-      }
 
       alert("수정 완료");
       router.push(`/network?type=${postType}`);
