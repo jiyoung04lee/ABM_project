@@ -438,7 +438,7 @@ export default function NetworkDetailPage() {
                       }`}
                     >
                       <Image
-                        src={comment.is_liked ? "/icons/good-blue.svg" : "/icons/good.svg"}
+                        src={comment.is_liked ? "/icons/good_blue.svg" : "/icons/good.svg"}
                         alt="like"
                         width={16}
                         height={16}
@@ -514,7 +514,7 @@ export default function NetworkDetailPage() {
                           }`}
                         >
                           <Image
-                            src={reply.is_liked ? "/icons/good-blue.svg" : "/icons/good.svg"}
+                            src={reply.is_liked ? "/icons/good_blue.svg" : "/icons/good.svg"}
                             alt="like"
                             width={14}
                             height={14}
