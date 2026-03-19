@@ -267,7 +267,7 @@ export default function DepartmentPage() {
 
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/images/ins_image_DA"
+                    src="/images/ins_image_DA.png"
                     alt="학회 소개집 2"
                     className="w-full h-auto rounded-2xl shadow-sm"
                   />
