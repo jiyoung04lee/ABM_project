@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import LoginLogo from "@/shared/components/layout/LoginLogo";
+import LoginLogo from "@/shared/components/layout/LoginLoGo";
 import { API_BASE } from "@/shared/api/api";
 
 const KAKAO_REST_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY ?? "";
