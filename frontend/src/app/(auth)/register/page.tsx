@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Logo from "@/shared/components/layout/Logo";
+import LoginLogo from "@/shared/components/layout/LoginLoGo";
 
 export default function RegisterPage() {
   return (
