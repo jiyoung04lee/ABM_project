@@ -90,8 +90,8 @@ export default function LoginPage() {
   return (
     <div className="w-full flex justify-center px-6 py-10">
       <div className="w-full max-w-[460px] flex flex-col items-center text-center">
-        <div className="mb-5 flex justify-center">
-          <Logo width={120} height={48} />
+        <div className="mb-6 w-full flex justify-center">
+          <Logo width={140} height={70} className="block" />
         </div>
 
         {reason && (
