@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Logo from "@/shared/components/layout/Logo";
+import LoginLogo from "@/shared/components/layout/LoginLoGo";
 import { API_BASE } from "@/shared/api/api";
 
 // UI 상 사용자 유형: 다부전공생은 재학생 + is_multi_major 로 매핑
@@ -151,7 +151,7 @@ function OnboardingContent() {
   return (
     <>
       <div className="mb-5">
-        <Logo />
+        <LoginLogo className="translate-x-[18px]" />
       </div>
 
       <h1 className="text-[2rem] font-bold text-gray-900 mb-1.5">프로필 완성</h1>

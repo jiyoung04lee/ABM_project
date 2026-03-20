@@ -7,7 +7,7 @@ export default function RegisterPage() {
   return (
     <>
       <div className="mb-5">
-        <Logo />
+        <LoginLogo className="translate-x-[18px]" />
       </div>
 
       <h1 className="text-[2rem] font-bold text-gray-900 mb-1.5">회원가입</h1>
