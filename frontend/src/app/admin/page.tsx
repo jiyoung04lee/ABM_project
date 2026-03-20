@@ -117,7 +117,11 @@ interface OperationalLog {
 }
 
 // 학년 숫자 → 라벨 (백엔드 grade: 1,2,3,4 / 34 / "graduate")
-function gradeToLabel(g: number | string | null): string {
+function gradeToLabel(
+  g: number | string | null,
+  userType?: "student" | "graduate"
+): string {
+  if (userType === "graduate") return "졸업생";
   if (g === null || g === undefined) return "-";
   if (g === 34) return "3~4학년";
   if (g === "graduate") return "졸업생";
@@ -473,9 +477,17 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isAdmin || currentView !== "userManagement") return;
     setLoadingUsers(true);
-    const grade = gradeFilter !== "all" ? [Number(gradeFilter.replace("학년", ""))] : undefined;
+    let user_type: "student" | "graduate" | undefined = undefined;
+    let grade: number[] | undefined = undefined;
+
+    if (gradeFilter === "graduate") {
+      user_type = "graduate";
+    } else if (gradeFilter !== "all") {
+      user_type = "student";
+      grade = [Number(gradeFilter.replace("학년", ""))];
+    }
     const interest = interestFilter !== "all" ? (interestFilter === "AI" ? ["ai"] : interestFilter === "데이터" ? ["data"] : ["business"]) : undefined;
-    getUsers({ grade, interest })
+    getUsers({ grade, interest, user_type })
       .then((r) => setUsersList(r.data.users))
       .catch(() => {})
       .finally(() => setLoadingUsers(false));
@@ -1436,7 +1448,7 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">학년</span>
                         <div className="flex gap-1.5">
-                          {["all", "1학년", "2학년", "3학년", "4학년"].map((g) => (
+                          {["all", "1학년", "2학년", "3학년", "4학년", "graduate"].map((g) => (
                             <button
                               key={g}
                               type="button"
@@ -1447,7 +1459,7 @@ export default function AdminPage() {
                                   : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
                               }`}
                             >
-                              {g === "all" ? "전체" : g}
+                              {g === "all" ? "전체" : g === "graduate" ? "졸업생" : g}
                             </button>
                           ))}
                         </div>
@@ -1487,8 +1499,8 @@ export default function AdminPage() {
                           <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4 text-sm font-medium text-gray-900">{u.nickname}</td>
                             <td className="px-6 py-4">
-                              <span className={`inline-flex px-3 py-1 rounded-lg text-xs font-medium ${getGradeBadgeColor(gradeToLabel(u.grade))}`}>
-                                {gradeToLabel(u.grade)}
+                              <span className={`inline-flex px-3 py-1 rounded-lg text-xs font-medium ${getGradeBadgeColor(gradeToLabel(u.grade, u.user_type))}`}>
+                                {gradeToLabel(u.grade, u.user_type)}
                               </span>
                             </td>
                             <td className="px-6 py-4">

@@ -97,6 +97,7 @@ export const getKnowledgeDeliveryScore = (params?: { days?: number }) =>
 // ─── User management ───
 export interface UserManagementUser {
   id: number;
+  user_type: "student" | "graduate";
   nickname: string;
   grade: number | null;
   interests: string[];
@@ -105,7 +106,11 @@ export interface UserManagementUser {
   score: number;
 }
 /** grade: [1,2], interest: ["ai","data"] → ?grade=1&grade=2&interest=ai&interest=data */
-export const getUsers = (params?: { grade?: number[]; interest?: string[] }) =>
+export const getUsers = (params?: {
+  grade?: number[];
+  interest?: string[];
+  user_type?: "student" | "graduate";
+}) =>
   api.get<{ users: UserManagementUser[]; count: number }>(
     "logs/analytics/user-management/",
     {
@@ -116,6 +121,12 @@ export const getUsers = (params?: { grade?: number[]; interest?: string[] }) =>
         const search = new URLSearchParams();
         const grade = (p as any)?.grade as number[] | undefined;
         const interest = (p as any)?.interest as string[] | undefined;
+
+        const userType = (p as any)?.user_type as
+          | "student"
+          | "graduate"
+          | undefined;
+        if (userType) search.append("user_type", userType);
 
         grade?.forEach((g) => search.append("grade", String(g)));
         interest?.forEach((i) => search.append("interest", i));
