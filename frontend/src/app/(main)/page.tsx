@@ -8,7 +8,6 @@ import {
   MessageCircle,
   GraduationCap,
   TrendingUp,
-  Menu,
   ArrowRight,
 } from "lucide-react";
 import { fetchPosts, PostListItem } from "@/shared/api/network";
@@ -114,22 +113,7 @@ function MobileHomeView({
 }) {
   return (
     <div className="min-h-screen bg-slate-50 md:hidden">
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-md items-center justify-between px-4">
-          <Link href="/" className="text-base font-bold tracking-tight text-slate-900">
-            AIVE
-          </Link>
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-slate-100"
-            aria-label="메뉴"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
-      </header>
-
-      <div className="mx-auto w-full max-w-md px-4 pb-8 pt-4">
+      <div className="mx-auto w-full max-w-md px-4 pb-8 pt-0">
         <section className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-sky-500 px-5 py-6 text-white shadow-sm">
           <p className="mb-2 text-xs font-medium text-blue-100">
             AI빅데이터융합경영학과 학생들을 위한
@@ -140,7 +124,7 @@ function MobileHomeView({
           <p className="mt-3 text-sm leading-6 text-blue-50">
             선배와 동기의 경험을 모아 더 나은 선택을 돕는 공간.
             학교생활 이야기부터 수업, 공모전, 취업 준비, 수상 경험까지
-            AI빅데이터융합경영학과의 다양한 정보를 한곳에 모았습니다..
+            AI빅데이터융합경영학과의 다양한 정보를 한곳에 모았습니다.
           </p>
 
           <div className="mt-5 flex gap-2">
