@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import Logo from "@/shared/components/layout/Logo";
+import LoginLogo from "@/shared/components/layout/LoginLoGo";
 import{ API_BASE } from "@/shared/api/api";
 
 
@@ -83,7 +83,7 @@ function KakaoCallbackContent() {
   if (status === "error") {
     return (
       <div className="w-full max-w-[460px] bg-white rounded-2xl shadow-lg px-8 py-8 text-center flex flex-col items-center justify-center">
-        <Logo />
+        <LoginLogo className="translate-x-[18px]" />
         <p className="text-red-500 mt-4">로그인에 실패했습니다.</p>
         {errorDetail && (
           <p className="text-gray-600 text-sm mt-2 break-words">{errorDetail}</p>
@@ -100,7 +100,7 @@ function KakaoCallbackContent() {
 
   return (
     <div className="w-full max-w-[460px] bg-white rounded-2xl shadow-lg px-8 py-8 text-center flex flex-col items-center justify-center">
-      <Logo />
+      <LoginLogo className="translate-x-[18px]" />
       <p className="text-gray-500 mt-2">로그인 처리 중...</p>
     </div>
   );
@@ -111,7 +111,7 @@ export default function KakaoCallbackPage() {
     <Suspense
       fallback={
         <div className="w-full max-w-[460px] bg-white rounded-2xl shadow-lg px-8 py-8 text-center flex flex-col items-center justify-center">
-          <Logo />
+          <LoginLogo className="translate-x-[18px]" />
           <p className="text-gray-500 mt-2">로그인 처리 중...</p>
         </div>
       }
