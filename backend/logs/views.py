@@ -954,6 +954,14 @@ class UserManagementView(APIView):
             ),
         )
 
+        # 온보딩 미완료자는 관리자 대시보드 계산에서 제외
+        qs = qs.filter(is_profile_complete=True)
+
+        # user_type 필터 (예: 졸업생 탭)
+        user_type = request.query_params.get("user_type")
+        if user_type in ("student", "graduate"):
+            qs = qs.filter(user_type=user_type)
+
         # 학년 필터 (?grade=1&grade=2 등 복수 허용)
         grade_params = request.query_params.getlist("grade")
         if grade_params:
@@ -978,6 +986,7 @@ class UserManagementView(APIView):
 
         users = qs.order_by("nickname").values(
             "id",
+            "user_type",
             "nickname",
             "grade",
             "interests",
@@ -989,6 +998,7 @@ class UserManagementView(APIView):
         result = [
             {
                 "id": u["id"],
+                "user_type": u.get("user_type"),
                 "nickname": u["nickname"] or "",
                 "grade": u["grade"],
                 "interests": u["interests"] or [],
