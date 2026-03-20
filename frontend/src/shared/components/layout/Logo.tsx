@@ -1,9 +1,9 @@
 export default function Logo() {
   return (
     <svg
-      width="220"
-      height="70"
-      viewBox="0 0 400 200"
+      width="140"
+      height="44"
+      viewBox="0 0 220 80"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -14,7 +14,7 @@ export default function Logo() {
           <stop offset="100%" style={{ stopColor: "#4f46e5", stopOpacity: 1 }} />
         </linearGradient>
         <filter id="logoGlow">
-          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+          <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
@@ -22,44 +22,47 @@ export default function Logo() {
         </filter>
       </defs>
 
-      {/* 전체 로고를 살짝 아래로 내리기 위해 그룹에 transform 적용 */}
-      <g transform="translate(0, 20)">
+      <g transform="translate(0, 8)">
         {/* Glow Effect */}
         <text
-          x="200"
-          y="110"
+          x="0"
+          y="42"
           fontFamily="Pretendard, -apple-system, BlinkMacSystemFont, Arial, sans-serif"
-          fontSize="80"
+          fontSize="40"
           fontWeight="900"
-          textAnchor="middle"
+          textAnchor="start"
           fill="url(#logoTextGradient)"
-          opacity="0.3"
+          opacity="0.28"
           filter="url(#logoGlow)"
-          letterSpacing="-2"
+          letterSpacing="-1.5"
         >
           AIVE
         </text>
 
         {/* Main Text */}
         <text
-          x="200"
-          y="110"
+          x="0"
+          y="42"
           fontFamily="Pretendard, -apple-system, BlinkMacSystemFont, Arial, sans-serif"
-          fontSize="80"
+          fontSize="40"
           fontWeight="900"
-          textAnchor="middle"
+          textAnchor="start"
           fill="url(#logoTextGradient)"
-          letterSpacing="-2"
+          letterSpacing="-1.5"
         >
           AIVE
         </text>
 
         {/* Decorative Dot */}
-        <circle cx="200" cy="45" r="4" fill="url(#logoTextGradient)">
-          <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
+        <circle cx="78" cy="10" r="2.6" fill="url(#logoTextGradient)">
+          <animate
+            attributeName="opacity"
+            values="1;0.5;1"
+            dur="2s"
+            repeatCount="indefinite"
+          />
         </circle>
       </g>
-
     </svg>
   );
 }
