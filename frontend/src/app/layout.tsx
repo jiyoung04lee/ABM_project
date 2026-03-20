@@ -64,7 +64,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </noscript>
         <NotificationProvider>
           <PageViewTracker />
-          <Header />
+          <div className="hidden md:block">
+            <Header />
+          </div>
           <AnnouncementBanner />
           <main className="pt-12">{children}</main>
         </NotificationProvider>
