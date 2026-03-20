@@ -10,7 +10,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import MobileContainer from "@/features/mobile/layout/MobileContainer";
-import MobileHeader from "@/features/mobile/layout/MobileHeader";
 import { fetchPosts, PostListItem } from "@/shared/api/network";
 import { getPosts as getCommunityPosts } from "@/shared/api/community";
 
@@ -147,8 +146,6 @@ export default function MobileHomePage() {
 
   return (
     <MobileContainer>
-      <MobileHeader />
-
       <section className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-sky-500 px-5 py-6 text-white shadow-sm">
         <p className="mb-2 text-xs font-medium text-blue-100">
           AI빅데이터융합경영학과 학생들을 위한
@@ -158,14 +155,14 @@ export default function MobileHomePage() {
         </h1>
         <p className="mt-3 text-sm leading-6 text-blue-50">
           학교생활 이야기부터 수업, 공모전, 취업 준비, 수상 경험까지
-          필요한 정보를 한곳에서 확인할 수 있어.
+          AI빅데이터융합경영학과의 다양한 정보를 한곳에 모았습니다.
         </p>
 
         <div className="mt-5 flex gap-2">
           {!isLoggedIn ? (
             <>
               <Link
-                href="/signup"
+                href="/register"
                 className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-blue-700"
               >
                 시작하기
