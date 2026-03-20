@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Logo from "@/shared/components/layout/Logo";
+import LoginLogo from "@/shared/components/layout/LoginLogo";
 import { API_BASE } from "@/shared/api/api";
 
 const KAKAO_REST_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY ?? "";
@@ -91,7 +91,7 @@ export default function LoginPage() {
     <div className="w-full flex justify-center px-6 py-10">
       <div className="w-full max-w-[460px] flex flex-col items-center text-center">
         <div className="mb-6 w-full flex justify-center">
-          <Logo width={140} height={70} className="block" />
+          <LoginLogo />
         </div>
 
         {reason && (
