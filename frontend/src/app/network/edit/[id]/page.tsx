@@ -93,6 +93,8 @@ function EditContent() {
   // - 기본적으로는 "서버에서 복원된 대표 썸네일"을 유지
   // - 사용자가 썸네일을 삭제하면(=thumbnailSrc가 null이 되면) 잠금을 해제
   const thumbnailLockedRef = useRef(false);
+  // 잠금 구간에서 onUpdate가 prev=null 타이밍에 실행돼도 유지해야 할 URL을 ref로 보관
+  const lockedThumbRef = useRef<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -116,6 +118,7 @@ function EditContent() {
       setThumbnailSrc((prev) => {
         if (prev === src) {
           thumbnailLockedRef.current = false; // 선택 이미지가 삭제되면 자동 복구를 허용
+          lockedThumbRef.current = null;
           return null;
         }
         return prev;
@@ -164,9 +167,11 @@ function EditContent() {
 
       setExistingImages((prev) => prev.filter((img) => srcSet.has(img.url)));
       setThumbnailSrc((prev) => {
-        // 사용자가 선택(또는 서버에서 복원)한 썸네일은 텍스트 수정 중엔 유지
-        // (에디터 onUpdate 타이밍 때문에 일시적으로 srcSet에 안 보이더라도 리셋하지 않음)
-        if (thumbnailLockedRef.current && prev) return prev;
+        // 잠금 구간: prev가 아직 null이더라도 lockedThumbRef에 보관된 값을 유지
+        // (setContent 직후 onUpdate 타이밍 때 prev가 null이어도 첫번째 이미지로 덮어쓰지 않음)
+        if (thumbnailLockedRef.current) {
+          return lockedThumbRef.current ?? prev;
+        }
 
         if (prev && srcSet.has(prev)) return prev;
         // 서버 URL 우선, 없으면 blob 중 첫 번째
@@ -235,6 +240,8 @@ function EditContent() {
           const initialThumb = matched ? matched.url : imgs.length > 0 ? imgs[0].url : null;
           setThumbnailSrc(initialThumb);
           setInitialThumbnailSrc(initialThumb);
+          // onUpdate가 React state 커밋 전에 실행돼도 올바른 값을 반환하도록 ref에도 동기 저장
+          lockedThumbRef.current = initialThumb;
           thumbnailLockedRef.current = true; // 서버에서 복원된 대표 썸네일은 텍스트 수정 중 유지
 
           // 본문의 __BLOB_N__ 을 실제 서버 URL 로 치환
@@ -527,6 +534,7 @@ function EditContent() {
                       type="button"
                       onClick={() => {
                         thumbnailLockedRef.current = true; // 사용자가 지정했으면 텍스트 입력 중 유지
+                        lockedThumbRef.current = src;
                         setThumbnailSrc(src);
                       }}
                       className={[
