@@ -140,7 +140,7 @@ function MobileHomeView({
           <p className="mt-3 text-sm leading-6 text-blue-50">
             선배와 동기의 경험을 모아 더 나은 선택을 돕는 공간.
             학교생활 이야기부터 수업, 공모전, 취업 준비, 수상 경험까지
-            다양한 정보를 한곳에 모았어.
+            AI빅데이터융합경영학과의 다양한 정보를 한곳에 모았습니다..
           </p>
 
           <div className="mt-5 flex gap-2">

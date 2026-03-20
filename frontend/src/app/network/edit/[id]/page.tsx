@@ -89,6 +89,10 @@ function EditContent() {
   const [thumbnailSrc, setThumbnailSrc] = useState<ThumbnailSrc | null>(null);
   // 최초 로딩 시점의 썸네일. 이 값과 달라질 때만 thumbnail_index를 전송(서버 불필요 재생성 방지)
   const [initialThumbnailSrc, setInitialThumbnailSrc] = useState<ThumbnailSrc | null>(null);
+  // onUpdate(텍스트 입력 등)에서 썸네일이 자동 리셋되지 않도록 잠금
+  // - 기본적으로는 "서버에서 복원된 대표 썸네일"을 유지
+  // - 사용자가 썸네일을 삭제하면(=thumbnailSrc가 null이 되면) 잠금을 해제
+  const thumbnailLockedRef = useRef(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -109,7 +113,13 @@ function EditContent() {
         // 기존 서버 이미지 삭제 (저장 시 existing_files 에서 빠짐)
         setExistingImages((prev) => prev.filter((img) => img.url !== src));
       }
-      setThumbnailSrc((prev) => (prev === src ? null : prev));
+      setThumbnailSrc((prev) => {
+        if (prev === src) {
+          thumbnailLockedRef.current = false; // 선택 이미지가 삭제되면 자동 복구를 허용
+          return null;
+        }
+        return prev;
+      });
     };
   }, []);
 
@@ -154,6 +164,10 @@ function EditContent() {
 
       setExistingImages((prev) => prev.filter((img) => srcSet.has(img.url)));
       setThumbnailSrc((prev) => {
+        // 사용자가 선택(또는 서버에서 복원)한 썸네일은 텍스트 수정 중엔 유지
+        // (에디터 onUpdate 타이밍 때문에 일시적으로 srcSet에 안 보이더라도 리셋하지 않음)
+        if (thumbnailLockedRef.current && prev) return prev;
+
         if (prev && srcSet.has(prev)) return prev;
         // 서버 URL 우선, 없으면 blob 중 첫 번째
         const firstServer = orderedSrcs.find((s) => !s.startsWith("blob:"));
@@ -178,6 +192,18 @@ function EditContent() {
 
         if (post.category) setCategory(String(post.category));
 
+        // 썸네일(URL) -> 원본 이미지 URL로 매칭하기 위한 함수
+        const getBaseNameFromUrl = (url: string) => {
+          try {
+            const u = new URL(url);
+            const last = u.pathname.split("/").filter(Boolean).pop() ?? "";
+            return last.replace(/\.[^.]+$/, ""); // 확장자 제거
+          } catch {
+            const last = url.split("/").filter(Boolean).pop() ?? "";
+            return last.replace(/\.[^.]+$/, "");
+          }
+        };
+
         // 기존 이미지: { id, url } 형태로 변환
         if (post.files?.length) {
           const base = API_BASE.replace(/\/$/, "");
@@ -194,9 +220,22 @@ function EditContent() {
             })
             .filter((img: ExistingImageEntry) => img.url);
           setExistingImages(imgs);
-          const initialThumb = imgs.length > 0 ? imgs[0].url : null;
+
+          // post.thumbnail은 network/thumbnails/.../{originalBase}_thumb.jpg 이므로
+          // originalBase로 환산해서 기존 imgs 중 같은 base 이름을 가진 항목을 찾습니다.
+          const thumbBase = post.thumbnail
+            ? getBaseNameFromUrl(post.thumbnail).replace(/_thumb$/, "")
+            : null;
+
+          const matched =
+            thumbBase
+              ? imgs.find((img) => getBaseNameFromUrl(img.url) === thumbBase) ?? null
+              : null;
+
+          const initialThumb = matched ? matched.url : imgs.length > 0 ? imgs[0].url : null;
           setThumbnailSrc(initialThumb);
           setInitialThumbnailSrc(initialThumb);
+          thumbnailLockedRef.current = true; // 서버에서 복원된 대표 썸네일은 텍스트 수정 중 유지
 
           // 본문의 __BLOB_N__ 을 실제 서버 URL 로 치환
           let contentToSet = post.content ?? "";
@@ -213,6 +252,7 @@ function EditContent() {
           if (editor) editor.commands.setContent(post.content ?? "");
           setThumbnailSrc(null);
           setInitialThumbnailSrc(null);
+          thumbnailLockedRef.current = false;
         }
 
         setLoaded(true);
@@ -485,7 +525,10 @@ function EditContent() {
                     <button
                       key={src}
                       type="button"
-                      onClick={() => setThumbnailSrc(src)}
+                      onClick={() => {
+                        thumbnailLockedRef.current = true; // 사용자가 지정했으면 텍스트 입력 중 유지
+                        setThumbnailSrc(src);
+                      }}
                       className={[
                         "relative w-20 h-20 rounded-lg overflow-hidden border-2 transition flex-shrink-0",
                         selected ? "border-[#2B7FFF] ring-2 ring-[#2B7FFF]/30" : "border-gray-200 hover:border-gray-400",
