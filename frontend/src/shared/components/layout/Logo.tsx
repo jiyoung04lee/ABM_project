@@ -1,19 +1,41 @@
-export default function Logo() {
+"use client";
+
+import { useId } from "react";
+
+type LogoProps = {
+  width?: number;
+  height?: number;
+  className?: string;
+};
+
+export default function Logo({
+  width = 220,
+  height = 70,
+  className = "",
+}: LogoProps) {
+  const id = useId();
+  const gradientId = `logoTextGradient-${id}`;
+  const glowId = `logoGlow-${id}`;
+
   return (
     <svg
-      width="140"
-      height="44"
+      width={width}
+      height={height}
       viewBox="0 0 220 80"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-label="AIVE logo"
+      role="img"
     >
       <defs>
-        <linearGradient id="logoTextGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style={{ stopColor: "#2563EB", stopOpacity: 1 }} />
-          <stop offset="50%" style={{ stopColor: "#3b82f6", stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: "#4f46e5", stopOpacity: 1 }} />
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#2563EB" stopOpacity="1" />
+          <stop offset="50%" stopColor="#3b82f6" stopOpacity="1" />
+          <stop offset="100%" stopColor="#4f46e5" stopOpacity="1" />
         </linearGradient>
-        <filter id="logoGlow">
+
+        <filter id={glowId}>
           <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
@@ -23,7 +45,6 @@ export default function Logo() {
       </defs>
 
       <g transform="translate(0, 8)">
-        {/* Glow Effect */}
         <text
           x="0"
           y="42"
@@ -31,15 +52,14 @@ export default function Logo() {
           fontSize="40"
           fontWeight="900"
           textAnchor="start"
-          fill="url(#logoTextGradient)"
+          fill={`url(#${gradientId})`}
           opacity="0.28"
-          filter="url(#logoGlow)"
+          filter={`url(#${glowId})`}
           letterSpacing="-1.5"
         >
           AIVE
         </text>
 
-        {/* Main Text */}
         <text
           x="0"
           y="42"
@@ -47,14 +67,13 @@ export default function Logo() {
           fontSize="40"
           fontWeight="900"
           textAnchor="start"
-          fill="url(#logoTextGradient)"
+          fill={`url(#${gradientId})`}
           letterSpacing="-1.5"
         >
           AIVE
         </text>
 
-        {/* Decorative Dot */}
-        <circle cx="78" cy="10" r="2.6" fill="url(#logoTextGradient)">
+        <circle cx="78" cy="10" r="2.6" fill={`url(#${gradientId})`}>
           <animate
             attributeName="opacity"
             values="1;0.5;1"

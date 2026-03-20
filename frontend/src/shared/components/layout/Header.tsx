@@ -64,11 +64,9 @@ export default function Header() {
     <>
       {/* 모바일 헤더 */}
       <header className="fixed top-0 left-0 w-full bg-white border-b border-[#E5E7EB] z-50 md:hidden">
-        <div className="pl-2 pr-3 h-16 flex items-center justify-between">
+        <div className="pl-1 pr-3 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center shrink-0">
-            <div className="origin-left scale-90">
-              <Logo />
-            </div>
+            <Logo width={120} height={38} />
           </Link>
 
           {isLoggedIn ? (
@@ -143,8 +141,8 @@ export default function Header() {
       <header className="hidden md:block fixed top-0 left-0 w-full bg-white border-b border-[#E5E7EB] z-50 min-w-[1024px]">
         <div className="max-w-[1200px] mx-auto px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center">
-              <Logo />
+            <Link href="/" className="flex items-center shrink-0">
+              <Logo width={180} height={56} />
             </Link>
 
             <nav className="flex items-center gap-8 text-[18px] font-semibold">
