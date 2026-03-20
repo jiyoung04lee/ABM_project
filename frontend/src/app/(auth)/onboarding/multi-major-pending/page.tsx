@@ -1,12 +1,12 @@
 import Link from "next/link";
-import Logo from "@/shared/components/layout/Logo";
+import LoginLogo from "@/shared/components/layout/LoginLoGo";
 
 export default function MultiMajorPendingPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#EEF2FF] to-white px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg px-8 py-8">
         <div className="mb-6 flex justify-center">
-          <Logo />
+          <LoginLogo className="translate-x-[18px]" />
         </div>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-3">
