@@ -336,6 +336,11 @@ function OnboardingContent() {
                 {fieldErrors.student_id && (
                   <p className="text-red-500 text-xs mt-1">{fieldErrors.student_id}</p>
                 )}
+                {userType === "multi_major" && (
+                  <p className="text-gray-500 text-xs mt-1">
+                    다부전공은 학번을 자동으로 명단과 대조하지 않습니다. 아래 증빙 이미지로 확인합니다.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -345,7 +350,7 @@ function OnboardingContent() {
                   value={grade}
                   onChange={(e) => setGrade(e.target.value === "" ? "" : Number(e.target.value))}
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#4F6EF7]"
-                  required={userType === "student"}
+                  required
                 >
                   <option value="">선택</option>
                   {[1, 2, 3, 4].map((n) => (
