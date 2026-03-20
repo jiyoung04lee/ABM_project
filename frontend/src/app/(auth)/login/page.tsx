@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Logo from "@/shared/components/layout/Logo";
 import { API_BASE } from "@/shared/api/api";
@@ -9,20 +7,18 @@ import { API_BASE } from "@/shared/api/api";
 const KAKAO_REST_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY ?? "";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [reason, setReason] = useState<string | null>(null);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [adminLoading, setAdminLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     setReason(params.get("reason"));
   }, []);
-
-  const [showAdmin, setShowAdmin] = useState(false);
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [adminError, setAdminError] = useState("");
-  const [adminLoading, setAdminLoading] = useState(false);
 
   const handleKakaoLogin = () => {
     if (!KAKAO_REST_KEY) {
@@ -93,8 +89,8 @@ export default function LoginPage() {
 
   return (
     <div className="w-full flex justify-center px-6 py-10">
-      <div className="w-full max-w-[460px]">
-        <div className="mb-6 flex justify-start">
+      <div className="w-full max-w-[460px] flex flex-col items-center text-center">
+        <div className="mb-5 flex justify-center">
           <Logo />
         </div>
 
@@ -105,11 +101,12 @@ export default function LoginPage() {
         )}
 
         <h1 className="text-[2rem] font-bold text-gray-900 mb-1.5">로그인</h1>
+
         <p className="text-gray-500 text-sm mb-8">
           AI빅데이터융합경영학과에 오신 것을 환영합니다
         </p>
 
-        <div className="w-full bg-white rounded-2xl shadow-lg px-8 py-8">
+        <div className="w-full bg-white rounded-2xl shadow-lg px-8 py-8 text-left">
           <div className="flex flex-col gap-4">
             <button
               type="button"

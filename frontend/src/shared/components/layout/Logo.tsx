@@ -9,8 +9,8 @@ type LogoProps = {
 };
 
 export default function Logo({
-  width = 220,
-  height = 70,
+  width = 120,
+  height = 48,
   className = "",
 }: LogoProps) {
   const id = useId();
@@ -21,7 +21,7 @@ export default function Logo({
     <svg
       width={width}
       height={height}
-      viewBox="0 0 220 80"
+      viewBox="0 0 120 52"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
@@ -44,10 +44,10 @@ export default function Logo({
         </filter>
       </defs>
 
-      <g transform="translate(0, 8)">
+      <g transform="translate(0, 6)">
         <text
           x="0"
-          y="42"
+          y="32"
           fontFamily="Pretendard, -apple-system, BlinkMacSystemFont, Arial, sans-serif"
           fontSize="40"
           fontWeight="900"
@@ -62,7 +62,7 @@ export default function Logo({
 
         <text
           x="0"
-          y="42"
+          y="32"
           fontFamily="Pretendard, -apple-system, BlinkMacSystemFont, Arial, sans-serif"
           fontSize="40"
           fontWeight="900"
@@ -73,7 +73,7 @@ export default function Logo({
           AIVE
         </text>
 
-        <circle cx="78" cy="10" r="2.6" fill={`url(#${gradientId})`}>
+        <circle cx="77" cy="3" r="2.6" fill={`url(#${gradientId})`}>
           <animate
             attributeName="opacity"
             values="1;0.5;1"
