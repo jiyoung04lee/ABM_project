@@ -83,7 +83,10 @@ class AdminLoginSerializer(serializers.Serializer):
     """관리자 전용 이메일·비밀번호 로그인 (is_staff 사용자만 허용)."""
 
     email = serializers.EmailField(write_only=True)
-    password = serializers.CharField(write_only=True, style={"input_type": "password"})
+    password = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+    )
 
 
 # ------------------------------------------------------------
@@ -225,6 +228,7 @@ class CompleteProfileSerializer(serializers.Serializer):
             student_id = (attrs.get("student_id") or "").strip()
             attrs["name"] = name
             attrs["student_id"] = student_id
+            is_multi_major = bool(attrs.get("is_multi_major"))
 
             if not student_id:
                 raise serializers.ValidationError({
@@ -243,18 +247,22 @@ class CompleteProfileSerializer(serializers.Serializer):
                     "student_id": "이미 등록된 학번입니다."
                 })
 
-            # 재학생 명단(StudentRegistry) 대조
-            try:
-                registry = StudentRegistry.objects.get(student_id=student_id)
-            except StudentRegistry.DoesNotExist:
-                raise serializers.ValidationError({
-                    "student_id": "등록된 학번이 아닙니다. 학과에 문의해주세요."
-                })
+            # 일반 재학생: StudentRegistry로 학번·이름 일치 검증
+            # 다부전공: 학번·학년은 수집만, 명단 대조 없음(증빙 이미지로 사후 심사)
+            if not is_multi_major:
+                try:
+                    registry = StudentRegistry.objects.get(
+                        student_id=student_id,
+                    )
+                except StudentRegistry.DoesNotExist:
+                    raise serializers.ValidationError({
+                        "student_id": "등록된 학번이 아닙니다. 학과에 문의해주세요."
+                    })
 
-            if registry.name.strip() != name:
-                raise serializers.ValidationError({
-                    "name": "이름과 학번이 일치하지 않습니다. 다시 확인해주세요."
-                })
+                if registry.name.strip() != name:
+                    raise serializers.ValidationError({
+                        "name": "이름과 학번이 일치하지 않습니다. 다시 확인해주세요."
+                    })
 
             grade = attrs.get("grade")
             if grade is None or not (1 <= grade <= 4):
@@ -263,7 +271,6 @@ class CompleteProfileSerializer(serializers.Serializer):
                 })
 
             # 다부전공 여부에 따라 학과 처리
-            is_multi_major = bool(attrs.get("is_multi_major"))
             if is_multi_major:
                 # 다부전공생: 학과 칸에 1전공을 직접 입력
                 department = (attrs.get("department") or "").strip()
@@ -333,9 +340,13 @@ class CompleteProfileSerializer(serializers.Serializer):
             is_multi_major = bool(self.validated_data.get("is_multi_major"))
             user.is_multi_major = is_multi_major
             if is_multi_major:
-                user.multi_major_image = self.validated_data.get("multi_major_image")
+                user.multi_major_image = self.validated_data.get(
+                    "multi_major_image",
+                )
                 user.multi_major_approved = False
-                user.primary_major = self.validated_data.get("primary_major") or None
+                user.primary_major = (
+                    self.validated_data.get("primary_major") or None
+                )
             else:
                 user.primary_major = None
 
