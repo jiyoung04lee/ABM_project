@@ -20,11 +20,14 @@ export default function MobileHeader({
 
   const isHome = pathname === "/";
 
+  // 홈에서는 공통 Header가 이미 있으므로 중복 방지
+  if (isHome) return null;
+
   return (
     <header className="sticky top-0 z-40 -mx-4 mb-4 border-b border-slate-200 bg-white/95 backdrop-blur md:hidden">
       <div className="mx-auto flex h-14 w-full max-w-md items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          {showBack && !isHome ? (
+          {showBack ? (
             <button
               type="button"
               onClick={() => router.back()}
@@ -39,9 +42,7 @@ export default function MobileHeader({
             </Link>
           )}
 
-          {title && !isHome && (
-            <span className="text-sm font-semibold text-slate-700">{title}</span>
-          )}
+          {title && <span className="text-sm font-semibold text-slate-700">{title}</span>}
         </div>
 
         {showMenu ? (
