@@ -234,7 +234,9 @@ function MessagesPageContent() {
           info: "관리자",
         },
         last_message: convRes.data.last_message || "",
-        last_date: formatLastDate(convRes.data.last_message_time || convRes.data.last_date || ""),
+        last_date: formatLastDate(
+          convRes.data.last_message_time || convRes.data.last_date || ""
+        ),
         unread_count: convRes.data.unread_count || 0,
       };
 
@@ -302,11 +304,12 @@ function MessagesPageContent() {
         )}
 
         <div className="md:grid md:grid-cols-12 md:gap-6 md:h-[calc(100vh-180px)] md:min-h-[500px]">
-          {/* 모바일: 목록 화면 */}
           {(!isMobile || !showMobileChat) && (
             <div className="md:col-span-4 bg-white rounded-[20px] md:rounded-[24px] border border-[#E5E7EB] overflow-hidden flex flex-col shadow-sm h-[calc(100vh-120px)] md:h-auto">
               <div className="px-4 pt-4 pb-3 border-b border-[#E5E7EB] md:border-b-0">
-                <h1 className="text-xl font-bold text-gray-800 md:hidden">메시지</h1>
+                <h1 className="text-xl font-bold text-gray-800 md:hidden">
+                  메시지
+                </h1>
 
                 {!isAdmin && (
                   <button
@@ -367,7 +370,6 @@ function MessagesPageContent() {
             </div>
           )}
 
-          {/* 데스크탑: 우측 채팅 / 모바일: 전체 채팅 */}
           {(!isMobile || showMobileChat) && (
             <div className="md:col-span-8 bg-white rounded-[20px] md:rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-hidden shadow-sm h-[calc(100vh-120px)] md:h-auto mt-3 md:mt-0">
               {selectedConversation ? (
@@ -437,7 +439,7 @@ function MessagesPageContent() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  <div className="border-t border-[#E5E7EB] p-3 md:p-6 bg-white">
+                  <div className="sticky bottom-0 border-t border-[#E5E7EB] bg-white p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] md:static md:p-6">
                     <div className="flex items-center gap-2 md:gap-4">
                       <input
                         value={replyText}
