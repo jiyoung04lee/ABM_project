@@ -228,6 +228,12 @@ function WriteContent() {
     };
   }, []);
 
+  const keepMobileToolbarOpen = useCallback(() => {
+    setIsMobileEditorFocused(true);
+    setShowMobileToolbar(true);
+  }, []);
+
+
   /* ---------------- TipTap Editor ---------------- */
 
   const editor = useEditor({
@@ -299,6 +305,16 @@ function WriteContent() {
     },
   });
 
+  const closeMobileToolbarIfNeeded = useCallback(() => {
+    setTimeout(() => {
+      if (!editor?.isFocused && !isKeyboardOpen && !showMobileTextToolbar) {
+        setIsMobileEditorFocused(false);
+        setShowMobileToolbar(false);
+      }
+    }, 100);
+  }, [editor, isKeyboardOpen, showMobileTextToolbar]);
+
+
   /* ---------------- 이미지 삽입 ---------------- */
 
   const addImageFiles = async (fileList: FileList | File[]) => {
@@ -321,6 +337,8 @@ function WriteContent() {
           return [...prev, { file, url }];
         });
       });
+
+      keepMobileToolbarOpen();
     } catch (err) {
       console.error(err);
       alert("이미지 처리 중 오류가 발생했습니다.");
@@ -734,15 +752,7 @@ function WriteContent() {
   useEffect(() => {
     if (isKeyboardOpen) {
       setShowMobileToolbar(true);
-      return;
     }
-
-    const timer = setTimeout(() => {
-      setShowMobileToolbar(false);
-      setShowMobileTextToolbar(false);
-    }, 150);
-
-    return () => clearTimeout(timer);
   }, [isKeyboardOpen]);
 
   const currentAlign = getCurrentAlign(editor);
@@ -1131,19 +1141,8 @@ function WriteContent() {
             setTitle(e.target.value);
             setIsDirty(true);
           }}
-          onFocus={() => {
-            setIsMobileEditorFocused(true);
-            setShowMobileToolbar(true);
-          }}
-          onBlur={() => {
-            setTimeout(() => {
-              if (!editor?.isFocused && !isKeyboardOpen) {
-                setIsMobileEditorFocused(false);
-                setShowMobileToolbar(false);
-                setShowMobileTextToolbar(false);
-              }
-            }, 100);
-          }}
+          onFocus={keepMobileToolbarOpen}
+          onBlur={closeMobileToolbarIfNeeded}
           placeholder="제목을 입력하세요"
           className="mb-5 w-full border-b pb-4 text-[28px] font-normal outline-none placeholder-gray-300"
         />
@@ -1166,22 +1165,10 @@ function WriteContent() {
           <div
             onClick={() => {
               editor?.commands.focus();
-              setIsMobileEditorFocused(true);
-              setShowMobileToolbar(true);
+              keepMobileToolbarOpen();
             }}
-            onFocus={() => {
-              setIsMobileEditorFocused(true);
-              setShowMobileToolbar(true);
-            }}
-            onBlur={() => {
-              setTimeout(() => {
-                if (!editor?.isFocused && !isKeyboardOpen) {
-                  setIsMobileEditorFocused(false);
-                  setShowMobileToolbar(false);
-                  setShowMobileTextToolbar(false);
-                }
-              }, 100);
-            }}
+            onFocus={keepMobileToolbarOpen}
+            onBlur={closeMobileToolbarIfNeeded}
           >
             <EditorContent editor={editor} className="prose w-full max-w-none outline-none" />
           </div>
@@ -1239,7 +1226,7 @@ function WriteContent() {
         )}
       </div>
 
-      {editor && showMobileToolbar && isKeyboardOpen && (
+      {editor && showMobileToolbar && (
         <>
           {showMobileTextToolbar && (
             <div
@@ -1275,7 +1262,10 @@ function WriteContent() {
                 <button
                   type="button"
                   onPointerDown={(e) => e.preventDefault()}
-                  onClick={() => editor.chain().focus().toggleBold().run()}
+                  onClick={() => {
+                    editor.chain().focus().toggleBold().run();
+                    keepMobileToolbarOpen();
+                  }}
                   className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-2 text-sm ${
                     editor.isActive("bold")
                       ? "bg-gray-900 text-white"
@@ -1288,7 +1278,10 @@ function WriteContent() {
                 <button
                   type="button"
                   onPointerDown={(e) => e.preventDefault()}
-                  onClick={() => editor.chain().focus().toggleUnderline().run()}
+                  onClick={() => {
+                    editor.chain().focus().toggleUnderline().run();
+                    keepMobileToolbarOpen();
+                  }}
                   className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-2 text-sm ${
                     editor.isActive("underline")
                       ? "bg-gray-900 text-white"
@@ -1301,7 +1294,10 @@ function WriteContent() {
                 <button
                   type="button"
                   onPointerDown={(e) => e.preventDefault()}
-                  onClick={() => editor.chain().focus().toggleStrike().run()}
+                  onClick={() => {
+                    editor.chain().focus().toggleStrike().run();
+                    keepMobileToolbarOpen();
+                  }}
                   className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-2 text-sm ${
                     editor.isActive("strike")
                       ? "bg-gray-900 text-white"
@@ -1322,7 +1318,10 @@ function WriteContent() {
               <button
                 type="button"
                 onPointerDown={(e) => e.preventDefault()}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  keepMobileToolbarOpen();
+                }}
                 className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md hover:bg-gray-100"
                 aria-label="이미지"
               >
@@ -1332,7 +1331,11 @@ function WriteContent() {
               <button
                 type="button"
                 onPointerDown={(e) => e.preventDefault()}
-                onClick={() => setShowMobileTextToolbar((prev) => !prev)}
+                onClick={() => {
+                  setShowMobileTextToolbar((prev) => !prev);
+                  keepMobileToolbarOpen();
+                  editor?.commands.focus();
+                }}
                 className={`flex h-9 w-10 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${
                   showMobileTextToolbar ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
                 }`}
@@ -1346,7 +1349,8 @@ function WriteContent() {
                 onPointerDown={(e) => e.preventDefault()}
                 onClick={() => {
                   const nextAlign = getNextAlign(getCurrentAlign(editor));
-                  editor.chain().focus().setTextAlign(nextAlign).run();
+                  editor?.chain().focus().setTextAlign(nextAlign).run();
+                  keepMobileToolbarOpen();
                 }}
                 className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md hover:bg-gray-100"
                 aria-label="정렬"
@@ -1357,7 +1361,10 @@ function WriteContent() {
               <button
                 type="button"
                 onPointerDown={(e) => e.preventDefault()}
-                onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                onClick={() => {
+                  editor?.chain().focus().setHorizontalRule().run();
+                  keepMobileToolbarOpen();
+                }}
                 className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md text-lg text-gray-700 hover:bg-gray-100"
                 aria-label="구분선"
               >
@@ -1370,7 +1377,8 @@ function WriteContent() {
                 onClick={() => {
                   const url = prompt("링크를 입력하세요");
                   if (!url) return;
-                  editor.chain().focus().insertContent({ type: "linkCard", attrs: { url } }).run();
+                  editor?.chain().focus().insertContent({ type: "linkCard", attrs: { url } }).run();
+                  keepMobileToolbarOpen();
                 }}
                 className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md text-base text-gray-700 hover:bg-gray-100"
                 aria-label="링크"
