@@ -8,7 +8,7 @@ import Image from "next/image";
 import { createPost, fetchCategories } from "@/shared/api/network";
 import { fetchDraft, saveDraft, deleteDraft, uploadDraftImage } from "@/shared/api/draft";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -22,7 +22,9 @@ import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import { LinkCard } from "@/features/network/ui/LinkCard";
 import ResizableImage from "@/shared/editor/ResizableImage";
 
+
 type NetworkType = "student" | "graduate" | "qa";
+type AlignType = "left" | "center" | "right" | "justify";
 
 interface Category {
   id: number;
@@ -156,6 +158,28 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
+function getCurrentAlign(editor: Editor | null): AlignType {
+  if (!editor) return "left";
+  if (editor.isActive({ textAlign: "justify" })) return "justify";
+  if (editor.isActive({ textAlign: "right" })) return "right";
+  if (editor.isActive({ textAlign: "center" })) return "center";
+  return "left";
+}
+
+function getNextAlign(current: AlignType): AlignType {
+  if (current === "left") return "center";
+  if (current === "center") return "right";
+  if (current === "right") return "justify";
+  return "left";
+}
+
+function getAlignIconSrc(align: AlignType) {
+  if (align === "center") return "/icons/center.svg";
+  if (align === "right") return "/icons/right.svg";
+  if (align === "justify") return "/icons/both.svg";
+  return "/icons/left.svg";
+}
+
 function WriteContent() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -188,6 +212,7 @@ function WriteContent() {
   const [isMobileEditorFocused, setIsMobileEditorFocused] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [showMobileTextToolbar, setShowMobileTextToolbar] = useState(false);
 
   const draftCheckedRef = useRef(false);
   const justSavedRef = useRef(false);
@@ -706,6 +731,15 @@ function WriteContent() {
     };
   }, [isMobile]);
 
+  useEffect(() => {
+    if (!isKeyboardOpen) {
+      setShowMobileTextToolbar(false);
+    }
+  }, [isKeyboardOpen]);
+
+  const currentAlign = getCurrentAlign(editor);
+  const currentAlignIcon = getAlignIconSrc(currentAlign);
+
   const desktopView = (
     <div className="flex flex-col h-screen pt-[1px] bg-white">
       {submitting && (
@@ -1062,14 +1096,6 @@ function WriteContent() {
             ))}
           </select>
 
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="h-10 rounded-md bg-gray-100 px-4 text-sm text-gray-700"
-          >
-            이미지
-          </button>
-
           {type !== "qa" && (
             <button
               type="button"
@@ -1191,83 +1217,146 @@ function WriteContent() {
       </div>
 
       {editor && isMobileEditorFocused && isKeyboardOpen && (
-        <div
-          className="fixed left-0 right-0 z-40 border-t bg-white px-3 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]"
-          style={{ bottom: `${keyboardOffset}px` }}
-        >
-          <div className="flex items-center gap-1 overflow-x-auto">
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => fileInputRef.current?.click()}
-              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        <>
+          {showMobileTextToolbar && (
+            <div
+              className="fixed left-0 right-0 z-40 border-t bg-white px-3 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]"
+              style={{ bottom: `${keyboardOffset + 52}px` }}
             >
-              이미지
-            </button>
+              <div className="flex items-center gap-2 overflow-x-auto">
+                <input
+                  type="color"
+                  value={editor.getAttributes("textStyle").color || "#000000"}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onInput={(e) =>
+                    editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()
+                  }
+                  className="h-7 w-7 shrink-0 cursor-pointer rounded border border-gray-200 bg-transparent p-0"
+                />
 
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              className={`shrink-0 rounded-md px-3 py-2 text-sm ${
-                editor.isActive("bold") ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              B
-            </button>
+                <select
+                  value={currentFontSize}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onChange={(e) => {
+                    setCurrentFontSize(e.target.value);
+                    editor.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run();
+                  }}
+                  className="h-8 shrink-0 rounded border border-gray-200 px-2 text-sm outline-none"
+                >
+                  <option value="14px">14</option>
+                  <option value="16px">16</option>
+                  <option value="18px">18</option>
+                  <option value="24px">24</option>
+                </select>
 
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              className={`shrink-0 rounded-md px-3 py-2 text-sm ${
-                editor.isActive("underline") ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              U
-            </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => editor.chain().focus().toggleBold().run()}
+                  className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-2 text-sm ${
+                    editor.isActive("bold")
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <b>B</b>
+                </button>
 
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
-                const url = prompt("링크를 입력하세요");
-                if (!url) return;
-                editor.chain().focus().insertContent({ type: "linkCard", attrs: { url } }).run();
-              }}
-              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              링크
-            </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => editor.chain().focus().toggleUnderline().run()}
+                  className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-2 text-sm ${
+                    editor.isActive("underline")
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <u>U</u>
+                </button>
 
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => editor.chain().focus().setTextAlign("left").run()}
-              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              좌
-            </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => editor.chain().focus().toggleStrike().run()}
+                  className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-2 text-sm ${
+                    editor.isActive("strike")
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <s>S</s>
+                </button>
+              </div>
+            </div>
+          )}
 
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => editor.chain().focus().setTextAlign("center").run()}
-              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              중
-            </button>
+          <div
+            className="fixed left-0 right-0 z-40 border-t bg-white px-3 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]"
+            style={{ bottom: `${keyboardOffset}px` }}
+          >
+            <div className="flex items-center gap-1 overflow-x-auto">
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md hover:bg-gray-100"
+                aria-label="이미지"
+              >
+                <Image src="/icons/image_upload.svg" alt="이미지" width={20} height={20} />
+              </button>
 
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => editor.chain().focus().setTextAlign("right").run()}
-              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              우
-            </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setShowMobileTextToolbar((prev) => !prev)}
+                className={`flex h-9 w-10 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${
+                  showMobileTextToolbar ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
+                }`}
+                aria-label="텍스트"
+              >
+                T
+              </button>
+
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  const nextAlign = getNextAlign(getCurrentAlign(editor));
+                  editor.chain().focus().setTextAlign(nextAlign).run();
+                }}
+                className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md hover:bg-gray-100"
+                aria-label="정렬"
+              >
+                <Image src={currentAlignIcon} alt="정렬" width={18} height={18} />
+              </button>
+
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md text-lg text-gray-700 hover:bg-gray-100"
+                aria-label="구분선"
+              >
+                ─
+              </button>
+
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  const url = prompt("링크를 입력하세요");
+                  if (!url) return;
+                  editor.chain().focus().insertContent({ type: "linkCard", attrs: { url } }).run();
+                }}
+                className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md text-base text-gray-700 hover:bg-gray-100"
+                aria-label="링크"
+              >
+                🔗
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
