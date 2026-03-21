@@ -73,34 +73,45 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 function getResizedSize(width: number, height: number, maxWidth: number, maxHeight: number) {
   let w = width;
   let h = height;
+
   if (w > maxWidth) {
     const r = maxWidth / w;
     w = Math.round(w * r);
     h = Math.round(h * r);
   }
+
   if (h > maxHeight) {
     const r = maxHeight / h;
     w = Math.round(w * r);
     h = Math.round(h * r);
   }
+
   return { width: w, height: h };
 }
 
 async function compressImage(file: File): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
+
   const img = await loadImage(file);
   const { width, height } = getResizedSize(img.width, img.height, 1600, 1600);
+
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
+
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas context 생성 실패");
+
   ctx.drawImage(img, 0, 0, width, height);
+
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, "image/jpeg", 0.75)
   );
+
   if (!blob) throw new Error("이미지 압축 실패");
+
   const name = file.name.replace(/\.[^/.]+$/, "");
+
   return new File([blob], `${name}.jpg`, {
     type: "image/jpeg",
     lastModified: Date.now(),
@@ -119,9 +130,11 @@ function extractImageSrcs(html: string): string[] {
   const srcs: string[] = [];
   const re = /<img[^>]*\ssrc="([^"]+)"[^>]*\/?>/gi;
   let m: RegExpExecArray | null;
+
   while ((m = re.exec(html)) !== null) {
     srcs.push(m[1]);
   }
+
   return srcs;
 }
 
@@ -171,6 +184,10 @@ function WriteContent() {
     content: string;
     image_ids: number[];
   } | null>(null);
+
+  const [isMobileEditorFocused, setIsMobileEditorFocused] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   const draftCheckedRef = useRef(false);
   const justSavedRef = useRef(false);
@@ -238,9 +255,11 @@ function WriteContent() {
       setNewImages((prev) => {
         const next = prev.filter((img) => srcSet.has(img.url));
         const removed = prev.filter((img) => !srcSet.has(img.url));
+
         removed.forEach((img) => {
           if (img.url.startsWith("blob:")) URL.revokeObjectURL(img.url);
         });
+
         return next;
       });
 
@@ -268,6 +287,7 @@ function WriteContent() {
 
       compressed.forEach((file) => {
         const url = URL.createObjectURL(file);
+
         editor.chain().focus().setImage({ src: url }).createParagraphNear().run();
 
         setNewImages((prev) => {
@@ -292,7 +312,9 @@ function WriteContent() {
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOver(false);
+
     if (!e.dataTransfer.files?.length) return;
+
     await addImageFiles(e.dataTransfer.files);
     e.dataTransfer.clearData();
   };
@@ -309,6 +331,7 @@ function WriteContent() {
       try {
         const draft = await fetchDraft(type as "student" | "graduate");
         if (!draft) return;
+
         setPendingDraft({
           title: draft.title,
           content: draft.content,
@@ -381,6 +404,7 @@ function WriteContent() {
             blobUrls.map(async (blobUrl) => {
               const file = blobToFile.get(blobUrl);
               if (!file) return;
+
               const result = await uploadDraftImage(file);
               blobToUrl.set(blobUrl, result.url);
               uploadedIds.push(result.id);
@@ -427,6 +451,7 @@ function WriteContent() {
 
         justSavedRef.current = true;
         setIsDirty(false);
+
         setTimeout(() => {
           justSavedRef.current = false;
         }, 500);
@@ -451,6 +476,7 @@ function WriteContent() {
         e.returnValue = "";
       }
     };
+
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
@@ -488,6 +514,7 @@ function WriteContent() {
           blobUrls.map(async (blobUrl) => {
             const file = blobToFile.get(blobUrl);
             if (!file) return;
+
             const result = await uploadDraftImage(file);
             blobToResult.set(blobUrl, result);
             blobToUrl.set(blobUrl, result.url);
@@ -525,6 +552,7 @@ function WriteContent() {
 
       justSavedRef.current = true;
       setIsDirty(false);
+
       setTimeout(() => {
         justSavedRef.current = false;
       }, 500);
@@ -561,10 +589,12 @@ function WriteContent() {
 
   const handleSubmit = async () => {
     if (submitting) return;
+
     if (!title.trim() || !content.trim()) {
       alert("제목과 내용을 입력해주세요.");
       return;
     }
+
     if (!category) {
       alert("카테고리를 선택해주세요.");
       return;
@@ -646,6 +676,35 @@ function WriteContent() {
       setSubmitting(false);
     }
   };
+
+  /* ---------------- 모바일 키보드 감지 ---------------- */
+
+  useEffect(() => {
+    if (!isMobile) return;
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const vv = window.visualViewport;
+
+    const updateKeyboardState = () => {
+      const viewportHeight = vv.height;
+      const fullHeight = window.innerHeight;
+      const diff = fullHeight - viewportHeight - vv.offsetTop;
+      const open = diff > 120;
+
+      setIsKeyboardOpen(open);
+      setKeyboardOffset(open ? Math.max(diff, 0) : 0);
+    };
+
+    updateKeyboardState();
+
+    vv.addEventListener("resize", updateKeyboardState);
+    vv.addEventListener("scroll", updateKeyboardState);
+
+    return () => {
+      vv.removeEventListener("resize", updateKeyboardState);
+      vv.removeEventListener("scroll", updateKeyboardState);
+    };
+  }, [isMobile]);
 
   const desktopView = (
     <div className="flex flex-col h-screen pt-[1px] bg-white">
@@ -989,7 +1048,7 @@ function WriteContent() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 pb-24 pt-4">
+      <div className="flex-1 px-4 pb-32 pt-4">
         <div className="mb-4 flex items-center gap-2">
           <select
             value={category ?? ""}
@@ -1038,6 +1097,12 @@ function WriteContent() {
             setTitle(e.target.value);
             setIsDirty(true);
           }}
+          onFocus={() => setIsMobileEditorFocused(true)}
+          onBlur={() => {
+            setTimeout(() => {
+              if (!editor?.isFocused) setIsMobileEditorFocused(false);
+            }, 100);
+          }}
           placeholder="제목을 입력하세요"
           className="mb-5 w-full border-b pb-4 text-[28px] font-normal outline-none placeholder-gray-300"
         />
@@ -1057,7 +1122,20 @@ function WriteContent() {
           }}
           onDrop={handleImageDrop}
         >
-          <EditorContent editor={editor} className="prose w-full max-w-none outline-none" />
+          <div
+            onClick={() => {
+              editor?.commands.focus();
+              setIsMobileEditorFocused(true);
+            }}
+            onFocus={() => setIsMobileEditorFocused(true)}
+            onBlur={() => {
+              setTimeout(() => {
+                if (!editor?.isFocused) setIsMobileEditorFocused(false);
+              }, 100);
+            }}
+          >
+            <EditorContent editor={editor} className="prose w-full max-w-none outline-none" />
+          </div>
         </div>
 
         {newImages.length > 0 && (
@@ -1111,6 +1189,86 @@ function WriteContent() {
           </div>
         )}
       </div>
+
+      {editor && isMobileEditorFocused && isKeyboardOpen && (
+        <div
+          className="fixed left-0 right-0 z-40 border-t bg-white px-3 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]"
+          style={{ bottom: `${keyboardOffset}px` }}
+        >
+          <div className="flex items-center gap-1 overflow-x-auto">
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => fileInputRef.current?.click()}
+              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              이미지
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              className={`shrink-0 rounded-md px-3 py-2 text-sm ${
+                editor.isActive("bold") ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              B
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor.chain().focus().toggleUnderline().run()}
+              className={`shrink-0 rounded-md px-3 py-2 text-sm ${
+                editor.isActive("underline") ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              U
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                const url = prompt("링크를 입력하세요");
+                if (!url) return;
+                editor.chain().focus().insertContent({ type: "linkCard", attrs: { url } }).run();
+              }}
+              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              링크
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor.chain().focus().setTextAlign("left").run()}
+              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              좌
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor.chain().focus().setTextAlign("center").run()}
+              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              중
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor.chain().focus().setTextAlign("right").run()}
+              className="shrink-0 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              우
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
