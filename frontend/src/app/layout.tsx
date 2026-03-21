@@ -66,7 +66,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <PageViewTracker />
           <Header />
           <AnnouncementBanner />
-          <main className="pt-12">{children}</main>
+          <main className="pt-20 md:pt-12">{children}</main>
         </NotificationProvider>
       </body>
     </html>
