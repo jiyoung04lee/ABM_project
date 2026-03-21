@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "AIVE",
   description: "AI빅데이터융합경영학과 학생들을 위한 정보 아카이브",
   icons: {
-    icon: "/favicon.ico",          
+    icon: "/favicon.ico",
     apple: "/icons/apple-touch-icon.png",
   },
   openGraph: {
@@ -64,9 +64,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </noscript>
         <NotificationProvider>
           <PageViewTracker />
-          <div className="hidden md:block">
-            <Header />
-          </div>
+          <Header />
           <AnnouncementBanner />
           <main className="pt-12">{children}</main>
         </NotificationProvider>
