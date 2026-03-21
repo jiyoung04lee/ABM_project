@@ -324,7 +324,7 @@ function MessagesPageContent() {
               <div className="overflow-y-auto flex-1">
                 {conversations.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-sm text-gray-400 px-4">
-                    아직 대화가 없어
+                    아직 대화가 없습니다
                   </div>
                 ) : (
                   conversations.map((conv) => (
