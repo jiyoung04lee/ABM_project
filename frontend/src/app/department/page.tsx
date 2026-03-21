@@ -52,25 +52,16 @@ function IntroContent({ mobile = false }: { mobile?: boolean }) {
           mobile ? "rounded-2xl p-5 mb-4" : "rounded-3xl p-8 mb-6"
         }`}
       >
-        <div className={`flex ${mobile ? "flex-col" : "items-start"} gap-4`}>
-          <div
-            className={`bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-              mobile ? "w-11 h-11" : "w-10 h-10"
-            }`}
-          >
-            <Target className={`${mobile ? "w-5 h-5" : "w-5 h-5"} text-white`} />
-          </div>
+        {mobile ? (
+          <>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Target className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-bold">학과 소개</h2>
+            </div>
 
-          <div className="flex-1">
-            <h2
-              className={`font-bold ${
-                mobile ? "text-xl mb-4" : "text-2xl mb-6"
-              }`}
-            >
-              학과 소개
-            </h2>
-
-            <div className={`${mobile ? "mb-5" : "max-w-3xl mx-auto mb-6"}`}>
+            <div className="mb-5">
               <a
                 href="https://www.youtube.com/watch?v=G4-QILt2f28&t=9s"
                 target="_blank"
@@ -87,23 +78,15 @@ function IntroContent({ mobile = false }: { mobile?: boolean }) {
                     />
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all duration-300" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div
-                        className={`bg-[#2563EB] rounded-full flex items-center justify-center shadow-2xl group-hover:bg-[#1d4ed8] group-hover:scale-110 transition-all duration-300 ${
-                          mobile ? "w-16 h-16" : "w-20 h-20"
-                        }`}
-                      >
+                      <div className="bg-[#2563EB] rounded-full flex items-center justify-center shadow-2xl group-hover:bg-[#1d4ed8] group-hover:scale-110 transition-all duration-300 w-16 h-16">
                         <Play
-                          className={`${mobile ? "w-8 h-8" : "w-10 h-10"} text-white ml-1`}
+                          className="w-8 h-8 text-white ml-1"
                           fill="white"
                         />
                       </div>
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                      <p
-                        className={`text-white font-medium ${
-                          mobile ? "text-sm" : ""
-                        }`}
-                      >
+                      <p className="text-white font-medium text-sm">
                         AI빅데이터융합경영학과 소개 영상
                       </p>
                     </div>
@@ -112,11 +95,7 @@ function IntroContent({ mobile = false }: { mobile?: boolean }) {
               </a>
             </div>
 
-            <div
-              className={`text-gray-700 leading-relaxed ${
-                mobile ? "space-y-4 text-[15px]" : "space-y-5 text-base"
-              }`}
-            >
+            <div className="text-gray-700 leading-relaxed space-y-4 text-[15px]">
               <p>
                 AI와 빅데이터를 활용한 업무 자동화와 효율화는 기업 운영 전반에서 비용 절감을 이끌고 있으며,
                 이를 기반으로 한 새로운 비즈니스 영역이 빠르게 확장되고 있습니다. 이에 따라 마케팅,
@@ -129,8 +108,66 @@ function IntroContent({ mobile = false }: { mobile?: boolean }) {
                 응용·활용할 수 있는 융합형 인재를 양성하는 것을 목표로 합니다.
               </p>
             </div>
+          </>
+        ) : (
+          <div className="flex items-start gap-4">
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 w-10 h-10">
+              <Target className="w-5 h-5 text-white" />
+            </div>
+
+            <div className="flex-1">
+              <h2 className="font-bold text-2xl mb-6">학과 소개</h2>
+
+              <div className="max-w-3xl mx-auto mb-6">
+                <a
+                  href="https://www.youtube.com/watch?v=G4-QILt2f28&t=9s"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block group"
+                >
+                  <div className="rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
+                    <div className="relative aspect-video">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://img.youtube.com/vi/G4-QILt2f28/maxresdefault.jpg"
+                        alt="AI빅데이터융합경영학과 소개 영상"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all duration-300" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-[#2563EB] rounded-full flex items-center justify-center shadow-2xl group-hover:bg-[#1d4ed8] group-hover:scale-110 transition-all duration-300 w-20 h-20">
+                          <Play
+                            className="w-10 h-10 text-white ml-1"
+                            fill="white"
+                          />
+                        </div>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                        <p className="text-white font-medium">
+                          AI빅데이터융합경영학과 소개 영상
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <div className="text-gray-700 leading-relaxed space-y-5 text-base">
+                <p>
+                  AI와 빅데이터를 활용한 업무 자동화와 효율화는 기업 운영 전반에서 비용 절감을 이끌고 있으며,
+                  이를 기반으로 한 새로운 비즈니스 영역이 빠르게 확장되고 있습니다. 이에 따라 마케팅,
+                  인사·조직, 금융, 생산관리 등 다양한 산업 분야의 실무와 경영 환경 역시 빅데이터와 AI를
+                  응용하는 방식으로 변화하고 있습니다.
+                </p>
+                <p>
+                  AI빅데이터융합경영학과는 이러한 산업 변화에 대응하여 비즈니스에 대한 이해와 협업 역량을 갖춘
+                  창의적 혁신가, 빅데이터 기반의 문제 해결 역량을 지닌 분석 전문가, AI를 실제 현장에
+                  응용·활용할 수 있는 융합형 인재를 양성하는 것을 목표로 합니다.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div
@@ -238,24 +275,27 @@ function GraduationContent({ mobile = false }: { mobile?: boolean }) {
           mobile ? "rounded-2xl p-5" : "rounded-3xl p-8"
         }`}
       >
-        <div className={`flex ${mobile ? "flex-col" : "items-start"} gap-4 mb-6`}>
-          <div
-            className={`bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-              mobile ? "w-12 h-12" : "w-14 h-14"
-            }`}
-          >
-            <GraduationCap className={`${mobile ? "w-6 h-6" : "w-7 h-7"} text-white`} />
+        {mobile ? (
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <GraduationCap className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-xl font-bold">추가 졸업 요건</h2>
           </div>
+        ) : (
+          <div className="flex items-start gap-4 mb-6">
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 w-14 h-14">
+              <GraduationCap className="w-7 h-7 text-white" />
+            </div>
 
-          <div>
-            <h2 className={`font-bold mb-2 ${mobile ? "text-xl" : "text-2xl"}`}>
-              추가 졸업 요건
-            </h2>
-            <p className="text-gray-600 text-sm md:text-base">
-              학점 이수 외에 충족해야 하는 졸업 요건입니다.
-            </p>
+            <div>
+              <h2 className="font-bold mb-2 text-2xl">추가 졸업 요건</h2>
+              <p className="text-gray-600 text-sm md:text-base">
+                학점 이수 외에 충족해야 하는 졸업 요건입니다.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className={mobile ? "space-y-4" : "space-y-6"}>
           <div
@@ -340,21 +380,16 @@ function GlossaryContent({ mobile = false }: { mobile?: boolean }) {
         mobile ? "rounded-2xl p-5" : "rounded-3xl p-8"
       }`}
     >
-      <div className={`flex ${mobile ? "flex-col" : "items-start"} gap-4`}>
-        <div
-          className={`bg-gradient-to-br from-indigo-600 to-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-            mobile ? "w-12 h-12" : "w-14 h-14"
-          }`}
-        >
-          <BookOpen className={`${mobile ? "w-6 h-6" : "w-7 h-7"} text-white`} />
-        </div>
+      {mobile ? (
+        <>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-11 h-11 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-xl font-bold">학회 소개집</h2>
+          </div>
 
-        <div className="flex-1">
-          <h2 className={`font-bold ${mobile ? "text-xl mb-4" : "text-2xl mb-6"}`}>
-            학회 소개집
-          </h2>
-
-          <div className={`max-w-4xl mx-auto flex flex-col ${mobile ? "gap-4" : "gap-6"}`}>
+          <div className="max-w-4xl mx-auto flex flex-col gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/ins_image_XAI.png"
@@ -369,8 +404,34 @@ function GlossaryContent({ mobile = false }: { mobile?: boolean }) {
               className="w-full h-auto rounded-2xl shadow-sm"
             />
           </div>
+        </>
+      ) : (
+        <div className="flex items-start gap-4">
+          <div className="bg-gradient-to-br from-indigo-600 to-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 w-14 h-14">
+            <BookOpen className="w-7 h-7 text-white" />
+          </div>
+
+          <div className="flex-1">
+            <h2 className="font-bold text-2xl mb-6">학회 소개집</h2>
+
+            <div className="max-w-4xl mx-auto flex flex-col gap-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/ins_image_XAI.png"
+                alt="학회 소개집 1"
+                className="w-full h-auto rounded-2xl shadow-sm"
+              />
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/ins_image_DA.png"
+                alt="학회 소개집 2"
+                className="w-full h-auto rounded-2xl shadow-sm"
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -405,21 +466,16 @@ function CurriculumContent({ mobile = false }: { mobile?: boolean }) {
         mobile ? "rounded-2xl p-5" : "rounded-3xl p-8"
       }`}
     >
-      <div className={`flex ${mobile ? "flex-col" : "items-start"} gap-4`}>
-        <div
-          className={`bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-            mobile ? "w-12 h-12" : "w-14 h-14"
-          }`}
-        >
-          <BookOpen className={`${mobile ? "w-6 h-6" : "w-7 h-7"} text-white`} />
-        </div>
+      {mobile ? (
+        <>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-xl font-bold">커리큘럼</h2>
+          </div>
 
-        <div className="flex-1">
-          <h2 className={`font-bold ${mobile ? "text-xl mb-4" : "text-2xl mb-6"}`}>
-            커리큘럼
-          </h2>
-
-          <div className={`max-w-4xl mx-auto ${mobile ? "mb-5" : "mb-8"}`}>
+          <div className="max-w-4xl mx-auto mb-5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/curriculum-roadmap.png"
@@ -428,7 +484,7 @@ function CurriculumContent({ mobile = false }: { mobile?: boolean }) {
             />
           </div>
 
-          <div className={mobile ? "space-y-3" : "space-y-4"}>
+          <div className="space-y-3">
             {items.map((item) => (
               <div
                 key={item.year}
@@ -436,27 +492,66 @@ function CurriculumContent({ mobile = false }: { mobile?: boolean }) {
                   item.color === "blue"
                     ? "from-blue-50 to-blue-100 border-blue-600"
                     : "from-indigo-50 to-indigo-100 border-indigo-600"
-                } rounded-2xl border-l-4 ${mobile ? "p-4" : "p-5"}`}
+                } rounded-2xl border-l-4 p-4`}
               >
                 <h3
                   className={`font-bold mb-2 ${
                     item.color === "blue" ? "text-blue-700" : "text-indigo-700"
-                  } ${mobile ? "text-base" : "text-lg"}`}
+                  } text-base`}
                 >
                   {item.year}
                 </h3>
-                <p
-                  className={`text-gray-700 leading-relaxed ${
-                    mobile ? "text-sm" : "text-sm"
-                  }`}
-                >
+                <p className="text-gray-700 leading-relaxed text-sm">
                   {item.desc}
                 </p>
               </div>
             ))}
           </div>
+        </>
+      ) : (
+        <div className="flex items-start gap-4">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 w-14 h-14">
+            <BookOpen className="w-7 h-7 text-white" />
+          </div>
+
+          <div className="flex-1">
+            <h2 className="font-bold text-2xl mb-6">커리큘럼</h2>
+
+            <div className="max-w-4xl mx-auto mb-8">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/curriculum-roadmap.png"
+                alt="커리큘럼 다이어그램: 1학년, 2학년, 3학년, 4학년"
+                className="w-full h-auto rounded-2xl shadow-sm"
+              />
+            </div>
+
+            <div className="space-y-4">
+              {items.map((item) => (
+                <div
+                  key={item.year}
+                  className={`bg-gradient-to-r ${
+                    item.color === "blue"
+                      ? "from-blue-50 to-blue-100 border-blue-600"
+                      : "from-indigo-50 to-indigo-100 border-indigo-600"
+                  } rounded-2xl border-l-4 p-5`}
+                >
+                  <h3
+                    className={`font-bold mb-2 ${
+                      item.color === "blue" ? "text-blue-700" : "text-indigo-700"
+                    } text-lg`}
+                  >
+                    {item.year}
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed text-sm">
+                    {item.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -471,15 +566,15 @@ function MobileDepartmentPage() {
         <div className="absolute top-0 right-0 w-56 h-56 bg-indigo-300 rounded-full blur-3xl opacity-25" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-56 h-56 bg-blue-400 rounded-full blur-3xl opacity-20" />
 
-        <div className="relative z-10 px-5 pt-24 pb-10">
+        <div className="relative z-10 px-5 pt-24 pb-10 flex flex-col items-center text-center">
           <div className="inline-block mb-3 px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-full text-xs font-medium">
             ✨ AI빅데이터융합경영 이렇게 공부하기
           </div>
-          <h1 className="text-3xl font-bold leading-tight mb-3">
-            AI빅데이터융합
-            <br />
-            경영학과
+
+          <h1 className="text-[clamp(1.9rem,5vw,2.4rem)] font-bold leading-tight mb-4 whitespace-nowrap">
+            AI빅데이터융합경영학과
           </h1>
+
           <p className="text-gray-700 text-sm leading-relaxed">
             데이터로 세상을 읽고,
             <br />
