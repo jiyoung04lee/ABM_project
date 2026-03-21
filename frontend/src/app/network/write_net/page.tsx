@@ -22,7 +22,6 @@ import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import { LinkCard } from "@/features/network/ui/LinkCard";
 import ResizableImage from "@/shared/editor/ResizableImage";
 
-
 type NetworkType = "student" | "graduate" | "qa";
 type AlignType = "left" | "center" | "right" | "justify";
 
@@ -212,6 +211,7 @@ function WriteContent() {
   const [isMobileEditorFocused, setIsMobileEditorFocused] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [showMobileToolbar, setShowMobileToolbar] = useState(false);
   const [showMobileTextToolbar, setShowMobileTextToolbar] = useState(false);
 
   const draftCheckedRef = useRef(false);
@@ -732,9 +732,17 @@ function WriteContent() {
   }, [isMobile]);
 
   useEffect(() => {
-    if (!isKeyboardOpen) {
-      setShowMobileTextToolbar(false);
+    if (isKeyboardOpen) {
+      setShowMobileToolbar(true);
+      return;
     }
+
+    const timer = setTimeout(() => {
+      setShowMobileToolbar(false);
+      setShowMobileTextToolbar(false);
+    }, 150);
+
+    return () => clearTimeout(timer);
   }, [isKeyboardOpen]);
 
   const currentAlign = getCurrentAlign(editor);
@@ -1123,10 +1131,17 @@ function WriteContent() {
             setTitle(e.target.value);
             setIsDirty(true);
           }}
-          onFocus={() => setIsMobileEditorFocused(true)}
+          onFocus={() => {
+            setIsMobileEditorFocused(true);
+            setShowMobileToolbar(true);
+          }}
           onBlur={() => {
             setTimeout(() => {
-              if (!editor?.isFocused) setIsMobileEditorFocused(false);
+              if (!editor?.isFocused && !isKeyboardOpen) {
+                setIsMobileEditorFocused(false);
+                setShowMobileToolbar(false);
+                setShowMobileTextToolbar(false);
+              }
             }, 100);
           }}
           placeholder="제목을 입력하세요"
@@ -1152,11 +1167,19 @@ function WriteContent() {
             onClick={() => {
               editor?.commands.focus();
               setIsMobileEditorFocused(true);
+              setShowMobileToolbar(true);
             }}
-            onFocus={() => setIsMobileEditorFocused(true)}
+            onFocus={() => {
+              setIsMobileEditorFocused(true);
+              setShowMobileToolbar(true);
+            }}
             onBlur={() => {
               setTimeout(() => {
-                if (!editor?.isFocused) setIsMobileEditorFocused(false);
+                if (!editor?.isFocused && !isKeyboardOpen) {
+                  setIsMobileEditorFocused(false);
+                  setShowMobileToolbar(false);
+                  setShowMobileTextToolbar(false);
+                }
               }, 100);
             }}
           >
@@ -1216,7 +1239,7 @@ function WriteContent() {
         )}
       </div>
 
-      {editor && isMobileEditorFocused && isKeyboardOpen && (
+      {editor && showMobileToolbar && isKeyboardOpen && (
         <>
           {showMobileTextToolbar && (
             <div
@@ -1227,7 +1250,7 @@ function WriteContent() {
                 <input
                   type="color"
                   value={editor.getAttributes("textStyle").color || "#000000"}
-                  onMouseDown={(e) => e.preventDefault()}
+                  onPointerDown={(e) => e.preventDefault()}
                   onInput={(e) =>
                     editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()
                   }
@@ -1236,7 +1259,7 @@ function WriteContent() {
 
                 <select
                   value={currentFontSize}
-                  onMouseDown={(e) => e.preventDefault()}
+                  onPointerDown={(e) => e.preventDefault()}
                   onChange={(e) => {
                     setCurrentFontSize(e.target.value);
                     editor.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run();
@@ -1251,7 +1274,7 @@ function WriteContent() {
 
                 <button
                   type="button"
-                  onMouseDown={(e) => e.preventDefault()}
+                  onPointerDown={(e) => e.preventDefault()}
                   onClick={() => editor.chain().focus().toggleBold().run()}
                   className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-2 text-sm ${
                     editor.isActive("bold")
@@ -1264,7 +1287,7 @@ function WriteContent() {
 
                 <button
                   type="button"
-                  onMouseDown={(e) => e.preventDefault()}
+                  onPointerDown={(e) => e.preventDefault()}
                   onClick={() => editor.chain().focus().toggleUnderline().run()}
                   className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-2 text-sm ${
                     editor.isActive("underline")
@@ -1277,7 +1300,7 @@ function WriteContent() {
 
                 <button
                   type="button"
-                  onMouseDown={(e) => e.preventDefault()}
+                  onPointerDown={(e) => e.preventDefault()}
                   onClick={() => editor.chain().focus().toggleStrike().run()}
                   className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-2 text-sm ${
                     editor.isActive("strike")
@@ -1298,7 +1321,7 @@ function WriteContent() {
             <div className="flex items-center gap-1 overflow-x-auto">
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => fileInputRef.current?.click()}
                 className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md hover:bg-gray-100"
                 aria-label="이미지"
@@ -1308,7 +1331,7 @@ function WriteContent() {
 
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => setShowMobileTextToolbar((prev) => !prev)}
                 className={`flex h-9 w-10 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${
                   showMobileTextToolbar ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
@@ -1320,7 +1343,7 @@ function WriteContent() {
 
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => {
                   const nextAlign = getNextAlign(getCurrentAlign(editor));
                   editor.chain().focus().setTextAlign(nextAlign).run();
@@ -1333,7 +1356,7 @@ function WriteContent() {
 
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => editor.chain().focus().setHorizontalRule().run()}
                 className="flex h-9 w-10 shrink-0 items-center justify-center rounded-md text-lg text-gray-700 hover:bg-gray-100"
                 aria-label="구분선"
@@ -1343,7 +1366,7 @@ function WriteContent() {
 
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => {
                   const url = prompt("링크를 입력하세요");
                   if (!url) return;
