@@ -264,6 +264,20 @@ function IntroContent({ mobile = false }: { mobile?: boolean }) {
 }
 
 function GraduationContent({ mobile = false }: { mobile?: boolean }) {
+  const infoItems = [
+    "교양교과목(기초교양 + 핵심교양 + 자유교양)은 50학점을 초과하여 이수할 수 없음.",
+    "S-TEAM Class 미이수 시 사제동행세미나를 이수해야 함.",
+    "S-TEAM Class 및 사제동행세미나 수업은 재학 중 최대 4학점까지만 이수 가능함.",
+    "졸업인증제 충족",
+  ];
+
+  const cautionItems = [
+    "졸업 요건은 입학년도에 따라 다를 수 있습니다.",
+    "학사 규정 변경 시 개정된 규정을 따릅니다.",
+    "복수전공, 부전공 이수 시 추가 요건이 있을 수 있습니다.",
+    "자세한 사항은 학과 사무실에 문의해주세요.",
+  ];
+
   return (
     <>
       <div className={mobile ? "mb-4" : "mb-6"}>
@@ -280,93 +294,132 @@ function GraduationContent({ mobile = false }: { mobile?: boolean }) {
             <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0">
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-xl font-bold">추가 졸업 요건</h2>
+            <div>
+              <h2 className="text-xl font-bold">추가 졸업 요건</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                학점 이수 외에 확인해야 할 사항
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="flex items-start gap-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 w-14 h-14">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
               <GraduationCap className="w-7 h-7 text-white" />
             </div>
-
             <div>
-              <h2 className="font-bold mb-2 text-2xl">추가 졸업 요건</h2>
-              <p className="text-gray-600 text-sm md:text-base">
+              <h2 className="text-2xl font-bold mb-1">추가 졸업 요건</h2>
+              <p className="text-gray-600">
                 학점 이수 외에 충족해야 하는 졸업 요건입니다.
               </p>
             </div>
           </div>
         )}
 
-        <div className={mobile ? "space-y-4" : "space-y-6"}>
-          <div
-            className={`bg-gradient-to-br from-blue-50 to-indigo-50 ${
-              mobile ? "rounded-2xl p-4" : "rounded-2xl p-6"
+        <div className={mobile ? "space-y-4" : "grid grid-cols-2 gap-6"}>
+          {/* 추가 정보 사항 */}
+          <section
+            className={`bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 ${
+              mobile ? "rounded-2xl p-4" : "rounded-3xl p-6"
             }`}
           >
-            <h3 className="font-bold mb-4 text-blue-900 text-lg">추가 정보 사항</h3>
-            <ul
-              className={`text-gray-700 bg-white rounded-xl ${
-                mobile ? "p-4 space-y-3 text-sm" : "p-5 space-y-3"
-              }`}
-            >
-              <li className="flex items-start gap-3">
-                <span className="text-blue-600 mt-1 text-xl">•</span>
-                <span>교양교과목(기초교양 + 핵심교양 + 자유교양)은 50학점을 초과하여 이수할 수 없음.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-blue-600 mt-1 text-xl">•</span>
-                <span>S-TEAM Class 미이수 시 사제동행세미나를 이수해야 함.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-blue-600 mt-1 text-xl">•</span>
-                <span>S-TEAM Class 및 사제동행세미나 수업은 재학 중 최대 4학점까지만 이수 가능함.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-blue-600 mt-1 text-xl">•</span>
-                <span>졸업인증제 충족</span>
-              </li>
-              <li className="flex items-start gap-3 ml-2 md:ml-6">
-                <span className="text-blue-600 mt-1">-</span>
-                <div>
-                  <span className="font-semibold">&lt;공통요건&gt;</span>
-                  <br />
-                  <span>* 심화전공 또는 다부전공 중 1가지 이상 이수</span>
-                </div>
-              </li>
-            </ul>
-          </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className={`bg-white border border-blue-200 rounded-xl flex items-center justify-center shrink-0 ${
+                  mobile ? "w-10 h-10" : "w-11 h-11"
+                }`}
+              >
+                <span className="text-blue-700 font-bold">✓</span>
+              </div>
+              <div>
+                <h3 className={`font-bold text-blue-900 ${mobile ? "text-base" : "text-lg"}`}>
+                  추가 정보 사항
+                </h3>
+                {!mobile && (
+                  <p className="text-sm text-blue-800/80 mt-1">
+                    졸업 전 반드시 확인해야 하는 기본 조건
+                  </p>
+                )}
+              </div>
+            </div>
 
-          <div
-            className={`bg-gradient-to-br from-blue-50 to-indigo-50 ${
-              mobile ? "rounded-2xl p-4" : "rounded-2xl p-6"
-            }`}
-          >
-            <h3 className="font-bold mb-4 text-blue-900 text-lg flex items-center gap-2">
-              <span className="text-xl">⚠️</span> 유의사항
-            </h3>
-            <ul
-              className={`text-gray-700 leading-relaxed bg-white rounded-xl ${
-                mobile ? "p-4 space-y-3 text-sm" : "p-5 space-y-3 text-sm"
+            <div
+              className={`bg-white border border-blue-100 ${
+                mobile ? "rounded-2xl p-4" : "rounded-2xl p-5"
               }`}
             >
-              <li className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>졸업 요건은 입학년도에 따라 다를 수 있습니다.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>학사 규정 변경 시 개정된 규정을 따릅니다.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>복수전공, 부전공 이수 시 추가 요건이 있을 수 있습니다.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>자세한 사항은 학과 사무실에 문의해주세요.</span>
-              </li>
-            </ul>
-          </div>
+              <ul className={mobile ? "space-y-3" : "space-y-4"}>
+                {infoItems.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3">
+                    <span className="mt-0.5 text-blue-600 text-sm">●</span>
+                    <span
+                      className={`text-gray-700 leading-relaxed ${
+                        mobile ? "text-sm" : "text-[15px]"
+                      }`}
+                    >
+                      {item}
+                    </span>
+                  </li>
+                ))}
+
+                <li className="ml-5 rounded-xl bg-blue-50 px-3 py-3 border border-blue-100">
+                  <p className="font-semibold text-blue-900 text-sm mb-1">
+                    공통요건
+                  </p>
+                  <p className={`text-gray-700 ${mobile ? "text-sm" : "text-[15px]"}`}>
+                    심화전공 또는 다부전공 중 1가지 이상 이수
+                  </p>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          {/* 유의사항 */}
+          <section
+            className={`bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 ${
+              mobile ? "rounded-2xl p-4" : "rounded-3xl p-6"
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className={`bg-white border border-amber-200 rounded-xl flex items-center justify-center shrink-0 ${
+                  mobile ? "w-10 h-10" : "w-11 h-11"
+                }`}
+              >
+                <span className="text-amber-600 font-bold">!</span>
+              </div>
+              <div>
+                <h3 className={`font-bold text-amber-900 ${mobile ? "text-base" : "text-lg"}`}>
+                  유의사항
+                </h3>
+                {!mobile && (
+                  <p className="text-sm text-amber-800/80 mt-1">
+                    최종 확인 전 참고해야 하는 안내
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div
+              className={`bg-white border border-amber-100 ${
+                mobile ? "rounded-2xl p-4" : "rounded-2xl p-5"
+              }`}
+            >
+              <ul className={mobile ? "space-y-3" : "space-y-4"}>
+                {cautionItems.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3">
+                    <span className="mt-0.5 text-amber-600 text-sm">•</span>
+                    <span
+                      className={`text-gray-700 leading-relaxed ${
+                        mobile ? "text-sm" : "text-[15px]"
+                      }`}
+                    >
+                      {item}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
         </div>
       </div>
     </>
