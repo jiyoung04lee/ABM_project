@@ -43,18 +43,22 @@ function NotificationsPageContent() {
     const isFirst = page === 1;
     if (isFirst) setLoading(true);
     else setLoadingMore(true);
+
     try {
       const res = await api.get("notifications/", {
         params: { page_size: PAGE_SIZE, page },
       });
+
       const data = res.data?.results ?? res.data;
       const list = Array.isArray(data) ? data : [];
       const hasNext = !!res.data?.next;
+
       if (isFirst) {
         setNotifications(list);
       } else {
         setNotifications((prev) => [...prev, ...list]);
       }
+
       setNextPageNum(hasNext ? page + 1 : null);
     } catch (err) {
       console.error("알림 불러오기 실패", err);
@@ -76,6 +80,7 @@ function NotificationsPageContent() {
   const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el || nextPageNum == null || loadingMore) return;
+
     const { scrollTop, scrollHeight, clientHeight } = el;
     if (scrollTop + clientHeight >= scrollHeight - 80) {
       loadMore();
@@ -87,6 +92,7 @@ function NotificationsPageContent() {
       if (!notification.is_read) {
         await api.patch(`notifications/${notification.id}/read/`);
       }
+
       if (notification.redirect_url) {
         router.push(notification.redirect_url);
       }
@@ -110,23 +116,27 @@ function NotificationsPageContent() {
     return "/icons/bell_white.svg";
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 flex items-center justify-center">
-        <div className="p-10 text-center bg-white rounded-3xl shadow-lg">
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-blue-50 flex items-center justify-center px-4">
+        <div className="px-6 py-5 sm:p-10 text-center bg-white rounded-2xl sm:rounded-3xl shadow-lg text-sm sm:text-base">
           로딩중...
         </div>
       </div>
     );
+  }
 
   return (
-    <div className="w-full py-6">
-      <div className="max-w-5xl mx-auto w-full px-4 text-left">
-        <div className="flex justify-between items-end mb-6">
-          <h1 className="text-4xl font-bold text-gray-900">알림</h1>
+    <div className="w-full py-4 sm:py-6">
+      <div className="max-w-5xl mx-auto w-full px-3 sm:px-4 text-left">
+        <div className="flex justify-between items-end mb-4 sm:mb-6 gap-3">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">
+            알림
+          </h1>
+
           <button
             onClick={handleReadAll}
-            className="text-[15px] text-[#2B7FFF] font-medium hover:underline"
+            className="text-[13px] sm:text-[15px] text-[#2B7FFF] font-medium hover:underline whitespace-nowrap"
           >
             모두 읽음으로 표시
           </button>
@@ -135,10 +145,10 @@ function NotificationsPageContent() {
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar"
+          className="bg-white rounded-[18px] sm:rounded-[24px] shadow-sm border border-gray-100 overflow-y-auto max-h-[calc(100vh-180px)] sm:max-h-[500px] pr-1 sm:pr-2 custom-scrollbar"
         >
           {notifications.length === 0 ? (
-            <div className="p-20 text-center text-gray-400">
+            <div className="p-12 sm:p-20 text-center text-sm sm:text-base text-gray-400">
               새로운 알림이 없습니다.
             </div>
           ) : (
@@ -147,38 +157,43 @@ function NotificationsPageContent() {
                 <div
                   key={notification.id}
                   onClick={() => handleClick(notification)}
-                  className={`px-10 py-6 flex items-center gap-5 cursor-pointer transition relative
-                  ${!notification.is_read ? "bg-[#F8FAFF]" : "bg-white"} 
+                  className={`px-4 sm:px-10 py-4 sm:py-6 flex items-center gap-3 sm:gap-5 cursor-pointer transition relative
+                  ${!notification.is_read ? "bg-[#F8FAFF]" : "bg-white"}
                   hover:bg-gray-50 border-b border-gray-100 last:border-none`}
                 >
-                  <div className="w-12 h-12 bg-[#2B7FFF] rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#2B7FFF] rounded-full flex items-center justify-center flex-shrink-0">
                     <Image
                       src={getIconPath(notification.type)}
                       alt="icon"
-                      width={22}
-                      height={22}
+                      width={18}
+                      height={18}
+                      className="sm:w-[22px] sm:h-[22px]"
                     />
                   </div>
-                  <div className="flex-1">
-                    <div className="text-[17px] font-medium text-gray-800 leading-snug">
+
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[15px] sm:text-[17px] font-medium text-gray-800 leading-snug break-words">
                       {notification.display_message}
                     </div>
-                    <div className="text-[14px] text-gray-400 mt-1.5 font-normal">
+                    <div className="text-[12px] sm:text-[14px] text-gray-400 mt-1 sm:mt-1.5 font-normal">
                       {formatRelativeTime(notification.created_at)}
                     </div>
                   </div>
+
                   {!notification.is_read && (
-                    <div className="w-2 h-2 bg-[#2B7FFF] rounded-full absolute right-8 top-1/2 -translate-y-1/2" />
+                    <div className="w-2 h-2 bg-[#2B7FFF] rounded-full absolute right-4 sm:right-8 top-1/2 -translate-y-1/2" />
                   )}
                 </div>
               ))}
+
               {loadingMore && (
-                <div className="py-4 text-center text-[14px] text-gray-400">
+                <div className="py-4 text-center text-[13px] sm:text-[14px] text-gray-400">
                   불러오는 중...
                 </div>
               )}
+
               {nextPageNum != null && !loadingMore && (
-                <div className="py-2 text-center text-[13px] text-gray-400">
+                <div className="py-2 text-center text-[12px] sm:text-[13px] text-gray-400">
                   아래로 스크롤하면 더 보기
                 </div>
               )}
@@ -188,7 +203,7 @@ function NotificationsPageContent() {
       </div>
     </div>
   );
-} 
+}
 
 export default function NotificationsPage() {
   return (
