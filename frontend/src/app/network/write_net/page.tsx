@@ -1237,8 +1237,7 @@ function WriteContent() {
                 <input
                   type="color"
                   value={editor.getAttributes("textStyle").color || "#000000"}
-                  onPointerDown={(e) => e.preventDefault()}
-                  onInput={(e) =>
+                  onChange={(e) =>
                     editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()
                   }
                   className="h-7 w-7 shrink-0 cursor-pointer rounded border border-gray-200 bg-transparent p-0"
@@ -1246,7 +1245,6 @@ function WriteContent() {
 
                 <select
                   value={currentFontSize}
-                  onPointerDown={(e) => e.preventDefault()}
                   onChange={(e) => {
                     setCurrentFontSize(e.target.value);
                     editor.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run();
