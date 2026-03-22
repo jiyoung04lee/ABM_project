@@ -334,13 +334,14 @@ class AdminLoginView(APIView):
         cache.set(f"admin_otp_{user.id}", otp_code, timeout=300)  # 5분
 
         try:
-            from django.core.mail import send_mail
-            send_mail(
+            message = Mail(
+                from_email='aive.admin@gmail.com',
+                to_emails=user.email,
                 subject='[AIVE] 관리자 OTP 인증번호',
-                message=f'인증번호: {otp_code}\n5분 내로 입력해주세요.',
-                from_email=None,
-                recipient_list=[user.email],
+                plain_text_content=f'인증번호: {otp_code}\n5분 내로 입력해주세요.'
             )
+            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+            sg.send(message)
         except Exception as e:
             print(f"이메일 발송 실패: {e}")
 
