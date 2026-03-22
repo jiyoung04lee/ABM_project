@@ -39,4 +39,6 @@ urlpatterns = [
         views.CompleteProfileView.as_view(),
         name="complete_profile",
     ),
+
+    path('<int:user_id>/multi-major-image/', views.multi_major_image_view, name='multi_major_image'),
 ]

@@ -733,3 +733,35 @@ class AdminOTPVerifyView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def multi_major_image_view(request, user_id):
+    """
+    GET /api/users/<user_id>/multi-major-image/
+    본인 또는 관리자만 다부전공 이미지 접근 가능
+    """
+    if request.user.id != user_id and not request.user.is_staff:
+        return Response(
+            {"detail": "접근 권한이 없습니다."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response(
+            {"detail": "사용자를 찾을 수 없습니다."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if not user.multi_major_image:
+        return Response(
+            {"detail": "이미지가 없습니다."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return Response(
+        {"url": user.multi_major_image.url},
+        status=status.HTTP_200_OK,
+    )
