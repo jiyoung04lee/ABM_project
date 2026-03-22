@@ -330,12 +330,15 @@ class AdminLoginView(APIView):
         otp_code = str(random.randint(100000, 999999))
         cache.set(f"admin_otp_{user.id}", otp_code, timeout=300)  # 5분
 
-        send_mail(
-            subject='[AIVE] 관리자 OTP 인증번호',
-            message=f'인증번호: {otp_code}\n5분 내로 입력해주세요.',
-            from_email=None,
-            recipient_list=[user.email],
-        )
+        try:
+            send_mail(
+                subject='[AIVE] 관리자 OTP 인증번호',
+                message=f'인증번호: {otp_code}\n5분 내로 입력해주세요.',
+                from_email=None,
+                recipient_list=[user.email],
+            )
+        except Exception as e:
+            print(f"이메일 발송 실패: {e}")
 
         return Response(
             {"message": "OTP를 이메일로 발송했습니다.", "user_id": user.id},

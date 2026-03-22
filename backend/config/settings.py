@@ -323,6 +323,8 @@ AUTHENTICATION_BACKENDS = [
 
 # OTP 설정
 OTP_EXPIRY_SECONDS = 300 # 5분 후 만료 
+# 이메일 타임아웃 설정
+EMAIL_TIMEOUT = 10 
 
 # ==================== 캐시 설정 ====================
 CACHES = {
