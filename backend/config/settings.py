@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'apps.networks',
     'apps.direct_messages',
     'apps.announcements',
+    'axes',
+    'apps.admin_otp',  
 ]
 
 MIDDLEWARE = [
@@ -58,6 +60,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'axes.middleware.AxesMiddleware', 
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -287,3 +290,36 @@ KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET", "").strip()
 
 # Railway 등 프록시 뒤에서 HTTPS 인식
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# 관리자 계정 보안 설정 
+# ==================== 이메일 설정 ====================
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# ==================== 보안 설정 ====================
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SESSION_COOKIE_AGE = 3600  # 세션 1시간 후 만료
+
+# ==================== django-axes 설정 ====================
+AXES_FAILURE_LIMIT = 5        # 5회 실패 시 잠금
+AXES_COOLOFF_TIME = 1         # 1시간 후 잠금 해제
+AXES_LOCKOUT_CALLABLE = None  # 기본 잠금 동작 사용
+AXES_RESET_ON_SUCCESS = True  # 로그인 성공 시 실패 기록 초기화
+
+# ==================== AUTHENTICATION BACKENDS ====================
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# OTP 설정
+OTP_EXPIRY_SECONDS = 300 # 5분 후 만료 

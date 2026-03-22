@@ -24,6 +24,9 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.http import JsonResponse
 
+from apps.admin_otp import views as otp_views
+from apps.admin_otp.views import AdminOTPSite
+
 schema_view = get_schema_view(
     openapi.Info(
         title="Community API",
@@ -33,13 +36,17 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=[permissions.AllowAny],
 )
+# Admin site를 OTP 버전으로 교체
+admin.site.__class__ = AdminOTPSite
 
 def health_root(request):
     return JsonResponse({"status": "ok"})
 
 urlpatterns = [
     path("", health_root), 
-    path('admin/', admin.site.urls),
+    path('admin-2026-mz9p/', admin.site.urls),
+    path('admin-otp/send/', otp_views.send_otp, name='admin_otp_send'),
+    path('admin-otp/verify/', otp_views.verify_otp, name='admin_otp_verify'),
     path('api/users/', include('apps.users.urls')),
     path('api/community/', include('apps.community.urls')),
     path("api/notifications/", include("apps.notifications.urls")),
