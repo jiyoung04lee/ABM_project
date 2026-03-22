@@ -1,0 +1,3169 @@
+[
+{
+  "model": "sessions.session",
+  "pk": "drt881kldnumellse7xehtm21hv903b2",
+  "fields": {
+    "session_data": "eyJpc19hZG1pbl92ZXJpZmllZCI6dHJ1ZSwiYWRtaW5fdXNlcl9pZCI6Mn0:1w4FcT:a7L5E8-P4w4TeTQB6YGxy_BCP9fr9CK2fzCZGNxaI1k",
+    "expire_date": "2026-04-05T10:01:17.758Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "aive.admin@gmail.com"
+    ],
+    "jti": "ddf35f36f91949728d4acdff6a420bf9",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3NDQyMjI5OSwiaWF0IjoxNzczODE3NDk5LCJqdGkiOiJkZGYzNWYzNmY5MTk0OTcyOGQ0YWNkZmY2YTQyMGJmOSIsInVzZXJfaWQiOjJ9.ltzXDpifFGgP9zX6KZXuBUJWTYjAKxwC5nxzEqk1sno",
+    "created_at": "2026-03-18T07:04:59.152Z",
+    "expires_at": "2026-03-25T07:04:59Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 2,
+  "fields": {
+    "user": [
+      "aive.admin@gmail.com"
+    ],
+    "jti": "313b680bcb5c41019bdf93d3ea9e4bf4",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3NDQ2NDI4OSwiaWF0IjoxNzczODU5NDg5LCJqdGkiOiIzMTNiNjgwYmNiNWM0MTAxOWJkZjkzZDNlYTllNGJmNCIsInVzZXJfaWQiOjJ9.zdWvX0BCXLrazG8PGjqrWPbw5h373gFIl38I9_XZ4EI",
+    "created_at": "2026-03-18T18:44:49.553Z",
+    "expires_at": "2026-03-25T18:44:49Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 3,
+  "fields": {
+    "user": [
+      "aive.admin@gmail.com"
+    ],
+    "jti": "6e268dae9d9845b59328b20674b37e2e",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3NDQ2NDk5MywiaWF0IjoxNzczODYwMTkzLCJqdGkiOiI2ZTI2OGRhZTlkOTg0NWI1OTMyOGIyMDY3NGIzN2UyZSIsInVzZXJfaWQiOjJ9.Wt0K9TazAt2CXVNKPKn48kcBovn4AeMmdFcYhq4mszo",
+    "created_at": "2026-03-18T18:56:33.016Z",
+    "expires_at": "2026-03-25T18:56:33Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 4,
+  "fields": {
+    "user": [
+      "aive.admin@gmail.com"
+    ],
+    "jti": "4334c9ba12ce4abb87585a6a1bbfd382",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3NDc4MDE3OSwiaWF0IjoxNzc0MTc1Mzc5LCJqdGkiOiI0MzM0YzliYTEyY2U0YWJiODc1ODVhNmExYmJmZDM4MiIsInVzZXJfaWQiOjJ9.I0bSoiw20UhrOIp1-_mzbMbu1zxIcf_eCTvL2grEJ60",
+    "created_at": "2026-03-22T10:29:39.714Z",
+    "expires_at": "2026-03-29T10:29:39Z"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 1,
+  "fields": {
+    "event_type": "page_view",
+    "section": "home",
+    "page": "/",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:44:27.782Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 2,
+  "fields": {
+    "event_type": "page_view",
+    "section": "home",
+    "page": "/",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:01.180Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 3,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:02.613Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 4,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:04.649Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 5,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network/10",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:05.362Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 6,
+  "fields": {
+    "event_type": "post_view",
+    "section": "network",
+    "page": null,
+    "post_id": 10,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:05.374Z",
+    "session_id": null
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 7,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:08.115Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 8,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network/10",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:10.294Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 9,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:18.844Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 10,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:24.458Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 11,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network/10",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:26.349Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 12,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:35.806Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 13,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:45.780Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 14,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network/10",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:45:47.161Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 15,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:47:31.022Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 16,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:47:33.617Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 17,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:47:42.376Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 18,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network/10",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:47:43.802Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 19,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:02.102Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 20,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:07.566Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 21,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:10.515Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 22,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network/10",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:11.446Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 23,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:16.326Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 24,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network/10",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:17.235Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 25,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:24.101Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 26,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:31.126Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 27,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:34.344Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 28,
+  "fields": {
+    "event_type": "page_view",
+    "section": "community",
+    "page": "/community",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:36.442Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 29,
+  "fields": {
+    "event_type": "page_view",
+    "section": "network",
+    "page": "/network",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-18T18:49:40.885Z",
+    "session_id": "s_1773817263304_myhootvvwn"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 30,
+  "fields": {
+    "event_type": "page_view",
+    "section": "home",
+    "page": "/",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-22T09:49:45.998Z",
+    "session_id": "s_1774172985638_7bnvnfmib1"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 31,
+  "fields": {
+    "event_type": "page_view",
+    "section": "home",
+    "page": "/",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-22T09:49:55.860Z",
+    "session_id": "s_1774172995845_jtjxv4xglq"
+  }
+},
+{
+  "model": "logs.eventlog",
+  "pk": 32,
+  "fields": {
+    "event_type": "page_view",
+    "section": "home",
+    "page": "/",
+    "post_id": null,
+    "user_type": null,
+    "grade_at_event": null,
+    "author_user_type": null,
+    "author_grade_at_event": null,
+    "search_keyword": null,
+    "interest_at_event": null,
+    "utm_source": null,
+    "created_at": "2026-03-22T10:22:20.977Z",
+    "session_id": "s_1774172995845_jtjxv4xglq"
+  }
+},
+{
+  "model": "logs.eventsetting",
+  "pk": 1,
+  "fields": {
+    "event_type": "page_view",
+    "category": "navigation",
+    "is_active": true
+  }
+},
+{
+  "model": "logs.eventsetting",
+  "pk": 2,
+  "fields": {
+    "event_type": "post_view",
+    "category": "content",
+    "is_active": true
+  }
+},
+{
+  "model": "logs.eventsetting",
+  "pk": 3,
+  "fields": {
+    "event_type": "post_create",
+    "category": "content",
+    "is_active": true
+  }
+},
+{
+  "model": "logs.eventsetting",
+  "pk": 4,
+  "fields": {
+    "event_type": "like",
+    "category": "engagement",
+    "is_active": true
+  }
+},
+{
+  "model": "logs.eventsetting",
+  "pk": 5,
+  "fields": {
+    "event_type": "comment",
+    "category": "engagement",
+    "is_active": true
+  }
+},
+{
+  "model": "logs.eventsetting",
+  "pk": 6,
+  "fields": {
+    "event_type": "signup",
+    "category": "authentication",
+    "is_active": true
+  }
+},
+{
+  "model": "logs.eventsetting",
+  "pk": 7,
+  "fields": {
+    "event_type": "login",
+    "category": "authentication",
+    "is_active": true
+  }
+},
+{
+  "model": "logs.eventsetting",
+  "pk": 8,
+  "fields": {
+    "event_type": "search",
+    "category": "discovery",
+    "is_active": true
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 1,
+  "fields": {
+    "path": "/api/networks/images/upload/",
+    "method": "POST",
+    "status_code": 500,
+    "message": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">\n  <meta name=\"robots\" content=\"NONE,NOARCHIVE\">\n  <title>NameError\n          at /api/networks/images/upload/</title>\n  <style>\n    html * { padding:0; margin:0; }\n    body * { padding:10px 20px; }\n    body * * { padding:0; }\n    body { font-family: sans-serif; background-color:#fff; color:#000; }\n    body > :where(header, main, footer) { border-bottom:1px solid #ddd; }\n    h1 { font-weight:normal; }\n    h2 { margin-bottom:.8em; }\n    h3 { margin:1em 0 .5em 0; }\n    h4 { margin:0 0 .5em 0; font-weight: normal; }\n    code, pre { font-size: 100%; white-space: pre-wrap; word-break: break-word; }\n    summary { cursor: pointer; }\n    table { border:1px solid #ccc; border-collapse: collapse; width:100%; background:white; }\n    tbody td, tbody th { vertical-align:top; padding:2px 3px; }\n    thead th {\n      padding:1px 6px 1px 3px; background:#fefefe; text-align:left;\n      font-weight",
+    "response_time_ms": 55,
+    "created_at": "2026-03-18T16:39:37.074Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 2,
+  "fields": {
+    "path": "/api/networks/images/upload/",
+    "method": "POST",
+    "status_code": 500,
+    "message": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">\n  <meta name=\"robots\" content=\"NONE,NOARCHIVE\">\n  <title>NameError\n          at /api/networks/images/upload/</title>\n  <style>\n    html * { padding:0; margin:0; }\n    body * { padding:10px 20px; }\n    body * * { padding:0; }\n    body { font-family: sans-serif; background-color:#fff; color:#000; }\n    body > :where(header, main, footer) { border-bottom:1px solid #ddd; }\n    h1 { font-weight:normal; }\n    h2 { margin-bottom:.8em; }\n    h3 { margin:1em 0 .5em 0; }\n    h4 { margin:0 0 .5em 0; font-weight: normal; }\n    code, pre { font-size: 100%; white-space: pre-wrap; word-break: break-word; }\n    summary { cursor: pointer; }\n    table { border:1px solid #ccc; border-collapse: collapse; width:100%; background:white; }\n    tbody td, tbody th { vertical-align:top; padding:2px 3px; }\n    thead th {\n      padding:1px 6px 1px 3px; background:#fefefe; text-align:left;\n      font-weight",
+    "response_time_ms": 39,
+    "created_at": "2026-03-18T16:39:55.087Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 3,
+  "fields": {
+    "path": "/api/networks/images/upload/",
+    "method": "POST",
+    "status_code": 404,
+    "message": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">\n  <title>Page not found at /api/networks/images/upload/</title>\n  <meta name=\"robots\" content=\"NONE,NOARCHIVE\">\n  <style>\n    html * { padding:0; margin:0; }\n    body * { padding:10px 20px; }\n    body * * { padding:0; }\n    body { font-family: sans-serif; background:#eee; color:#000; }\n    body > :where(header, main, footer) { border-bottom:1px solid #ddd; }\n    h1 { font-weight:normal; margin-bottom:.4em; }\n    h1 small { font-size:60%; color:#666; font-weight:normal; }\n    table { border:none; border-collapse: collapse; width:100%; }\n    td, th { vertical-align:top; padding:2px 3px; }\n    th { width:12em; text-align:right; color:#666; padding-right:.5em; }\n    #info { background:#f6f6f6; }\n    #info ol { margin: 0.5em 4em; }\n    #info ol li { font-family: monospace; }\n    #summary { background: #ffc; }\n    #explanation { background:#eee; border-bottom: 0px none; }\n    pre.exc",
+    "response_time_ms": 10,
+    "created_at": "2026-03-18T17:11:42.975Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 4,
+  "fields": {
+    "path": "/api/networks/images/upload/",
+    "method": "POST",
+    "status_code": 404,
+    "message": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">\n  <title>Page not found at /api/networks/images/upload/</title>\n  <meta name=\"robots\" content=\"NONE,NOARCHIVE\">\n  <style>\n    html * { padding:0; margin:0; }\n    body * { padding:10px 20px; }\n    body * * { padding:0; }\n    body { font-family: sans-serif; background:#eee; color:#000; }\n    body > :where(header, main, footer) { border-bottom:1px solid #ddd; }\n    h1 { font-weight:normal; margin-bottom:.4em; }\n    h1 small { font-size:60%; color:#666; font-weight:normal; }\n    table { border:none; border-collapse: collapse; width:100%; }\n    td, th { vertical-align:top; padding:2px 3px; }\n    th { width:12em; text-align:right; color:#666; padding-right:.5em; }\n    #info { background:#f6f6f6; }\n    #info ol { margin: 0.5em 4em; }\n    #info ol li { font-family: monospace; }\n    #summary { background: #ffc; }\n    #explanation { background:#eee; border-bottom: 0px none; }\n    pre.exc",
+    "response_time_ms": 6,
+    "created_at": "2026-03-18T17:11:48.925Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 5,
+  "fields": {
+    "path": "/api/networks/images/upload/",
+    "method": "POST",
+    "status_code": 404,
+    "message": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">\n  <title>Page not found at /api/networks/images/upload/</title>\n  <meta name=\"robots\" content=\"NONE,NOARCHIVE\">\n  <style>\n    html * { padding:0; margin:0; }\n    body * { padding:10px 20px; }\n    body * * { padding:0; }\n    body { font-family: sans-serif; background:#eee; color:#000; }\n    body > :where(header, main, footer) { border-bottom:1px solid #ddd; }\n    h1 { font-weight:normal; margin-bottom:.4em; }\n    h1 small { font-size:60%; color:#666; font-weight:normal; }\n    table { border:none; border-collapse: collapse; width:100%; }\n    td, th { vertical-align:top; padding:2px 3px; }\n    th { width:12em; text-align:right; color:#666; padding-right:.5em; }\n    #info { background:#f6f6f6; }\n    #info ol { margin: 0.5em 4em; }\n    #info ol li { font-family: monospace; }\n    #summary { background: #ffc; }\n    #explanation { background:#eee; border-bottom: 0px none; }\n    pre.exc",
+    "response_time_ms": 12,
+    "created_at": "2026-03-18T17:12:07.832Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 6,
+  "fields": {
+    "path": "/api/networks/images/upload/",
+    "method": "POST",
+    "status_code": 404,
+    "message": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">\n  <title>Page not found at /api/networks/images/upload/</title>\n  <meta name=\"robots\" content=\"NONE,NOARCHIVE\">\n  <style>\n    html * { padding:0; margin:0; }\n    body * { padding:10px 20px; }\n    body * * { padding:0; }\n    body { font-family: sans-serif; background:#eee; color:#000; }\n    body > :where(header, main, footer) { border-bottom:1px solid #ddd; }\n    h1 { font-weight:normal; margin-bottom:.4em; }\n    h1 small { font-size:60%; color:#666; font-weight:normal; }\n    table { border:none; border-collapse: collapse; width:100%; }\n    td, th { vertical-align:top; padding:2px 3px; }\n    th { width:12em; text-align:right; color:#666; padding-right:.5em; }\n    #info { background:#f6f6f6; }\n    #info ol { margin: 0.5em 4em; }\n    #info ol li { font-family: monospace; }\n    #summary { background: #ffc; }\n    #explanation { background:#eee; border-bottom: 0px none; }\n    pre.exc",
+    "response_time_ms": 9,
+    "created_at": "2026-03-18T17:12:34.022Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 7,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:05.363Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 8,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:05.380Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 9,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:05.419Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 10,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:05.432Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 11,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:10.295Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 12,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:10.327Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 13,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:10.339Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 14,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:10.349Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 15,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:26.353Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 16,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 2,
+    "created_at": "2026-03-18T18:45:26.390Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 17,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:26.432Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 18,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:26.440Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 19,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 2,
+    "created_at": "2026-03-18T18:45:47.161Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 20,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 8,
+    "created_at": "2026-03-18T18:45:47.209Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 21,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 1,
+    "created_at": "2026-03-18T18:45:47.285Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 22,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:45:47.302Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 23,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:47:43.851Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 24,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 1,
+    "created_at": "2026-03-18T18:47:43.907Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 25,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:49:11.497Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 26,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:49:11.516Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 27,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:49:17.272Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 28,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 0,
+    "created_at": "2026-03-18T18:49:17.282Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 29,
+  "fields": {
+    "path": "/api/networks/posts/10/add_comment/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "Authentication credentials were not provided.",
+    "response_time_ms": 2,
+    "created_at": "2026-03-18T18:49:20.638Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 30,
+  "fields": {
+    "path": "/api/messages/messages/unread_count/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Given token not valid for any token type",
+    "response_time_ms": 28,
+    "created_at": "2026-03-22T09:49:54.898Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 31,
+  "fields": {
+    "path": "/api/notifications/unread_count/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Given token not valid for any token type",
+    "response_time_ms": 22,
+    "created_at": "2026-03-22T09:49:54.898Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 32,
+  "fields": {
+    "path": "/api/users/me/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Given token not valid for any token type",
+    "response_time_ms": 32,
+    "created_at": "2026-03-22T09:49:54.898Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 33,
+  "fields": {
+    "path": "/api/messages/messages/unread_count/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Given token not valid for any token type",
+    "response_time_ms": 1,
+    "created_at": "2026-03-22T09:49:54.910Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 34,
+  "fields": {
+    "path": "/api/notifications/unread_count/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Given token not valid for any token type",
+    "response_time_ms": 0,
+    "created_at": "2026-03-22T09:49:54.931Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 35,
+  "fields": {
+    "path": "/api/announcements/",
+    "method": "GET",
+    "status_code": 401,
+    "message": "Given token not valid for any token type",
+    "response_time_ms": 23,
+    "created_at": "2026-03-22T09:49:54.898Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 36,
+  "fields": {
+    "path": "/api/users/admin-login/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "response_time_ms": 310,
+    "created_at": "2026-03-22T09:50:09.196Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 37,
+  "fields": {
+    "path": "/api/users/admin-login/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "response_time_ms": 298,
+    "created_at": "2026-03-22T09:50:49.789Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 38,
+  "fields": {
+    "path": "/api/users/admin-login/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "response_time_ms": 261,
+    "created_at": "2026-03-22T09:51:01.053Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 39,
+  "fields": {
+    "path": "/api/users/admin-login/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "response_time_ms": 264,
+    "created_at": "2026-03-22T09:51:21.301Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 40,
+  "fields": {
+    "path": "/api/users/admin-login/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "response_time_ms": 303,
+    "created_at": "2026-03-22T10:22:43.185Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 41,
+  "fields": {
+    "path": "/api/users/admin-login/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "response_time_ms": 68,
+    "created_at": "2026-03-22T10:23:47.523Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 42,
+  "fields": {
+    "path": "/api/users/admin-login/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "response_time_ms": 21,
+    "created_at": "2026-03-22T10:24:22.158Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 43,
+  "fields": {
+    "path": "/api/users/admin-login/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "response_time_ms": 11,
+    "created_at": "2026-03-22T10:24:23.390Z"
+  }
+},
+{
+  "model": "logs.apierrorlog",
+  "pk": 44,
+  "fields": {
+    "path": "/api/users/admin-login/",
+    "method": "POST",
+    "status_code": 401,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "response_time_ms": 17,
+    "created_at": "2026-03-22T10:24:44.128Z"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 1,
+  "fields": {
+    "name": "공지",
+    "slug": "notice",
+    "group": "community"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 2,
+  "fields": {
+    "name": "홍보",
+    "slug": "promotion",
+    "group": "community"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 3,
+  "fields": {
+    "name": "알쓸잡생",
+    "slug": "free",
+    "group": "community"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 4,
+  "fields": {
+    "name": "기타",
+    "slug": "etc",
+    "group": "community"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 5,
+  "fields": {
+    "name": "인턴",
+    "slug": "intern",
+    "group": "network_student"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 6,
+  "fields": {
+    "name": "대외활동/공모전",
+    "slug": "activity",
+    "group": "network_student"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 7,
+  "fields": {
+    "name": "학교 프로그램",
+    "slug": "program",
+    "group": "network_student"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 8,
+  "fields": {
+    "name": "전공(다부전공)",
+    "slug": "major",
+    "group": "network_student"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 9,
+  "fields": {
+    "name": "국제교류",
+    "slug": "global",
+    "group": "network_student"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 10,
+  "fields": {
+    "name": "취업",
+    "slug": "job",
+    "group": "network_graduate"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 11,
+  "fields": {
+    "name": "대학원",
+    "slug": "gradschool",
+    "group": "network_graduate"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 12,
+  "fields": {
+    "name": "직무 알아보기",
+    "slug": "career",
+    "group": "network_graduate"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 13,
+  "fields": {
+    "name": "학습",
+    "slug": "study",
+    "group": "network_qna"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 14,
+  "fields": {
+    "name": "진로",
+    "slug": "path",
+    "group": "network_qna"
+  }
+},
+{
+  "model": "community.category",
+  "pk": 15,
+  "fields": {
+    "name": "기타",
+    "slug": "etc",
+    "group": "network_qna"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 1,
+  "fields": {
+    "type": "student",
+    "name": "인턴",
+    "slug": "intern"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 2,
+  "fields": {
+    "type": "student",
+    "name": "대외활동/공모전",
+    "slug": "contest"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 3,
+  "fields": {
+    "type": "student",
+    "name": "학교 프로그램",
+    "slug": "program"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 4,
+  "fields": {
+    "type": "student",
+    "name": "전공(다부전공)",
+    "slug": "major"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 5,
+  "fields": {
+    "type": "student",
+    "name": "해외 프로그램",
+    "slug": "exchange"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 6,
+  "fields": {
+    "type": "graduate",
+    "name": "취업",
+    "slug": "job"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 7,
+  "fields": {
+    "type": "graduate",
+    "name": "대학원",
+    "slug": "grad-school"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 8,
+  "fields": {
+    "type": "graduate",
+    "name": "직무 알아보기",
+    "slug": "job-info"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 9,
+  "fields": {
+    "type": "qa",
+    "name": "학습",
+    "slug": "study"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 10,
+  "fields": {
+    "type": "qa",
+    "name": "진로",
+    "slug": "career"
+  }
+},
+{
+  "model": "networks.category",
+  "pk": 11,
+  "fields": {
+    "type": "qa",
+    "name": "기타",
+    "slug": "etc"
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 1,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "글쓰기",
+    "content": "<p>글쓰기 임시저장 테스트</p><p></p><p></p><p><strong>글쓰기 임시저장 테스트 </strong></p><p><span style=\"font-size: 18px;\">글쓰기임시저장테스트 </span></p><p><span style=\"color: rgb(51, 64, 240);\">글쓰기임시저장테스트</span> </p><hr><p></p><p style=\"text-align: center;\">글쓰기임시저장테스트 </p><p style=\"text-align: left;\"><em>글쓰기임시저장테스트 </em></p><p style=\"text-align: left;\"><u>글쓰기임시저장테스트 </u></p><p style=\"text-align: left;\"><s>글쓰기임시저장테스트 </s></p><p style=\"text-align: left;\"></p><p style=\"text-align: left;\"></p><p style=\"text-align: left;\"></p><p style=\"text-align: left;\"></p><link-card url=\"https://www.tistory.com\"></link-card><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T07:34:15.585Z",
+    "updated_at": "2026-03-18T07:34:15.585Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 2,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "fff",
+    "content": "<p>dd글쓰기 임시저장 테스트</p><p></p><p></p><p><strong>글쓰기 임시저장 테스트</strong></p><p><span style=\"font-size: 18px;\">글쓰기임시저장테스트</span></p><p><span style=\"color: rgb(51, 64, 240);\">글쓰기임시저장테스트</span></p><hr><p></p><p style=\"text-align: center;\">글쓰기임시저장테스트</p><p style=\"text-align: left;\"><em>글쓰기임시저장테스트</em></p><p style=\"text-align: left;\"><u>글쓰기임시저장테스트</u></p><p style=\"text-align: left;\"><s>글쓰기임시저장테스트</s></p><p style=\"text-align: left;\"></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 0,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T07:48:27.062Z",
+    "updated_at": "2026-03-18T07:48:27.062Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 3,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "graduate",
+    "category": 6,
+    "title": "취업",
+    "content": "<p>글쓰기 임시저장 테스트</p><p></p><p></p><p><strong>글쓰기 임시저장 테스트</strong></p><p><span style=\"font-size: 18px;\">글쓰기임시저장테스트</span></p><p><span style=\"color: rgb(51, 64, 240);\">글쓰기임시저장테스트</span></p><hr><p></p><p style=\"text-align: center;\">글쓰기임시저장테스트</p><p style=\"text-align: left;\"><em>글쓰기임시저장테스트</em></p><p style=\"text-align: left;\"><u>글쓰기임시저장테스트</u></p><p style=\"text-align: left;\"><s>글쓰기임시저장테스트</s></p><p style=\"text-align: left;\"></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T07:48:55.424Z",
+    "updated_at": "2026-03-18T07:48:55.424Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 4,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "ㅇㅇㅇ",
+    "content": "<p>글쓰기 임시저장 테스트</p><p></p><p></p><p><strong>글쓰기 임시저장 테스트</strong></p><p><span style=\"font-size: 18px;\">글쓰기임시저장테스트</span></p><p><span style=\"color: rgb(51, 64, 240);\">글쓰기임시저장테스트</span></p><hr><p></p><p style=\"text-align: center;\">글쓰기임시저장테스트</p><p style=\"text-align: left;\"><em>글쓰기임시저장테스트</em></p><p style=\"text-align: left;\"><u>글쓰기임시저장테스트</u></p><p style=\"text-align: left;\"><s>글쓰기임시저장테스트</s></p><p style=\"text-align: left;\"></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 0,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T07:49:15.122Z",
+    "updated_at": "2026-03-18T07:49:15.122Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 5,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "qa",
+    "category": 9,
+    "title": "ㅇㅇㅇ",
+    "content": "ㅇㅇㅁㅍㅁㄷㅍ",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 0,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T07:49:49.648Z",
+    "updated_at": "2026-03-18T07:49:49.648Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 6,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "dddd",
+    "content": "<img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4.44.20.jpg\" data-align=\"left\"><p>dddd</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-10_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_12.39.58.jpg\" width=\"378.7603759765625px\" data-align=\"left\"><p></p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/스크린샷_2026-03-10_오후_12.39.58_thumb.jpg",
+    "created_at": "2026-03-18T17:11:14.018Z",
+    "updated_at": "2026-03-18T17:11:14.119Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 7,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "ddddd",
+    "content": "<p>썸네일</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_6LT2m8N.44.20.jpg\" width=\"317px\" data-align=\"left\"><p>ㅇㅇㅇㅇㅇㅇ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-19_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_1.25.05.jpg\" data-align=\"left\"><p>ㄴㄴㄴㄴㄴㄴㄴ</p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T17:15:58.008Z",
+    "updated_at": "2026-03-18T17:15:58.008Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 8,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "ㅇㅇㅇ",
+    "content": "<p>ㅎㅇ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-19_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_1.44.55.jpg\" width=\"687.3046875px\" data-align=\"left\"><p></p><p></p><p>ㅇㅇㅇㅇ</p><p></p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-10_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_12_pMJwOKD.39.58.jpg\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 2,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/thumbnail_thumb.jpg",
+    "created_at": "2026-03-18T17:23:46.831Z",
+    "updated_at": "2026-03-18T17:23:46.893Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 9,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "찐 최종",
+    "content": "<p>같이 사진 계속 넣어서 ㅈㅅ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-19_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_2.25.38.jpg\" data-align=\"left\"><p>엇 다른 사진임 얏호</p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_AEmiswp.44.20.jpg\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 2,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/thumbnail_thumb_uGhD6Tw.jpg",
+    "created_at": "2026-03-18T17:40:18.680Z",
+    "updated_at": "2026-03-18T17:40:18.702Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 10,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "찐 최종에 실패해서 구라인것 같아서 서버 다시 해서 도전해 볼게요",
+    "content": "<p>ㅎㅎ,,</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-19_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_2.25.17.jpg\" width=\"155.27081298828125px\" data-align=\"left\"><p>ㅇㅇㅇㅇㅇ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-19_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_2_TNoHPn0.25.38.jpg\" width=\"283.348876953125px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 6,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/thumbnail_thumb_yCdGBR2.jpg",
+    "created_at": "2026-03-18T17:42:18.844Z",
+    "updated_at": "2026-03-18T17:42:18.869Z",
+    "is_deleted": true,
+    "is_pinned": true,
+    "pinned_at": "2026-03-18T18:44:58.320Z"
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 11,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "ㅈㄴ 재도전",
+    "content": "<p>ㅅㅂ 이제 조좀해줘라</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_JJgvogI.44.20.jpg\" width=\"302.1796875px\" data-align=\"left\"><p>마지막이면 좋겠으니 명수옹 사진을 썸네일로,,</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-19_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_2_JyHrKH5.25.38.jpg\" width=\"756.1875px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 4,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/thumbnail_thumb_akxa9Ao.jpg",
+    "created_at": "2026-03-18T17:49:05.120Z",
+    "updated_at": "2026-03-18T17:49:05.141Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 12,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "아니 뭐가 문제인데요?ㅡㅜㅜㅜㅜ",
+    "content": "<p>ㅇㅇㅇㅇㅇㅇ</p><p></p><p>ㅏㅏㅏㅏ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-19_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_1_PfMyVAv.25.05.jpg\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 2,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T17:52:43.010Z",
+    "updated_at": "2026-03-18T18:23:57.215Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 13,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "제블 수정본 다시 확인",
+    "content": "<p>ㅇㅇㅇㅇ</p><p></p><p>예은 ㅎㅇ</p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_2025._4._20._%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_9.49.jpg\" width=\"275.75px\" data-align=\"left\"><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_xAD0eU6.44.20.png\" data-align=\"left\"><p></p><p></p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 4,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/스크린샷_2026-03-06_오후_4_xAD0eU6.44.20_thumb.jpg",
+    "created_at": "2026-03-18T18:01:53.121Z",
+    "updated_at": "2026-03-19T13:08:19.346Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 14,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "ㅇㅇㅇ",
+    "content": "<img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_2023._9._11._%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_8.51.jpg\" data-align=\"left\"><p>ㅇㅇㅇㅇㅇㅇ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_2023._9._21._%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4.31_4.jpg\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/thumbnail_thumb_O18aOVB.jpg",
+    "created_at": "2026-03-18T18:06:55.376Z",
+    "updated_at": "2026-03-18T18:06:55.410Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 15,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "ㅇㅇㅇㅇ",
+    "content": "<p>ㅇㅇㅇㅇㅇㅇㅇ</p><p></p><p>수정본 </p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4.44.20.png\" data-align=\"left\"><p></p><p>아아아아아ㅏ아아</p><p>이제 그만하고 싶어요</p><p>나 질렸어요 진짜 휴학해버리고 떠나고 싶다 </p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-10_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_12.39.58.png\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 2,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/사진_2023_Soi6JSk._9._21._오후_4.31_4_thumb.jpg",
+    "created_at": "2026-03-18T18:13:36.899Z",
+    "updated_at": "2026-03-19T13:03:04.660Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 16,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "자동저장 테스트",
+    "content": "<p>자동 저장 테스트를 일단 글로만 해볼게요 </p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 0,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T18:19:45.533Z",
+    "updated_at": "2026-03-18T18:19:45.533Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 17,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "제목만 작성한 자동저장",
+    "content": "<p>ㅇㅇㅇ</p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 0,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T18:20:17.574Z",
+    "updated_at": "2026-03-18T18:20:17.574Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 18,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "ㄹㄹㄹ",
+    "content": "<p>내용만 작성한 자동저장</p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 0,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-18T18:20:35.712Z",
+    "updated_at": "2026-03-18T18:20:35.712Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 19,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "찐 최종 제발 이거 썸네일 확인용",
+    "content": "<p>헤헤헤헤헤 저 그만하고 싶어요</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_2023_TIhQFkg._9._11._%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_8.51.jpg\" width=\"496.4375px\" data-align=\"left\"><p></p><p>ㅋㅋ 어리노 </p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/AIVELOGO-removebg.png\" data-align=\"left\"><p></p><p></p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/스크린샷_2026-03-06_오후_4_CnEAtYW.44.20_thumb.jpg",
+    "created_at": "2026-03-19T13:09:34.195Z",
+    "updated_at": "2026-03-19T13:10:03.760Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 20,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "ㅋㅋ 왜 이럼",
+    "content": "<p>제발 ㅋㅋ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_2025_OlsLCzy._4._20._%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_9.49.jpg\" width=\"380.69793701171875px\" data-align=\"left\"><p>ㅎㅇ </p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_2025_OlsLCzy._4._20._%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_9.49.jpg\" width=\"398.24993896484375px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/사진_2025._4._20._오후_9.50_thumb.jpg",
+    "created_at": "2026-03-19T13:12:56.009Z",
+    "updated_at": "2026-03-19T13:13:27.110Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 21,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "찐 확인 용",
+    "content": "<p>ㅎㅇ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%80%E1%85%AE%E1%86%A8%E1%84%86%E1%85%B5%E1%86%AB_%E1%84%8F%E1%85%B5%E1%86%BC_%E1%84%8B%E1%85%B5%E1%86%B7%E1%84%8B%E1%85%A8%E1%84%8B%E1%85%B3%E1%86%AB%E1%84%80%E1%85%AA_%E1%84%92%E1%85%A1%E1%86%AB%E1%84%8F%E1%85%A5%E1%86%BA_r3qNNpg.jpg\" width=\"476.20306396484375px\" data-align=\"left\"><p></p><p>명수옹 테스트를 해볼게요</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%80%E1%85%AE%E1%86%A8%E1%84%86%E1%85%B5%E1%86%AB_%E1%84%8F%E1%85%B5%E1%86%BC_%E1%84%8B%E1%85%B5%E1%86%B7%E1%84%8B%E1%85%A8%E1%84%8B%E1%85%B3%E1%86%AB%E1%84%80%E1%85%AA_%E1%84%92%E1%85%A1%E1%86%AB%E1%84%8F%E1%85%A5%E1%86%BA_r3qNNpg.jpg\" width=\"416.359375px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/사진_2025_ABmwZFS._4._20._오후_9.49_thumb.jpg",
+    "created_at": "2026-03-19T13:14:42.472Z",
+    "updated_at": "2026-03-19T13:15:51.418Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 22,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "시나리오",
+    "content": "<p>일단 지금 2개 사진 넣기 성공</p><p>수정으로 해서 썸네일 기존 사진으로 변경 성공</p><p>수정으로 2개 중 첫번째 사진 삭제 후 다른 사진 넣기 + 썸네일 지정 성공</p><p>=&gt; 이 다음 두번째 사진 삭제 후 새로운 사진 넣으면 첫번째 사진과 동일한 사진으로 두개 나옴 근데 수정 들어가서 썸네일 지정하는 부분에서는 제대로 나오고, 썸네일 지정하면 썸네일은 제대로 나옴</p><p>=&gt; 두개 사진 삭제 테스트 + 두번째 사진 없애는 거 다시 해봐야 할듯</p><p></p><p>사진 두개 삭제 하면 글 상세에서는 변경사진으로 두개 제대로 나옴 하지만 썸네일은 기존 변경전 사진으로 나옴 -&gt; 엥 새로고침 하니까 제대로 나왔어요 근데 이거를 내가 새로 줄글로 수정을 해서 그런지 모르겠어요 다시 테스트 해볼게요</p><p></p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_YT5ic77.44.20.png\" width=\"218.0103759765625px\" data-align=\"left\"><p></p><p>ㅈㄲ 넣어서 죄송띠</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/79CXEWCU20250430022911DEImT.jpg.png\" width=\"310.4322509765625px\" data-align=\"left\"><p></p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/79CXEWCU20250430022911DEImT.jpg_thumb.jpg",
+    "created_at": "2026-03-19T13:18:07.861Z",
+    "updated_at": "2026-03-19T13:22:24.047Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 23,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "찐 테스트",
+    "content": "<p>일단 지금 2개 사진 넣기 성공</p><p>수정으로 해서 썸네일 기존 사진으로 변경 성공</p><p>수정으로 2개 중 첫번째 사진 삭제 후 다른 사진 넣기 + 썸네일 지정 성공</p><p>=&gt; 이 다음 두번째 사진 삭제 후 새로운 사진 넣으면 첫번째 사진과 동일한 사진으로 두개 나옴 근데 수정 들어가서 썸네일 지정하는 부분에서는 제대로 나오고, 썸네일 지정하면 썸네일은 제대로 나옴</p><p>=&gt; 두개 사진 삭제 테스트 + 두번째 사진 없애는 거 다시 해봐야 할듯</p><p></p><p>사진 두개 삭제 하면 글 상세에서는 변경사진으로 두개 제대로 나옴 하지만 썸네일은 기존 변경전 사진으로 나옴 -&gt; 엥 새로고침 하니까 제대로 나왔어요 근데 이거를 내가 새로 줄글로 수정을 해서 그런지 모르겠어요 다시 테스트 해볼게요</p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_2023_nS0g9zW._9._21._%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4.31_4.jpg\" width=\"322.296875px\" data-align=\"left\"><p></p><p>ㅎㅇㅎㅇ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_2023._9._21._%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4.31.jpg\" width=\"297.9322509765625px\" data-align=\"left\"><p></p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/사진_2023._9._21._오후_4.31_thumb.jpg",
+    "created_at": "2026-03-19T13:23:38.423Z",
+    "updated_at": "2026-03-19T13:24:23.155Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 24,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "사진 두개다 삭제 테스트",
+    "content": "<p><span style=\"color: rgb(54, 65, 83); font-size: 15px;\">사진 두개 삭제 하면 글 상세에서는 변경사진으로 두개 제대로 나옴 하지만 썸네일은 기존 변경전 사진으로 나옴 -&gt; 엥 새로고침 하니까 제대로 나왔어요 근데 이거를 내가 새로 줄글로 수정을 해서 그런지 모르겠어요 다시 테스트 해볼게요</span></p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%80%E1%85%AE%E1%86%A8%E1%84%86%E1%85%B5%E1%86%AB_%E1%84%8F%E1%85%B5%E1%86%BC_%E1%84%8B%E1%85%B5%E1%86%B7%E1%84%8B%E1%85%A8%E1%84%8B%E1%85%B3%E1%86%AB%E1%84%80%E1%85%AA_%E1%84%92%E1%85%A1%E1%86%AB%E1%84%8F%E1%85%A5%E1%86%BA_aUN6QnJ.jpg\" width=\"306.48431396484375px\" data-align=\"left\"><p></p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%80%E1%85%AE%E1%86%A8%E1%84%86%E1%85%B5%E1%86%AB_%E1%84%8F%E1%85%B5%E1%86%BC_%E1%84%8B%E1%85%B5%E1%86%B7%E1%84%8B%E1%85%A8%E1%84%8B%E1%85%B3%E1%86%AB%E1%84%80%E1%85%AA_%E1%84%92%E1%85%A1%E1%86%AB%E1%84%8F%E1%85%A5%E1%86%BA_aUN6QnJ.jpg\" width=\"300.171875px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/국민_킹_임예은과_한컷_aUN6QnJ_thumb.jpg",
+    "created_at": "2026-03-19T13:25:15.856Z",
+    "updated_at": "2026-03-19T13:25:15.904Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 25,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "사진 두개 아예 새로운 사진으로 테스트",
+    "content": "<p>이게 계속 똑같은 사진이 가서 그런건지 확인해볼게요</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%8C%E1%85%A1%E1%84%80%E1%85%A7%E1%86%A8%E1%84%8C%E1%85%B3%E1%86%BC.jpeg\" data-align=\"left\"><p>커여워 이거 ㅎㅎ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/ADSP.png\" width=\"354.0103759765625px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 2,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/스크린샷_2026-03-18_오전_2.46.02_thumb.jpg",
+    "created_at": "2026-03-19T13:26:52.588Z",
+    "updated_at": "2026-03-19T13:27:18.905Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 26,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "최초최최초치ㅗ치ㅗ치종 테스트",
+    "content": "<p>ㅇㅇㅇㅇㅇ</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_Xeuqqfk.44.20.png\" width=\"307.578125px\" data-align=\"left\"><p></p><p>ADSP 쉬웠는뎅 ㅎ</p><p>텍스트만 수정해보기</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_Xeuqqfk.44.20.png\" data-align=\"left\"><p></p><p></p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/자격증_사진_thumb.jpg",
+    "created_at": "2026-03-19T13:32:55.555Z",
+    "updated_at": "2026-03-19T13:35:04.826Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 27,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "최초최최초치ㅗ치ㅗ치종 테스트",
+    "content": "<p>ㅇㅇㅇㅇㅇ</p><p>ADSP 쉬웠는뎅 ㅎ</p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%8C%E1%85%A1%E1%84%80%E1%85%A7%E1%86%A8%E1%84%8C%E1%85%B3%E1%86%BC_%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_Pby1KD8.jpg\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 0,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/자격증_사진_Pby1KD8_thumb.jpg",
+    "created_at": "2026-03-19T13:38:32.975Z",
+    "updated_at": "2026-03-19T13:38:33.023Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 28,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "consol 확인용",
+    "content": "<p>첫번째 사진은 핀터레스트</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%8C%E1%85%A1%E1%84%80%E1%85%A7%E1%86%A8%E1%84%8C%E1%85%B3%E1%86%BC.jpg\" width=\"272.72918701171875px\" data-align=\"left\"><p>두번째 사지은 ADSP</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%8C%E1%85%A1%E1%84%80%E1%85%A7%E1%86%A8%E1%84%8C%E1%85%B3%E1%86%BC.jpg\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 2,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/ADSP_thumb.jpg",
+    "created_at": "2026-03-19T13:39:11.781Z",
+    "updated_at": "2026-03-19T13:39:11.815Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 29,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "콘솔용 확인",
+    "content": "<p>첫번째 사진은 명수옹임</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_yGXzSXu.44.20.jpg\" width=\"311.9140625px\" data-align=\"left\"><p>두번째 사진은 자격증</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_yGXzSXu.44.20.jpg\" width=\"317.47918701171875px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/스크린샷_2026-03-06_오후_4_yGXzSXu.44.20_thumb.jpg",
+    "created_at": "2026-03-19T13:42:12.445Z",
+    "updated_at": "2026-03-19T13:42:36.671Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 30,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "첫번째 사진은",
+    "content": "<p>콘솔 확인 용 테스트 다시</p><p></p><p>첫번째 사진 자격증</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%8C%E1%85%A1%E1%84%80%E1%85%A7%E1%86%A8%E1%84%8C%E1%85%B3%E1%86%BC_%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_AdqqwV6.jpg\" width=\"306.2708740234375px\" data-align=\"left\"><p></p><p>두번째 사진 곰돌이~~ -&gt; 명수옹 </p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_aTIH9WY.44.20.png\" width=\"284.03125px\" data-align=\"left\"><p></p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/스크린샷_2026-03-06_오후_4_aTIH9WY.44.20_thumb.jpg",
+    "created_at": "2026-03-19T13:43:21.928Z",
+    "updated_at": "2026-03-19T13:44:38.271Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 31,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "ektl gh",
+    "content": "<p>첫번째 사진 나</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%80%E1%85%AE%E1%86%A8%E1%84%86%E1%85%B5%E1%86%AB_%E1%84%8F%E1%85%B5%E1%86%BC_%E1%84%8B%E1%85%B5%E1%86%B7%E1%84%8B%E1%85%A8%E1%84%8B%E1%85%B3%E1%86%AB%E1%84%80%E1%85%AA_%E1%84%92%E1%85%A1%E1%86%AB%E1%84%8F%E1%85%A5%E1%86%BA_Bu0r8OL.jpg\" width=\"207.0416259765625px\" data-align=\"left\"><p>두번째 사진 강아지</p><p></p><p></p><p></p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-18_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_2_V2Wu5hD.46.02.jpg\" width=\"258.19793701171875px\" data-align=\"left\"><p>개크다 ㅎ</p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/스크린샷_2026-03-18_오전_2_V2Wu5hD.46.02_thumb.jpg",
+    "created_at": "2026-03-19T13:47:10.047Z",
+    "updated_at": "2026-03-19T13:47:54.422Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 32,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "다시 해볼게",
+    "content": "<p>ㅋㅋㅋ 몇번을 글쓰냐</p><p>첫번째 ADSP</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/ADSP_x5WnV3G.jpg\" width=\"128.90106201171875px\" data-align=\"left\"><p>두번째 자격증</p><p>두번째 사진 삭제 후 다른 사진 핀터</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%8C%E1%85%A1%E1%84%80%E1%85%A7%E1%86%A8%E1%84%8C%E1%85%B3%E1%86%BC_p4lyyy1.jpeg\" width=\"481.3671875px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 2,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/자격증_p4lyyy1_thumb.jpg",
+    "created_at": "2026-03-19T13:50:27.550Z",
+    "updated_at": "2026-03-19T13:51:12.955Z",
+    "is_deleted": true,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 33,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "이미지 없이 글 작성",
+    "content": "<p>텍스만 작성 후 완료</p><p></p><p>텍스트만 수정해 볼게요</p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "",
+    "created_at": "2026-03-19T14:06:26.436Z",
+    "updated_at": "2026-03-19T14:09:44.766Z",
+    "is_deleted": false,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 34,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "이미지 1장 글 작성",
+    "content": "<p>이미지 1장 삽입</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%8C%E1%85%A1%E1%84%80%E1%85%A7%E1%86%A8%E1%84%8C%E1%85%B3%E1%86%BC_%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_CCEcEc0.jpg\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 0,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/자격증_사진_CCEcEc0_thumb.jpg",
+    "created_at": "2026-03-19T14:06:54.209Z",
+    "updated_at": "2026-03-19T14:06:54.272Z",
+    "is_deleted": false,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 35,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "이미지 2장 글 작성",
+    "content": "<p>이미지 2장 삽입 후 썸네일은 두번째 사진으로</p><p></p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%8C%E1%85%A1%E1%84%80%E1%85%A7%E1%86%A8%E1%84%8C%E1%85%B3%E1%86%BC_14m5b1g.jpg\" width=\"92.3228759765625px\" data-align=\"left\"><p>두번째 사진 변경 해보기 </p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%8C%E1%85%A1%E1%84%80%E1%85%A7%E1%86%A8%E1%84%8C%E1%85%B3%E1%86%BC_%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB_9182GXA.png\" width=\"251.96871948242188px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/자격증_14m5b1g_thumb.jpg",
+    "created_at": "2026-03-19T14:07:41.673Z",
+    "updated_at": "2026-03-19T14:14:28.010Z",
+    "is_deleted": false,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 36,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "자동 저장 후 작성 완료",
+    "content": "<p>이미지 1장 + 텍스트 작성</p><p>명수옹 안녕하세요</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_B7dDd3i.44.20.jpg\" width=\"124.55206298828125px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/스크린샷_2026-03-06_오후_4_B7dDd3i.44.20_thumb.jpg",
+    "created_at": "2026-03-19T14:08:33.897Z",
+    "updated_at": "2026-03-19T14:08:33.924Z",
+    "is_deleted": false,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 37,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "자동저장 2장 텍스트",
+    "content": "<p>이미지 2장 + 텍스트 작성</p><p>이미지 1 -&gt; 변경</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-10_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_12_v4akJ47.39.58.png\" width=\"175.82284545898438px\" data-align=\"left\"><p>이미지 2 -&gt; 변경 -&gt; 변경</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-10_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_12_v4akJ47.39.58.png\" width=\"248.04159545898438px\" data-align=\"left\"><p></p><p></p><p></p><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 2,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/스크린샷_2026-03-10_오후_12_v4akJ47.39.58_thumb.jpg",
+    "created_at": "2026-03-19T14:09:24.506Z",
+    "updated_at": "2026-03-19T14:12:13.751Z",
+    "is_deleted": false,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 38,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "사진 두개 작성",
+    "content": "<p>이미지 1</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/ADSP_0FfxI57.jpg\" width=\"198.88534545898438px\" data-align=\"left\"><p>이미지 2</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_K62WLL9.44.20.png\" width=\"191.36981201171875px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/ADSP_0FfxI57_thumb.jpg",
+    "created_at": "2026-03-19T14:18:26.925Z",
+    "updated_at": "2026-03-19T14:18:48.986Z",
+    "is_deleted": false,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.post",
+  "pk": 39,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "student",
+    "category": 1,
+    "title": "사진 두개 작성 후 -> 두번째 사진 변경 후 썸네일 지정",
+    "content": "<img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-06_%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE_4_kOtutWQ.44.20.jpg\" width=\"152.18231201171875px\" data-align=\"left\"><p>변경 할 사진</p><p>강아디!!!</p><img class=\"editor-image\" src=\"http://localhost:8000/media/network/posts/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA_2026-03-18_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_2.46.02.png\" width=\"245.60931396484375px\" data-align=\"left\"><p></p>",
+    "is_anonymous": false,
+    "use_real_name": false,
+    "view_count": 1,
+    "like_count": 0,
+    "comment_count": 0,
+    "thumbnail": "network/thumbnails/network/posts/스크린샷_2026-03-18_오전_2_XsPpwkE.46.02_thumb.jpg",
+    "created_at": "2026-03-19T14:19:45.352Z",
+    "updated_at": "2026-03-19T14:20:08.508Z",
+    "is_deleted": false,
+    "is_pinned": false,
+    "pinned_at": null
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 1,
+  "fields": {
+    "post": null,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4.44.20.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T16:44:04.045Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 2,
+  "fields": {
+    "post": 6,
+    "file": "network/posts/스크린샷_2026-03-10_오후_12.39.58.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:11:14.024Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 3,
+  "fields": {
+    "post": null,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_6LT2m8N.44.20.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:15:33.630Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 4,
+  "fields": {
+    "post": null,
+    "file": "network/posts/스크린샷_2026-03-19_오전_1.25.05.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:15:49.721Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 5,
+  "fields": {
+    "post": null,
+    "file": "network/posts/스크린샷_2026-03-19_오전_1.44.55.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:23:31.345Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 6,
+  "fields": {
+    "post": 8,
+    "file": "network/posts/스크린샷_2026-03-10_오후_12_pMJwOKD.39.58.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:23:46.835Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 7,
+  "fields": {
+    "post": null,
+    "file": "network/posts/스크린샷_2026-03-19_오전_2.25.38.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:39:56.839Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 8,
+  "fields": {
+    "post": 9,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_AEmiswp.44.20.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:40:18.682Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 9,
+  "fields": {
+    "post": null,
+    "file": "network/posts/스크린샷_2026-03-19_오전_2.25.17.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:41:29.675Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 10,
+  "fields": {
+    "post": 10,
+    "file": "network/posts/스크린샷_2026-03-19_오전_2_TNoHPn0.25.38.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:42:18.847Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 11,
+  "fields": {
+    "post": null,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_JJgvogI.44.20.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:48:31.762Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 12,
+  "fields": {
+    "post": 11,
+    "file": "network/posts/스크린샷_2026-03-19_오전_2_JyHrKH5.25.38.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:49:05.123Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 13,
+  "fields": {
+    "post": null,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_mpaAYyo.44.20.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:52:23.483Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 14,
+  "fields": {
+    "post": null,
+    "file": "network/posts/스크린샷_2026-03-19_오전_1_PfMyVAv.25.05.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T17:52:38.442Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 15,
+  "fields": {
+    "post": null,
+    "file": "network/posts/사진_2025._4._20._오후_9.49.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T18:01:47.344Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 16,
+  "fields": {
+    "post": null,
+    "file": "network/posts/국민_킹_임예은과_한컷.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T18:01:47.345Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 17,
+  "fields": {
+    "post": null,
+    "file": "network/posts/사진_2023._9._11._오전_8.51.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T18:06:49.207Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 18,
+  "fields": {
+    "post": null,
+    "file": "network/posts/사진_2023._9._21._오후_4.31_4.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T18:06:49.207Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 19,
+  "fields": {
+    "post": 15,
+    "file": "network/posts/사진_2023_Soi6JSk._9._21._오후_4.31_4.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T18:13:30.478Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 20,
+  "fields": {
+    "post": 15,
+    "file": "network/posts/사진_2025_ZM6sJUw._4._20._오후_9.49.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-18T18:13:30.478Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 21,
+  "fields": {
+    "post": 15,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4.44.20.png",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:03:04.663Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 22,
+  "fields": {
+    "post": 15,
+    "file": "network/posts/스크린샷_2026-03-10_오후_12.39.58.png",
+    "file_type": "image",
+    "order": 3,
+    "created_at": "2026-03-19T13:03:04.665Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 23,
+  "fields": {
+    "post": 13,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_xAD0eU6.44.20.png",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:08:19.350Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 24,
+  "fields": {
+    "post": 19,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_CnEAtYW.44.20.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:09:28.018Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 25,
+  "fields": {
+    "post": 19,
+    "file": "network/posts/스크린샷_2026-03-10_오후_12_dz2ZNbR.39.58.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:09:28.018Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 26,
+  "fields": {
+    "post": 19,
+    "file": "network/posts/사진_2023_TIhQFkg._9._11._오전_8.51.jpg",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:10:03.766Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 27,
+  "fields": {
+    "post": 19,
+    "file": "network/posts/AIVELOGO-removebg.png",
+    "file_type": "image",
+    "order": 3,
+    "created_at": "2026-03-19T13:10:03.767Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 28,
+  "fields": {
+    "post": 20,
+    "file": "network/posts/사진_2025_OlsLCzy._4._20._오후_9.49.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:12:43.087Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 29,
+  "fields": {
+    "post": 20,
+    "file": "network/posts/사진_2025._4._20._오후_9.50.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:12:56.014Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 32,
+  "fields": {
+    "post": 21,
+    "file": "network/posts/국민_킹_임예은과_한컷_r3qNNpg.jpg",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:15:17.254Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 33,
+  "fields": {
+    "post": 21,
+    "file": "network/posts/사진_2025_ABmwZFS._4._20._오후_9.49.jpg",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:15:37.511Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 36,
+  "fields": {
+    "post": 22,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_YT5ic77.44.20.png",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:18:46.664Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 37,
+  "fields": {
+    "post": 22,
+    "file": "network/posts/스크린샷_2026-03-10_오후_12_zV6rkZo.39.58.png",
+    "file_type": "image",
+    "order": 3,
+    "created_at": "2026-03-19T13:18:46.668Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 38,
+  "fields": {
+    "post": 22,
+    "file": "network/posts/79CXEWCU20250430022911DEImT.jpg.png",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:21:00.506Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 39,
+  "fields": {
+    "post": 22,
+    "file": "network/posts/스크린샷_2026-01-15_오후_9.25.48.png",
+    "file_type": "image",
+    "order": 3,
+    "created_at": "2026-03-19T13:21:00.507Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 40,
+  "fields": {
+    "post": 23,
+    "file": "network/posts/사진_2023_nS0g9zW._9._21._오후_4.31_4.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:23:18.319Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 42,
+  "fields": {
+    "post": 23,
+    "file": "network/posts/사진_2023._9._21._오후_4.31.jpg",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:24:10.851Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 43,
+  "fields": {
+    "post": 24,
+    "file": "network/posts/국민_킹_임예은과_한컷_aUN6QnJ.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:25:09.214Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 44,
+  "fields": {
+    "post": 24,
+    "file": "network/posts/사진_2025._4._20._오후_9.52.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:25:15.860Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 45,
+  "fields": {
+    "post": 25,
+    "file": "network/posts/스크린샷_2026-03-18_오전_2.46.02.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:26:23.551Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 46,
+  "fields": {
+    "post": 25,
+    "file": "network/posts/자격증_사진.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:26:51.412Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 47,
+  "fields": {
+    "post": 25,
+    "file": "network/posts/자격증.jpeg",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:27:18.908Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 48,
+  "fields": {
+    "post": 25,
+    "file": "network/posts/ADSP.png",
+    "file_type": "image",
+    "order": 3,
+    "created_at": "2026-03-19T13:27:18.910Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 51,
+  "fields": {
+    "post": 27,
+    "file": "network/posts/자격증_사진_Pby1KD8.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:32:55.556Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 54,
+  "fields": {
+    "post": 26,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_Xeuqqfk.44.20.png",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:34:30.373Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 55,
+  "fields": {
+    "post": 26,
+    "file": "network/posts/자격증_사진.png",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:35:04.831Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 56,
+  "fields": {
+    "post": 28,
+    "file": "network/posts/자격증.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:39:05.429Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 57,
+  "fields": {
+    "post": 28,
+    "file": "network/posts/ADSP.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:39:11.784Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 58,
+  "fields": {
+    "post": 29,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_yGXzSXu.44.20.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:42:07.169Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 62,
+  "fields": {
+    "post": 30,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_aTIH9WY.44.20.png",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:44:38.277Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 63,
+  "fields": {
+    "post": 31,
+    "file": "network/posts/국민_킹_임예은과_한컷_Bu0r8OL.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:46:53.273Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 64,
+  "fields": {
+    "post": 31,
+    "file": "network/posts/스크린샷_2026-03-18_오전_2_V2Wu5hD.46.02.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:46:59.359Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 65,
+  "fields": {
+    "post": 32,
+    "file": "network/posts/ADSP_x5WnV3G.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T13:50:21.409Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 67,
+  "fields": {
+    "post": 32,
+    "file": "network/posts/자격증_p4lyyy1.jpeg",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T13:51:12.961Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 68,
+  "fields": {
+    "post": 34,
+    "file": "network/posts/자격증_사진_CCEcEc0.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T14:06:54.215Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 69,
+  "fields": {
+    "post": null,
+    "file": "network/posts/자격증_사진_V585xIu.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T14:06:54.280Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 70,
+  "fields": {
+    "post": 35,
+    "file": "network/posts/자격증_14m5b1g.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T14:07:25.281Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 72,
+  "fields": {
+    "post": 36,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_B7dDd3i.44.20.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T14:08:16.759Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 78,
+  "fields": {
+    "post": 37,
+    "file": "network/posts/스크린샷_2026-03-10_오후_12_v4akJ47.39.58.png",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T14:11:53.046Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 80,
+  "fields": {
+    "post": 37,
+    "file": "network/posts/ADSP_IJ3NXig.png",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T14:12:13.756Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 81,
+  "fields": {
+    "post": 35,
+    "file": "network/posts/자격증_사진_9182GXA.png",
+    "file_type": "image",
+    "order": 2,
+    "created_at": "2026-03-19T14:14:28.015Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 82,
+  "fields": {
+    "post": 38,
+    "file": "network/posts/ADSP_0FfxI57.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T14:18:15.623Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 84,
+  "fields": {
+    "post": 38,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_K62WLL9.44.20.png",
+    "file_type": "image",
+    "order": 1,
+    "created_at": "2026-03-19T14:18:49.004Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 85,
+  "fields": {
+    "post": 39,
+    "file": "network/posts/스크린샷_2026-03-06_오후_4_kOtutWQ.44.20.jpg",
+    "file_type": "image",
+    "order": 0,
+    "created_at": "2026-03-19T14:19:38.325Z"
+  }
+},
+{
+  "model": "networks.postfile",
+  "pk": 87,
+  "fields": {
+    "post": 39,
+    "file": "network/posts/스크린샷_2026-03-18_오전_2.46.02.png",
+    "file_type": "image",
+    "order": 1,
+    "created_at": "2026-03-19T14:20:08.517Z"
+  }
+},
+{
+  "model": "networks.draft",
+  "pk": 5,
+  "fields": {
+    "author": [
+      "aive.admin@gmail.com"
+    ],
+    "type": "graduate",
+    "title": "취업 ㅈ",
+    "content": "<p>글쓰기 임시저장 테스트</p><p></p><p></p><p><strong>글쓰기 임시저장 테스트</strong></p><p><span style=\"font-size: 18px;\">글쓰기임시저장테스트</span></p><p><span style=\"color: rgb(51, 64, 240);\">글쓰기임시저장테스트</span></p><hr><p></p><p style=\"text-align: center;\">글쓰기임시저장테스트</p><p style=\"text-align: left;\"><em>글쓰기임시저장테스트</em></p><p style=\"text-align: left;\"><u>글쓰기임시저장테스트</u></p><p style=\"text-align: left;\"><s>글쓰기임시저장테스트</s></p><p style=\"text-align: left;\"></p>",
+    "image_ids": [],
+    "updated_at": "2026-03-18T07:49:35.857Z"
+  }
+}
+]
