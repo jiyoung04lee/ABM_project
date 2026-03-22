@@ -299,28 +299,18 @@ class MyCommentsView(generics.ListAPIView):
 # ---------------------------------------------------------------------------
 
 class AdminLoginView(APIView):
-    """
-    POST /api/users/admin-login/
-    Body: { "email": "...", "password": "..." }
-    관리자(is_staff)만 로그인 가능. 성공 시 카카오 로그인과 동일한 토큰 응답.
-    """
     permission_classes = [permissions.AllowAny]
     throttle_classes = [AuthThrottle]
 
     def post(self, request):
         serializer = AdminLoginSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         email = serializer.validated_data["email"]
         password = serializer.validated_data["password"]
-        user = authenticate(
-            request,
-            username=email,
-            password=password,
-        )
+        user = authenticate(request, username=email, password=password)
+
         if user is None:
             return Response(
                 {"detail": "이메일 또는 비밀번호가 올바르지 않습니다."},
@@ -331,17 +321,24 @@ class AdminLoginView(APIView):
                 {"detail": "관리자 계정만 로그인할 수 있습니다."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        refresh = RefreshToken.for_user(user)
+
+        # OTP 생성 및 이메일 발송
+        import random, time
+        from django.core.mail import send_mail
+        from django.core.cache import cache
+
+        otp_code = str(random.randint(100000, 999999))
+        cache.set(f"admin_otp_{user.id}", otp_code, timeout=300)  # 5분
+
+        send_mail(
+            subject='[AIVE] 관리자 OTP 인증번호',
+            message=f'인증번호: {otp_code}\n5분 내로 입력해주세요.',
+            from_email=None,
+            recipient_list=[user.email],
+        )
+
         return Response(
-            {
-                "message": "로그인 성공",
-                "needs_profile": False,
-                "user": UserSerializer(user).data,
-                "tokens": {
-                    "access": str(refresh.access_token),
-                    "refresh": str(refresh),
-                },
-            },
+            {"message": "OTP를 이메일로 발송했습니다.", "user_id": user.id},
             status=status.HTTP_200_OK,
         )
 
@@ -674,3 +671,57 @@ def top_active_users(request):
         })
 
     return Response(result)
+
+
+# 관리자 계정 OTP 검증 API 
+class AdminOTPVerifyView(APIView):
+    """
+    POST /api/users/admin-otp-verify/
+    Body: { "user_id": 2, "otp_code": "123456" }
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        import time
+        from django.core.cache import cache
+
+        user_id = request.data.get("user_id")
+        otp_code = request.data.get("otp_code", "")
+
+        if not user_id or not otp_code:
+            return Response(
+                {"detail": "user_id와 otp_code가 필요합니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        saved_code = cache.get(f"admin_otp_{user_id}")
+
+        if not saved_code:
+            return Response(
+                {"detail": "인증번호가 만료됐어요. 다시 로그인해주세요."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if otp_code != saved_code:
+            return Response(
+                {"detail": "인증번호가 틀렸어요."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 인증 성공
+        cache.delete(f"admin_otp_{user_id}")
+        user = User.objects.get(id=user_id)
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "message": "로그인 성공",
+                "needs_profile": False,
+                "user": UserSerializer(user).data,
+                "tokens": {
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
