@@ -323,3 +323,11 @@ AUTHENTICATION_BACKENDS = [
 
 # OTP 설정
 OTP_EXPIRY_SECONDS = 300 # 5분 후 만료 
+
+# ==================== 캐시 설정 ====================
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_cache",
+    }
+}

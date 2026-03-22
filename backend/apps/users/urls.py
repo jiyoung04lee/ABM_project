@@ -28,6 +28,7 @@ urlpatterns = [
 
     # 관리자 이메일/비밀번호 로그인
     path("admin-login/", views.AdminLoginView.as_view(), name="admin_login"),
+    path("admin-otp-verify/", views.AdminOTPVerifyView.as_view(), name="admin_otp_verify"),
 
     # 카카오 소셜 로그인
     path("kakao/login/", views.KakaoLoginView.as_view(), name="kakao_login"),

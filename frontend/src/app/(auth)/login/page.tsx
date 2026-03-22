@@ -13,6 +13,12 @@ export default function LoginPage() {
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState("");
   const [adminLoading, setAdminLoading] = useState(false);
+  // 관리자 OTP 설정 
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpUserId, setOtpUserId] = useState<number | null>(null);
+  const [otpError, setOtpError] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -66,6 +72,46 @@ export default function LoginPage() {
         return;
       }
 
+      // OTP 화면으로 전환
+      setOtpUserId(data.user_id);
+      setShowOtp(true);
+
+    } catch {
+      setAdminError("네트워크 오류입니다.");
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  // otp 검증 함수 
+  const handleOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpError("");
+
+    if (!otpCode || otpCode.length !== 6) {
+      setOtpError("6자리 인증번호를 입력해주세요.");
+      return;
+    }
+
+    setOtpLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/users/admin-otp-verify/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: otpUserId,
+          otp_code: otpCode,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setOtpError(data?.detail ?? "인증에 실패했습니다.");
+        return;
+      }
+
       if (data.tokens?.access) {
         localStorage.setItem("access_token", data.tokens.access);
         if (data.tokens.refresh) {
@@ -74,16 +120,13 @@ export default function LoginPage() {
         if (data.user?.id) {
           localStorage.setItem("user_id", String(data.user.id));
         }
-
         window.location.href = "/admin";
-        return;
       }
 
-      setAdminError("로그인에 실패했습니다.");
     } catch {
-      setAdminError("네트워크 오류입니다.");
+      setOtpError("네트워크 오류입니다.");
     } finally {
-      setAdminLoading(false);
+      setOtpLoading(false);
     }
   };
 
@@ -132,7 +175,7 @@ export default function LoginPage() {
               >
                 관리자 로그인
               </button>
-            ) : (
+            ) : !showOtp ? (
               <form onSubmit={handleAdminLogin} className="flex flex-col gap-3 pt-1">
                 <input
                   type="email"
@@ -140,42 +183,61 @@ export default function LoginPage() {
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                  autoComplete="email"
                 />
-
                 <input
                   type="password"
                   placeholder="비밀번호"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                  autoComplete="current-password"
                 />
-
-                {adminError && (
-                  <p className="text-sm text-red-500">{adminError}</p>
-                )}
-
+                {adminError && <p className="text-sm text-red-500">{adminError}</p>}
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowAdmin(false);
-                      setAdminError("");
-                      setAdminEmail("");
-                      setAdminPassword("");
-                    }}
+                    onClick={() => { setShowAdmin(false); setAdminError(""); setAdminEmail(""); setAdminPassword(""); }}
                     className="flex-1 py-2.5 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50"
                   >
                     취소
                   </button>
-
                   <button
                     type="submit"
                     disabled={adminLoading}
                     className="flex-1 py-2.5 text-sm font-medium text-white bg-[#2563EB] rounded-xl hover:bg-[#1d4ed8] disabled:opacity-50"
                   >
                     {adminLoading ? "로그인 중..." : "관리자 로그인"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleOtpVerify} className="flex flex-col gap-3 pt-1">
+                <p className="text-sm text-gray-500 text-center">
+                  이메일로 발송된 6자리 인증번호를 입력하세요.
+                </p>
+                <input
+                  type="text"
+                  placeholder="000000"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB] text-center text-xl tracking-widest"
+                  autoFocus
+                />
+                {otpError && <p className="text-sm text-red-500">{otpError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowOtp(false); setOtpCode(""); setOtpError(""); }}
+                    className="flex-1 py-2.5 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50"
+                  >
+                    다시 로그인
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={otpLoading}
+                    className="flex-1 py-2.5 text-sm font-medium text-white bg-[#2563EB] rounded-xl hover:bg-[#1d4ed8] disabled:opacity-50"
+                  >
+                    {otpLoading ? "확인 중..." : "인증하기"}
                   </button>
                 </div>
               </form>
