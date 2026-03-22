@@ -72,6 +72,18 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
         verbose_name="이메일",
     )
+    email_encrypted = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="이메일(암호화)",
+    )
+    email_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        db_index=True,
+        verbose_name="이메일 해시",
+    )
     nickname = models.CharField(
         max_length=30,
         unique=True,
@@ -94,6 +106,18 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         unique=True,
         verbose_name="학번",
+    )
+    student_id_encrypted = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="학번(암호화)",
+    )
+    student_id_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        db_index=True,
+        verbose_name="학번 해시",
     )
     grade = models.PositiveSmallIntegerField(
         blank=True,
@@ -266,13 +290,37 @@ class StudentRegistry(models.Model):
     """학번·이름 대조용 재학생 명단."""
 
     student_id = models.CharField(
-        max_length=8,
-        unique=True,
+        max_length=8, 
+        unique=True, 
         verbose_name="학번",
     )
+    student_id_encrypted = models.TextField(
+        blank=True, 
+        null=True, 
+        verbose_name="학번(암호화)",
+    )
+    student_id_hash = models.CharField(
+        max_length=64, 
+        blank=True, 
+        null=True, 
+        db_index=True, 
+        verbose_name="학번 해시",
+    )
     name = models.CharField(
-        max_length=50,
+        max_length=50, 
         verbose_name="이름",
+    )
+    name_encrypted = models.TextField(
+        blank=True, 
+        null=True, 
+        verbose_name="이름(암호화)",
+    )
+    name_hash = models.CharField(
+        max_length=64, 
+        blank=True, 
+        null=True, 
+        db_index=True, 
+        verbose_name="이름 해시",
     )
 
     class Meta:
