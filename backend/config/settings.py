@@ -359,7 +359,6 @@ DEFAULT_FROM_EMAIL = "aive.admin@gmail.com"
 
 # ==================== 보안 설정 ====================
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
