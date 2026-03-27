@@ -24,10 +24,21 @@ from .serializers import (
     CompleteProfileSerializer,
     AdminLoginSerializer,
 )
-from .throttles import AuthThrottle
+from .throttles import (
+    AuthThrottle,
+    OnboardingSessionThrottle,
+    OnboardingCompleteThrottle,
+)
+from .kakao_oauth import validate_kakao_redirect_uri
 from .utils import (
     generate_and_store_signup_token,
     delete_signup_token,
+    get_user_id_from_signup_token,
+    set_onboarding_signup_cookie,
+    clear_onboarding_signup_cookie,
+    generate_onboarding_nonce,
+    verify_onboarding_nonce,
+    delete_onboarding_nonce,
 )
 
 from .utils_score import give_login_point
@@ -371,7 +382,8 @@ class KakaoLoginView(APIView):
 
     응답:
     - 프로필 미완성:
-      { "needs_profile": true, "signup_token": "..." }
+      { "needs_profile": true } + Set-Cookie(HttpOnly onboarding_signup_token).
+      DEBUG=True 인 경우에만 JSON에 signup_token 포함(로컬 크로스오리진 대비).
 
     - 프로필 완성:
       {
@@ -385,8 +397,7 @@ class KakaoLoginView(APIView):
     throttle_classes = [AuthThrottle]
 
     def _exchange_code_for_token(self, code: str, redirect_uri: str) -> str:
-        """카카오 authorization code → access_token 교환"""
-        redirect_uri = (redirect_uri or "").rstrip("/")
+        """카카오 authorization code → access_token 교환 (redirect_uri는 이미 검증·정규화됨)"""
         payload = {
             "grant_type": "authorization_code",
             "client_id": settings.KAKAO_REST_API_KEY,
@@ -421,8 +432,10 @@ class KakaoLoginView(APIView):
             kakao_access_token = data["access_token"]
         else:
             try:
+                raw_redirect_uri = (data["redirect_uri"] or "").strip()
+                validate_kakao_redirect_uri(raw_redirect_uri)
                 kakao_access_token = self._exchange_code_for_token(
-                    data["code"], data["redirect_uri"]
+                    data["code"], raw_redirect_uri
                 )
             except (ValueError, KeyError) as e:
                 msg = str(e) if str(e) else "카카오 인증 코드 처리에 실패했습니다."
@@ -464,30 +477,6 @@ class KakaoLoginView(APIView):
 
         email = kakao_account.get("email") or None
         name = profile.get("nickname") or "카카오사용자"
-
-        # #region agent log
-        try:
-            import json as _json, time as _time
-            from pathlib import Path as _Path
-
-            _log_path = _Path("/Users/yunseongcheol/Developer/ABM_project/.cursor/debug-69648e.log")
-            _payload = {
-                "sessionId": "69648e",
-                "runId": "pre-fix",
-                "hypothesisId": "H1",
-                "location": "apps.users.views.KakaoLoginView.post:get_or_create",
-                "message": "About to get_or_create Kakao user",
-                "data": {
-                    "has_email": bool(email),
-                    "has_name": bool(name),
-                },
-                "timestamp": int(_time.time() * 1000),
-            }
-            with _log_path.open("a", encoding="utf-8") as _f:
-                _f.write(_json.dumps(_payload, ensure_ascii=False) + "\n")
-        except Exception:
-            pass
-        # #endregion agent log
 
         user, created = User.objects.get_or_create(
             kakao_id=kakao_id,
@@ -536,13 +525,16 @@ class KakaoLoginView(APIView):
 
         if not user.is_profile_complete:
             signup_token = generate_and_store_signup_token(user.id)
-            return Response(
-                {
-                    "needs_profile": True,
-                    "signup_token": signup_token,
-                },
-                status=status.HTTP_200_OK,
-            )
+            nonce = generate_onboarding_nonce(signup_token)
+            payload: dict[str, Any] = {
+                "needs_profile": True,
+                "onboarding_nonce": nonce,
+            }
+            if getattr(settings, "ONBOARDING_DEV_MODE", False):
+                payload["signup_token"] = signup_token
+            response = Response(payload, status=status.HTTP_200_OK)
+            set_onboarding_signup_cookie(response, signup_token)
+            return response
 
         if user.is_multi_major and not user.multi_major_approved:
             return Response(
@@ -570,42 +562,64 @@ class KakaoLoginView(APIView):
         )
 
 
+class OnboardingSessionView(APIView):
+    """
+    GET /api/users/social/onboarding-session/
+    온보딩용 HttpOnly 쿠키가 유효한지 확인.
+    X-Requested-With 헤더 필수 (HTML form GET 방지).
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [OnboardingSessionThrottle]
+
+    def get(self, request, *args, **kwargs):
+        if request.headers.get("X-Requested-With") != "XMLHttpRequest":
+            return Response(
+                {"detail": "잘못된 요청입니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        name = getattr(settings, "ONBOARDING_SIGNUP_COOKIE_NAME", "onboarding_signup_token")
+        token = (request.COOKIES.get(name) or "").strip()
+        if not token or not get_user_id_from_signup_token(token):
+            return Response({"valid": False}, status=status.HTTP_200_OK)
+        return Response({"valid": True}, status=status.HTTP_200_OK)
+
+
 class CompleteProfileView(generics.GenericAPIView):
     """
     POST /api/users/social/complete-profile/
+    Headers:
+      X-Onboarding-Nonce: <nonce>  # 더블 서브밋 CSRF 방어
     Body:
-    {
-      "signup_token": "...",
-      "user_type": "student" | "graduate",
-      "nickname": "...",
-      "department": "...",
-      "email": "...",                 # 선택 입력
-      "personal_info_consent": true,
-      "student_id": "...",            # 재학생
-      "grade": 1,                     # 재학생
-      "admission_year": 2020          # 졸업생
-    }
+      signup_token(DEBUG만), user_type, nickname, department, ...
 
     응답:
-    {
-      "message": "회원가입이 완료되었습니다.",
-      "user": {...},
-      "tokens": { "access": "...", "refresh": "..." }
-    }
+    - 일반: { "message", "user", "tokens": { "access", "refresh" } }
+    - 다부전공 미승인: { "message", "user", "multi_major_pending": true }
     """
     permission_classes = [permissions.AllowAny]
     serializer_class = CompleteProfileSerializer
+    throttle_classes = [OnboardingCompleteThrottle]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        signup_token = serializer.validated_data["signup_token"]
+
+        nonce = (request.headers.get("X-Onboarding-Nonce") or "").strip()
+        if not verify_onboarding_nonce(signup_token, nonce):
+            return Response(
+                {"detail": "잘못된 요청입니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         user = serializer.save()
 
-        # 활동 점수 
         add_score(user, 30)
 
-        delete_signup_token(serializer.validated_data["signup_token"])
+        delete_signup_token(signup_token)
+        delete_onboarding_nonce(signup_token)
 
         create_event_log(
             event_type="signup",
@@ -616,9 +630,25 @@ class CompleteProfileView(generics.GenericAPIView):
             user=user,
         )
 
+        # 다부전공 미승인: JWT 미발급, tokens 필드 없음
+        if user.is_multi_major and not user.multi_major_approved:
+            response = Response(
+                {
+                    "message": (
+                        "기본 정보 입력이 완료되었습니다. "
+                        "다부전공 승인 후 로그인 및 커뮤니티 이용이 가능합니다."
+                    ),
+                    "user": UserSerializer(user).data,
+                    "multi_major_pending": True,
+                },
+                status=status.HTTP_200_OK,
+            )
+            clear_onboarding_signup_cookie(response)
+            return response
+
         refresh = RefreshToken.for_user(user)
 
-        return Response(
+        response = Response(
             {
                 "message": "회원가입이 완료되었습니다.",
                 "user": UserSerializer(user).data,
@@ -629,6 +659,8 @@ class CompleteProfileView(generics.GenericAPIView):
             },
             status=status.HTTP_200_OK,
         )
+        clear_onboarding_signup_cookie(response)
+        return response
     
 
 # 제외할 닉네임 목록

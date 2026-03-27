@@ -14,6 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -44,7 +46,7 @@ def health_root(request):
 
 urlpatterns = [
     path("", health_root), 
-    path('admin-2026-mz9p/', admin.site.urls),
+    path(f'{os.environ.get("ADMIN_URL_PATH", "admin").strip("/")}/', admin.site.urls),
     path('admin-otp/send/', otp_views.send_otp, name='admin_otp_send'),
     path('admin-otp/verify/', otp_views.verify_otp, name='admin_otp_verify'),
     path('api/users/', include('apps.users.urls')),

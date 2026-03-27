@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import timedelta
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,7 +21,7 @@ load_dotenv(BASE_DIR / ".env")
 # SECRET_KEY / DEBUG / ALLOWED_HOSTS 는 반드시 .env 에서 로드 (fallback 없음)
 # 개발 시: cp .env.example .env 후 필요 시 값 수정
 SECRET_KEY = os.environ["SECRET_KEY"]
-DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 _allowed = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [x.strip() for x in _allowed.split(",") if x.strip()]
 
@@ -219,7 +220,7 @@ else:
 # - health, me: throttle 없음
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.users.authentication.PendingAwareJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -227,6 +228,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "auth": "5/min",
         "password_reset": "3/min",
+        "onboarding_session": "10/min",
+        "onboarding_complete": "3/min",
     },
     "DEFAULT_PAGINATION_CLASS": (
         "rest_framework.pagination.PageNumberPagination"
@@ -284,9 +287,61 @@ else:
         "http://127.0.0.1:3001",
     ]
 
+# credentialed fetch(쿠키) 허용 — 온보딩 HttpOnly 쿠키 전달용
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "origin",
+    "x-requested-with",
+    "x-onboarding-nonce",
+]
+
+# 소셜 온보딩 signup_token 캐시 TTL(초) = 쿠키 max_age
+SIGNUP_TOKEN_TIMEOUT_SEC = int(
+    os.environ.get("SIGNUP_TOKEN_TIMEOUT_SEC", "600")
+)
+
+# 온보딩 개발 모드: True면 signup_token을 JSON에 포함 + body 수신 허용.
+# 로컬 크로스오리진 개발(쿠키 전달 불가) 시에만 True로 설정.
+# DEBUG=False 환경(운영)에서 True이면 서버 시작을 차단한다.
+ONBOARDING_DEV_MODE = os.environ.get(
+    "ONBOARDING_DEV_MODE", "false"
+).lower() in ("true", "1", "yes")
+
+if not DEBUG and ONBOARDING_DEV_MODE:
+    raise ImproperlyConfigured(
+        "ONBOARDING_DEV_MODE=True는 DEBUG=True(개발 환경)일 때만 허용됩니다. "
+        "운영 서버에서는 ONBOARDING_DEV_MODE를 false로 설정하세요."
+    )
+
+# HttpOnly 쿠키로 온보딩 토큰 전달(URL 쿼리 제거).
+# 크로스 도메인이면 SameSite=None + Secure
+_default_onb_cookie = os.environ.get(
+    "ONBOARDING_SIGNUP_COOKIE_NAME", "onboarding_signup_token"
+).strip()
+ONBOARDING_SIGNUP_COOKIE_NAME = _default_onb_cookie or "onboarding_signup_token"
+_samesite_cookie = os.environ.get("ONBOARDING_SIGNUP_COOKIE_SAMESITE", "").strip()
+if _samesite_cookie:
+    ONBOARDING_SIGNUP_COOKIE_SAMESITE = _samesite_cookie
+else:
+    ONBOARDING_SIGNUP_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
+if str(ONBOARDING_SIGNUP_COOKIE_SAMESITE).lower() == "none":
+    ONBOARDING_SIGNUP_COOKIE_SECURE = True
+else:
+    ONBOARDING_SIGNUP_COOKIE_SECURE = os.environ.get(
+        "ONBOARDING_SIGNUP_COOKIE_SECURE", str(not DEBUG).lower()
+    ).lower() in ("true", "1", "yes")
+
 # Kakao Login (code 교환용)
 KAKAO_REST_API_KEY = os.environ.get("KAKAO_REST_API_KEY", "").strip()
-KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET", "").strip() 
+KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET", "").strip()
+# code 플로우: redirect_uri 화이트리스트 (카카오 콘솔과 동일 문자열, 콤마 구분)
+_kakao_redirect_raw = os.environ.get("KAKAO_REDIRECT_URIS", "").strip()
+KAKAO_REDIRECT_URIS = [
+    u.strip() for u in _kakao_redirect_raw.split(",") if u.strip()
+]
 
 # Railway 등 프록시 뒤에서 HTTPS 인식
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
