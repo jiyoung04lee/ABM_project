@@ -4,7 +4,11 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import LoginLogo from "@/shared/components/layout/LoginLoGo";
-import { API_BASE } from "@/shared/api/api";
+import {
+  API_BASE,
+  ONBOARDING_SIGNUP_STORAGE_KEY,
+  ONBOARDING_NONCE_STORAGE_KEY,
+} from "@/shared/api/api";
 
 // UI 상 사용자 유형: 다부전공생은 재학생 + is_multi_major 로 매핑
 type UserType = "student" | "graduate" | "multi_major";
@@ -18,9 +22,12 @@ const INTEREST_OPTIONS: { value: string; label: string }[] = [
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const signupToken = searchParams.get("signup_token");
 
   const DEPARTMENT = "AI빅데이터융합경영학과";
+
+  const [sessionGate, setSessionGate] = useState<
+    "loading" | "ready" | "blocked"
+  >("loading");
 
   const [userType, setUserType] = useState<UserType>("student");
   const [name, setName] = useState("");
@@ -41,20 +48,59 @@ function OnboardingContent() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const token = localStorage.getItem("access_token");
-    if (token) {
+    const jwt = localStorage.getItem("access_token");
+    if (jwt) {
+      setSessionGate("blocked");
       router.replace("/");
       return;
     }
 
-    if (!signupToken) {
-      router.replace("/login");
+    const legacy = searchParams.get("signup_token");
+    if (legacy) {
+      sessionStorage.setItem(ONBOARDING_SIGNUP_STORAGE_KEY, legacy);
+      router.replace("/onboarding");
+      return;
     }
-  }, [signupToken, router]);
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/users/social/onboarding-session/`,
+          {
+            credentials: "include",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          },
+        );
+        const data = (await res.json().catch(() => ({}))) as {
+          valid?: boolean;
+        };
+        const devFallback = sessionStorage.getItem(
+          ONBOARDING_SIGNUP_STORAGE_KEY,
+        );
+        if (cancelled) return;
+        if (data.valid || devFallback) {
+          setSessionGate("ready");
+          return;
+        }
+        setSessionGate("blocked");
+        router.replace("/login");
+      } catch {
+        if (!cancelled) {
+          setSessionGate("blocked");
+          router.replace("/login");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signupToken) return;
+    if (sessionGate !== "ready") return;
     setError("");
     setFieldErrors({});
     setLoading(true);
@@ -66,7 +112,10 @@ function OnboardingContent() {
       // 다부전공생은 student + is_multi_major=true 로 보낸다.
       const backendUserType = userType === "multi_major" ? "student" : userType;
 
-      formData.append("signup_token", signupToken);
+      const devToken = sessionStorage.getItem(ONBOARDING_SIGNUP_STORAGE_KEY);
+      if (devToken) {
+        formData.append("signup_token", devToken);
+      }
       formData.append("user_type", backendUserType);
       formData.append("name", name.trim());
       formData.append("nickname", nickname.trim());
@@ -99,10 +148,16 @@ function OnboardingContent() {
         }
       }
 
+      const nonce = sessionStorage.getItem(ONBOARDING_NONCE_STORAGE_KEY) ?? "";
+      const headers: Record<string, string> = {
+        "X-Onboarding-Nonce": nonce,
+      };
       const res = await fetch(
         `${API_BASE}/api/users/social/complete-profile/`,
         {
           method: "POST",
+          credentials: "include",
+          headers,
           body: formData,
         }
       );
@@ -121,13 +176,17 @@ function OnboardingContent() {
         return;
       }
 
-      if (data.tokens?.access) {
-        if (userType === "multi_major") {
-          // 다부전공생: 로그인 상태를 만들지 않고 승인 대기 페이지로 이동
-          router.replace("/onboarding/multi-major-pending");
-          return;
-        }
+      // 다부전공 미승인: 백엔드가 tokens 없이 multi_major_pending만 반환
+      if (data.multi_major_pending) {
+        sessionStorage.removeItem(ONBOARDING_SIGNUP_STORAGE_KEY);
+        sessionStorage.removeItem(ONBOARDING_NONCE_STORAGE_KEY);
+        router.replace("/onboarding/multi-major-pending");
+        return;
+      }
 
+      if (data.tokens?.access) {
+        sessionStorage.removeItem(ONBOARDING_SIGNUP_STORAGE_KEY);
+        sessionStorage.removeItem(ONBOARDING_NONCE_STORAGE_KEY);
         localStorage.setItem("access_token", data.tokens.access);
         if (data.tokens.refresh) {
           localStorage.setItem("refresh_token", data.tokens.refresh);
@@ -144,7 +203,18 @@ function OnboardingContent() {
     }
   };
 
-  if (!signupToken) {
+  if (sessionGate === "loading") {
+    return (
+      <>
+        <div className="mb-5">
+          <LoginLogo className="translate-x-[18px]" />
+        </div>
+        <p className="text-gray-500 text-sm">온보딩 확인 중...</p>
+      </>
+    );
+  }
+
+  if (sessionGate === "blocked") {
     return null;
   }
 
