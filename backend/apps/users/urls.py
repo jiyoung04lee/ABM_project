@@ -35,6 +35,11 @@ urlpatterns = [
 
     # 소셜 온보딩
     path(
+        "social/onboarding-session/",
+        views.OnboardingSessionView.as_view(),
+        name="onboarding_session",
+    ),
+    path(
         "social/complete-profile/",
         views.CompleteProfileView.as_view(),
         name="complete_profile",

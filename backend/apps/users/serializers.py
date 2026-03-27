@@ -1,4 +1,6 @@
 import re
+
+from django.conf import settings as django_settings
 from rest_framework import serializers
 
 from .models import StudentRegistry, User
@@ -126,7 +128,7 @@ class KakaoLoginInputSerializer(serializers.Serializer):
 
 class CompleteProfileSerializer(serializers.Serializer):
 
-    signup_token = serializers.CharField()
+    signup_token = serializers.CharField(required=False, allow_blank=True)
 
     user_type = serializers.ChoiceField(
         choices=User.USER_TYPE_CHOICES
@@ -187,7 +189,27 @@ class CompleteProfileSerializer(serializers.Serializer):
 
     def validate(self, attrs):
 
-        token = attrs["signup_token"]
+        request = self.context.get("request")
+        cookie_name = getattr(
+            django_settings,
+            "ONBOARDING_SIGNUP_COOKIE_NAME",
+            "onboarding_signup_token",
+        )
+
+        if getattr(django_settings, "ONBOARDING_DEV_MODE", False):
+            token = (attrs.get("signup_token") or "").strip()
+            if not token and request is not None:
+                token = (request.COOKIES.get(cookie_name) or "").strip()
+        else:
+            token = ""
+            if request is not None:
+                token = (request.COOKIES.get(cookie_name) or "").strip()
+
+        if not token:
+            raise serializers.ValidationError({
+                "signup_token": "유효하지 않거나 만료된 토큰입니다."
+            })
+
         user_id = get_user_id_from_signup_token(token)
 
         if not user_id:
@@ -195,6 +217,7 @@ class CompleteProfileSerializer(serializers.Serializer):
                 "signup_token": "유효하지 않거나 만료된 토큰입니다."
             })
 
+        attrs["signup_token"] = token
         attrs["_user_id"] = user_id
 
         if User.objects.exclude(pk=user_id).filter(

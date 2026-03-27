@@ -4,7 +4,11 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import LoginLogo from "@/shared/components/layout/LoginLoGo";
-import{ API_BASE } from "@/shared/api/api";
+import {
+  API_BASE,
+  ONBOARDING_SIGNUP_STORAGE_KEY,
+  ONBOARDING_NONCE_STORAGE_KEY,
+} from "@/shared/api/api";
 
 
 function KakaoCallbackContent() {
@@ -37,6 +41,7 @@ function KakaoCallbackContent() {
         const res = await fetch(`${API_BASE}/api/users/kakao/login/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ code, redirect_uri: redirectUri }),
         });
         const data = await res.json();
@@ -49,10 +54,20 @@ function KakaoCallbackContent() {
           return;
         }
 
-        if (data.needs_profile && data.signup_token) {
-          window.location.href = `/onboarding?signup_token=${encodeURIComponent(
-            data.signup_token,
-          )}`;
+        if (data.needs_profile) {
+          if (typeof data.signup_token === "string" && data.signup_token) {
+            sessionStorage.setItem(
+              ONBOARDING_SIGNUP_STORAGE_KEY,
+              data.signup_token,
+            );
+          }
+          if (typeof data.onboarding_nonce === "string" && data.onboarding_nonce) {
+            sessionStorage.setItem(
+              ONBOARDING_NONCE_STORAGE_KEY,
+              data.onboarding_nonce,
+            );
+          }
+          window.location.href = "/onboarding";
           return;
         }
 
