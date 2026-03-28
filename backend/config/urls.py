@@ -44,8 +44,15 @@ admin.site.__class__ = AdminOTPSite
 def health_root(request):
     return JsonResponse({"status": "ok"})
 
+
+def healthz(request):
+    """Railway 헬스체크 전용. DRF·JWT·throttle·/api 로깅 미들웨어를 거치지 않음."""
+    return JsonResponse({"status": "ok"})
+
+
 urlpatterns = [
-    path("", health_root), 
+    path("healthz/", healthz),
+    path("", health_root),
     path(f'{os.environ.get("ADMIN_URL_PATH", "admin").strip("/")}/', admin.site.urls),
     path('admin-otp/send/', otp_views.send_otp, name='admin_otp_send'),
     path('admin-otp/verify/', otp_views.verify_otp, name='admin_otp_verify'),

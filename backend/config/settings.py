@@ -367,7 +367,6 @@ if _csrf_trusted:
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000
     SESSION_COOKIE_AGE = 3600  # 세션 1시간 후 만료
 
 # ==================== django-axes 설정 ====================
