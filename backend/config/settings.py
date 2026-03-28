@@ -358,6 +358,12 @@ EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_API_KEY", "")
 DEFAULT_FROM_EMAIL = "aive.admin@gmail.com"
 
 # ==================== 보안 설정 ====================
+_csrf_trusted = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+if _csrf_trusted:
+    CSRF_TRUSTED_ORIGINS = [
+        x.strip() for x in _csrf_trusted.split(",") if x.strip()
+    ]
+
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
