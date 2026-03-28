@@ -4,7 +4,6 @@ buildCommand = "pip install -r requirements.txt && python manage.py collectstati
 
 [deploy]
 startCommand = "python manage.py migrate --noinput && python manage.py createcachetable --database default 2>/dev/null; gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
-healthcheckPath = "/"
-healthcheckTimeout = 300
+# healthcheckPath/Timeout은 Railway 대시보드에서 설정 (toml에 두면 UI에서 수정 불가)
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
