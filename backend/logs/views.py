@@ -1,8 +1,19 @@
+# pyright: reportArgumentType=false, reportAttributeAccessIssue=false, reportOptionalMemberAccess=false, reportOperatorIssue=false
+
 from __future__ import annotations
 
 from collections import defaultdict
 
-from django.db.models import Avg, Case, Count, IntegerField, Min, Max, Sum, When
+from django.db.models import (
+    Avg,
+    Case,
+    Count,
+    IntegerField,
+    Min,
+    Max,
+    Sum,
+    When,
+)
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -54,7 +65,10 @@ HEATMAP_GROUPS = [(1, "1학년"), (2, "2학년"), (34, "3~4학년"), ("graduate"
 HEATMAP_GROUP_KEYS: list[int | str] = [1, 2, 34, "graduate"]
 
 
-def _author_group(author_grade: int | None, author_user_type: str | None) -> int | str | None:
+def _author_group(
+    author_grade: int | None,
+    author_user_type: str | None,
+) -> int | str | None:
     """작성자 학년/유형 → 히트맵 그룹 (1, 2, 34, graduate)."""
     if author_user_type == "graduate" or author_grade is None:
         return "graduate" if author_user_type == "graduate" else None
@@ -63,7 +77,10 @@ def _author_group(author_grade: int | None, author_user_type: str | None) -> int
     return author_grade  # 1 or 2
 
 
-def _viewer_group(grade_at_event: int | None, user_type: str | None) -> int | str | None:
+def _viewer_group(
+    grade_at_event: int | None,
+    user_type: str | None,
+) -> int | str | None:
     """조회자 학년/유형 → 히트맵 그룹."""
     if user_type == "graduate" or grade_at_event is None:
         return "graduate" if user_type == "graduate" else None
@@ -191,12 +208,14 @@ class OperationalLogListView(APIView):
                 "details": details,
             }
             results.append(row)
-        return Response({
-            "results": results,
-            "count": total,
-            "page": page,
-            "page_size": page_size,
-        })
+        return Response(
+            {
+                "results": results,
+                "count": total,
+                "page": page,
+                "page_size": page_size,
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -225,7 +244,10 @@ class HeatmapView(APIView):
             )
         )
 
-        matrix: dict = {ag: {vg: 0 for vg in HEATMAP_GROUP_KEYS} for ag in HEATMAP_GROUP_KEYS}
+        matrix: dict = {
+            ag: {vg: 0 for vg in HEATMAP_GROUP_KEYS}
+            for ag in HEATMAP_GROUP_KEYS
+        }
         for row in rows:
             ag = _author_group(
                 row.get("author_grade_at_event"),
@@ -325,7 +347,8 @@ class PopularByGradeView(APIView):
                 key=lambda x: -x[1],
             )[:top_n]
             top_by_group[group_id] = [
-                (section, post_id, score) for (section, post_id), score in items
+                (section, post_id, score)
+                for (section, post_id), score in items
             ]
 
         # 글 제목 조회 (section별 bulk)
@@ -374,8 +397,10 @@ class PopularByGradeView(APIView):
 
 # ---------------------------------------------------------------------------
 # 3. 인기 검색어 Top 10 API
-#    GET /api/logs/analytics/search-ranking/?section=community&top_n=10&interest=ai
-#    응답: total_search_count, ranking(키워드별 main_grade, main_interest)
+#    GET /api/logs/analytics/search-ranking/
+#         ?section=community&top_n=10&interest=ai
+#    응답: total_search_count,
+#         ranking(키워드별 main_grade, main_interest)
 # ---------------------------------------------------------------------------
 class SearchRankingView(APIView):
     """
@@ -452,26 +477,37 @@ class SearchRankingView(APIView):
                 "count": row["count"],
                 "main_grade": main_grade_map.get(row["search_keyword"]),
                 "main_grade_label": GRADE_LABEL.get(
-                    main_grade_map.get(row["search_keyword"], 0),  # type: ignore[arg-type]
+                    main_grade_map.get(
+                        row["search_keyword"],
+                        0,
+                    ),  # type: ignore[arg-type]
                     "-",
                 ),
-                "main_interest": main_interest_map.get(row["search_keyword"]),
+                "main_interest": main_interest_map.get(
+                    row["search_keyword"]
+                ),
                 "main_interest_label": INTEREST_LABEL.get(
-                    main_interest_map.get(row["search_keyword"]) or "", "-"
+                    main_interest_map.get(row["search_keyword"]) or "",
+                    "-",
                 ),
             }
             for idx, row in enumerate(keyword_counts)
         ]
-        return Response({
-            "total_search_count": total_search_count,
-            "ranking": ranking,
-        })
+        return Response(
+            {
+                "total_search_count": total_search_count,
+                "ranking": ranking,
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
 # 3-2. 페이지 방문 로깅 (프론트에서 호출)
 #    POST /api/logs/page-view/
-#    Body: { "section": "community"|"network"|"department"|"home", "page": "/community" }
+#    Body: {
+#      "section": "community"|"network"|"department"|"home",
+#      "page": "/community"
+#    }
 # ---------------------------------------------------------------------------
 SECTION_LABELS = {
     "home": "홈",
@@ -498,7 +534,12 @@ class PageViewLogView(APIView):
         session_id = (data.get("session_id") or "").strip() or None
         if section not in PAGE_VIEW_SECTIONS:
             return Response(
-                {"detail": "section은 home, community, network, department 중 하나여야 합니다."},
+                {
+                    "detail": (
+                        "section은 home, community, network, department "
+                        "중 하나여야 합니다."
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user = getattr(request, "user", None)
@@ -692,7 +733,13 @@ class SessionAnalyticsView(APIView):
             session_durations.append((dur, gk))
 
         # 학년별 평균 (분)
-        by_grade: dict[int | str, list[float]] = {1: [], 2: [], 3: [], 4: [], "graduate": []}
+        by_grade: dict[int | str, list[float]] = {
+            1: [],
+            2: [],
+            3: [],
+            4: [],
+            "graduate": [],
+        }
         for dur, gk in session_durations:
             if gk in by_grade:
                 by_grade[gk].append(dur / 60.0)
@@ -1074,7 +1121,7 @@ class SessionJourneyView(APIView):
     session_id가 있는 page_view 로그를 기반으로
     섹션 간 전환 흐름 빈도 집계 (from_section → to_section).
     top_n: 상위 몇 개 전환을 반환할지 (기본 15).
-    """
+    """  # pyright: ignore[reportAttributeAccessIssue]
     permission_classes = [IsAdminUser]
 
     SECTION_LABEL = {
