@@ -444,7 +444,6 @@ class PostCreateSerializer(serializers.ModelSerializer):
         existing_ids = validated_data.pop("existing_files", None)
         clear_files = validated_data.pop("clear_files", False)
         new_files = validated_data.pop("new_files", None)
-        has_new_files = bool(new_files)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -514,12 +513,6 @@ class PostCreateSerializer(serializers.ModelSerializer):
                     instance.save(update_fields=["content"])
 
         image_files = list(instance.files.filter(file_type="image").order_by("order"))
-        should_regenerate_thumbnail = (
-            thumbnail_index is not None
-            or bool(files_to_delete)
-            or has_new_files
-            or (not instance.thumbnail)
-        )
 
         # 이미지가 아예 없으면 썸네일 제거
         if not image_files:
@@ -528,34 +521,59 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 instance.save(update_fields=["thumbnail"])
             return instance
 
-        # 썸네일을 "안 바꾼" 경우(=thumbnail_index 미전송 + 이미지 파일 변경 없음)
-        # 에는 서버 비용(make_thumbnail)을 건너뛰고 기존 썸네일을 유지한다.
-        if not should_regenerate_thumbnail:
+        # thumbnail_index를 명시적으로 보낸 경우에만 썸네일 변경
+        if thumbnail_index is not None:
+            if 0 <= thumbnail_index < len(image_files):
+                selected_image = image_files[thumbnail_index]
+            else:
+                selected_image = image_files[0]
+
+            if selected_image and selected_image.file:
+                thumb_file = make_thumbnail(selected_image.file)
+                if thumb_file:
+                    if instance.thumbnail:
+                        instance.thumbnail.delete(save=False)
+                    instance.thumbnail.save(
+                        thumb_file.name,
+                        thumb_file,
+                        save=False,
+                    )
+                    instance.save(update_fields=["thumbnail"])
             return instance
 
-        if (
-            thumbnail_index is not None
-            and 0 <= thumbnail_index < len(image_files)
-        ):
-            selected_image = image_files[thumbnail_index]
-        else:
-            selected_image = image_files[0]
+        # 기존 썸네일 이미지가 삭제된 경우: 남은 첫 이미지로 재생성
+        if instance.thumbnail:
+            current_thumb_name = instance.thumbnail.name
+            thumb_still_valid = any(
+                f.file and f.file.name == current_thumb_name
+                for f in image_files
+            )
+            if not thumb_still_valid and not files_to_delete:
+                return instance
+            if not thumb_still_valid:
+                selected = image_files[0]
+                if selected and selected.file:
+                    thumb_file = make_thumbnail(selected.file)
+                    if thumb_file:
+                        instance.thumbnail.delete(save=False)
+                        instance.thumbnail.save(
+                            thumb_file.name,
+                            thumb_file,
+                            save=False,
+                        )
+                        instance.save(update_fields=["thumbnail"])
+            return instance
 
-        if selected_image and selected_image.file:
-            thumb_file = make_thumbnail(selected_image.file)
+        # 썸네일이 없는데 이미지가 있으면 첫 이미지로 생성
+        selected = image_files[0]
+        if selected and selected.file:
+            thumb_file = make_thumbnail(selected.file)
             if thumb_file:
-                if instance.thumbnail:
-                    instance.thumbnail.delete(save=False)
                 instance.thumbnail.save(
                     thumb_file.name,
                     thumb_file,
                     save=False,
                 )
-                instance.save(update_fields=["thumbnail"])
-        else:
-            # 이미지가 있는데 선택 이미지 파일이 없으면 썸네일 제거
-            if instance.thumbnail:
-                instance.thumbnail.delete(save=False)
                 instance.save(update_fields=["thumbnail"])
 
         return instance
