@@ -25,6 +25,10 @@ DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 _allowed = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [x.strip() for x in _allowed.split(",") if x.strip()]
 
+# Railway 기본 도메인(*.up.railway.app) — 환경변수에 호스트를 빼먹어도 헬스체크/접속 가능
+if os.environ.get("RAILWAY_ENVIRONMENT") and ".up.railway.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".up.railway.app")
+
 
 # Application definition
 
