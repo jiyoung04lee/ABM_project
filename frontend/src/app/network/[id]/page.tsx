@@ -19,6 +19,7 @@ import {
   Comment,
 } from "@/shared/api/network";
 
+import DOMPurify from "dompurify";
 import api from "@/shared/api/axios";
 import { API_BASE } from "@/shared/api/api";
 import PostMeta from "@/features/post/components/PostMeta";
@@ -375,6 +376,18 @@ export default function NetworkDetailPage() {
               }
             );
 
+            html = DOMPurify.sanitize(html, {
+              ALLOWED_TAGS: [
+                "p","br","strong","em","u","s","a","img",
+                "h1","h2","h3","ul","ol","li","hr","span",
+                "blockquote","div","figure","figcaption",
+              ],
+              ALLOWED_ATTR: [
+                "href","src","alt","width","height","class",
+                "target","rel","data-align",
+              ],
+              ALLOW_DATA_ATTR: false,
+            });
             return html;
           })(),
         }}
