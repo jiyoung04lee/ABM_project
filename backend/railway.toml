@@ -3,9 +3,8 @@ builder = "nixpacks"
 buildCommand = "pip install -r requirements.txt && python manage.py collectstatic --noinput"
 
 [deploy]
-# 마이그레이션은 release에서 먼저 실행 → 웹은 gunicorn만 빨리 띄워 헬스체크 레이스 방지
-releaseCommand = "python manage.py migrate --noinput && (python manage.py createcachetable --database default 2>/dev/null || true)"
-startCommand = "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
-# healthcheckPath/Timeout은 Railway 대시보드에서 설정 (toml에 두면 UI에서 수정 불가)
+startCommand = "python manage.py migrate --noinput && python manage.py createcachetable --database default 2>/dev/null; gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+healthcheckPath = "/api/users/health/"
+healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
