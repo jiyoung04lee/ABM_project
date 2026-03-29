@@ -29,6 +29,17 @@ ALLOWED_HOSTS = [x.strip() for x in _allowed.split(",") if x.strip()]
 if os.environ.get("RAILWAY_ENVIRONMENT") and ".up.railway.app" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(".up.railway.app")
 
+# Railway 내부 헬스/프록시에서 쓰는 Host (누락 시 DisallowedHost → 비정상 응답)
+if os.environ.get("RAILWAY_ENVIRONMENT"):
+    for _railway_host in (
+        "127.0.0.1",
+        "localhost",
+        "[::1]",
+        ".railway.internal",
+    ):
+        if _railway_host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_railway_host)
+
 
 # Application definition
 
