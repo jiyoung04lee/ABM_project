@@ -25,6 +25,11 @@ DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 _allowed = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [x.strip() for x in _allowed.split(",") if x.strip()]
 
+# Railway 배포 헬스체크는 Host: healthcheck.railway.app 사용
+# https://docs.railway.app/deploy/healthchecks
+if "healthcheck.railway.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("healthcheck.railway.app")
+
 
 # Application definition
 
