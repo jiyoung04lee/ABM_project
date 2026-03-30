@@ -18,17 +18,19 @@ export default function Header() {
   const [messageCount, setMessageCount] = useState(0);
 
   useEffect(() => {
-    // 쿠키 방식: /api/users/me/ 호출로 로그인 여부 판단
-    Promise.all([
-      api.get("users/me/"),
-      api.get("notifications/unread_count/"),
-      api.get("messages/messages/unread_count/"),
-    ])
-      .then(([meRes, notifRes, msgRes]) => {
+    api.get("users/me/")
+      .then((meRes) => {
         setIsLoggedIn(true);
         setIsAdmin(meRes.data.is_staff === true);
-        setUnreadCount(notifRes.data.unread_count ?? 0);
-        setMessageCount(msgRes.data.unread_count ?? 0);
+
+        // 나머지는 개별적으로 처리 (실패해도 로그인 상태 유지)
+        api.get("notifications/unread_count/")
+          .then((res) => setUnreadCount(res.data.unread_count ?? 0))
+          .catch(() => {});
+
+        api.get("messages/messages/unread_count/")
+          .then((res) => setMessageCount(res.data.unread_count ?? 0))
+          .catch(() => {});
       })
       .catch(() => {
         setIsLoggedIn(false);
