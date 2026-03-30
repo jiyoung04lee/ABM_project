@@ -76,13 +76,11 @@ function KakaoCallbackContent() {
           return;
         }
 
-        if (data.tokens?.access || data.user) {
-          if (data.user?.id) {
-            localStorage.setItem("user_id", String(data.user.id));
-          }
-          window.location.href = "/";
-          return;
+        if (data.user?.id) {
+          localStorage.setItem("user_id", String(data.user.id));
         }
+        window.location.href = "/";
+        return;
 
         setStatus("error");
       } catch {
