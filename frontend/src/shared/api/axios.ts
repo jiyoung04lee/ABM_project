@@ -3,19 +3,16 @@ import { API_BASE } from "./api";
 
 const api = axios.create({
   baseURL: `${API_BASE}/api/`,
-  withCredentials: true, // 모든 요청에 쿠키 자동 첨부
+  withCredentials: true,
 });
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // users/me/는 각 컴포넌트에서 직접 처리하므로 여기서 redirect 안 함
     if (error.response?.status === 401) {
-      if (error.config?.url?.includes("users/me/")) {
-        return Promise.reject(error);
-      }
-      // user_id만 정리 (access/refresh는 쿠키라 서버에서 삭제)
       localStorage.removeItem("user_id");
-      window.location.replace("/login");
+      // useRequireAuth나 각 페이지에서 처리하도록 그냥 reject만
     }
     return Promise.reject(error);
   }
