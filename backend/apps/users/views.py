@@ -722,7 +722,7 @@ class AdminOTPVerifyView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        import time
+        from django.contrib.auth import login
         from django.core.cache import cache
 
         user_id = request.data.get("user_id")
@@ -751,6 +751,11 @@ class AdminOTPVerifyView(APIView):
         # 인증 성공
         cache.delete(f"admin_otp_{user_id}")
         user = User.objects.get(id=user_id)
+
+        # Django 세션 로그인 (admin 패널 접근용)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+        # JWT 토큰도 함께 발급
         refresh = RefreshToken.for_user(user)
 
         return Response(
