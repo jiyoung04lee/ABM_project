@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { fetchPosts, PostListItem } from "@/shared/api/network";
 import { getPosts as getCommunityPosts } from "@/shared/api/community";
+import api from "@/shared/api/axios";
 
 type HomePost = {
   id: number;
@@ -494,9 +495,9 @@ export default function HomeView() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    setIsLoggedIn(!!token);
+    api.get("users/me/")
+      .then(() => setIsLoggedIn(true))
+      .catch(() => setIsLoggedIn(false));
   }, []);
 
   useEffect(() => {

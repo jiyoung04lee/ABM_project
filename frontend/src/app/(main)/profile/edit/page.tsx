@@ -3,7 +3,7 @@
 import { Save, X, Upload } from "lucide-react";
  import { useRouter } from "next/navigation";
  import { useEffect, useState } from "react";
-import{ API_BASE } from "@/shared/api/api";
+import api from "@/shared/api/axios";
 
  type UserType = "student" | "graduate";
 
@@ -58,60 +58,44 @@ import{ API_BASE } from "@/shared/api/api";
    const [imageFile, setImageFile] = useState<File | null>(null);
 
    useEffect(() => {
-     const token =
-       typeof window !== "undefined"
-         ? window.localStorage.getItem("access_token")
-         : null;
+    const fetchMe = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-     if (!token) {
-       router.push("/login");
-       return;
-     }
+        const res = await api.get("users/me/");
+        const data: UserMeResponse = res.data;
+        setUser(data);
 
-     const fetchMe = async () => {
-       try {
-         setLoading(true);
-         setError("");
-
-         const res = await fetch(`${API_BASE}/api/users/me/`, {
-           headers: {
-             Authorization: `Bearer ${token}`,
-           },
-         });
-
-         if (res.status === 401) {
-           router.push("/login");
-           return;
-         }
-
-         const data: UserMeResponse = await res.json();
-         setUser(data);
-
-         if (data.profile_image) {
-          setProfileImage(`${API_BASE}${data.profile_image}`);
+        if (data.profile_image) {
+          setProfileImage(data.profile_image); // R2 URL이라 이미 full URL
         }
 
-         const initial: ProfileForm = {
-           name: data.name,
-           nickname: data.nickname,
-           email: data.email ?? "",
-           major: data.department ?? "AI빅데이터융합경영학과",
-           grade: data.grade != null ? String(data.grade) : "",
-           student_id: data.student_id ?? "",
-           admission_year: toAdmissionYearDisplay(data.admission_year),
-           bio: data.bio ?? "",
-         };
+        const initial: ProfileForm = {
+          name: data.name,
+          nickname: data.nickname,
+          email: data.email ?? "",
+          major: data.department ?? "AI빅데이터융합경영학과",
+          grade: data.grade != null ? String(data.grade) : "",
+          student_id: data.student_id ?? "",
+          admission_year: toAdmissionYearDisplay(data.admission_year),
+          bio: data.bio ?? "",
+        };
 
-         setForm(initial);
-       } catch {
-         setError("프로필 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
-       } finally {
-         setLoading(false);
-       }
-     };
+        setForm(initial);
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          router.push("/login");
+          return;
+        }
+        setError("프로필 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-     fetchMe();
-   }, [router]);
+    fetchMe();
+  }, [router]);
 
   const handleChange = (
      e:
@@ -145,16 +129,6 @@ import{ API_BASE } from "@/shared/api/api";
      e.preventDefault();
      if (!form || !user) return;
 
-     const token =
-       typeof window !== "undefined"
-         ? window.localStorage.getItem("access_token")
-         : null;
-
-     if (!token) {
-       router.push("/login");
-       return;
-     }
-
      try {
        setSaving(true);
        setError("");
@@ -185,48 +159,32 @@ import{ API_BASE } from "@/shared/api/api";
         }
       }
 
-      const res = await fetch(`${API_BASE}/api/users/me/`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      await api.patch("users/me/", formData); // api 인스턴스 사용
+      router.push("/profile");
 
-       const data = await res.json();
-
-       if (!res.ok) {
-         if (typeof data === "object" && data) {
-           const fe: Record<string, string> = {};
-           Object.entries(data as Record<string, unknown>).forEach(
-             ([key, value]) => {
-               if (Array.isArray(value) && value.length > 0) {
-                 fe[key] = String(value[0]);
-               }
-             },
-           );
-           if (Object.keys(fe).length > 0) {
-             setFieldErrors(fe);
-           } else {
-             setError(
-               data.detail ||
-                 data.message ||
-                 "프로필 수정에 실패했습니다. 다시 시도해주세요.",
-             );
-           }
-         } else {
-           setError("프로필 수정에 실패했습니다. 다시 시도해주세요.");
-         }
-         return;
-       }
-
-       router.push("/profile");
-     } catch {
-       setError("서버와 통신 중 오류가 발생했습니다.");
-     } finally {
-       setSaving(false);
-     }
-   };
+     } catch (err: any) {
+        const data = err?.response?.data;
+        if (data && typeof data === "object") {
+          const fe: Record<string, string> = {};
+          Object.entries(data as Record<string, unknown>).forEach(([key, value]) => {
+            if (Array.isArray(value) && value.length > 0) {
+              fe[key] = String(value[0]);
+            }
+          });
+          if (Object.keys(fe).length > 0) {
+            setFieldErrors(fe);
+          } else {
+            setError(
+              data.detail || data.message || "프로필 수정에 실패했습니다. 다시 시도해주세요.",
+            );
+          }
+        } else {
+          setError("서버와 통신 중 오류가 발생했습니다.");
+        }
+      } finally {
+        setSaving(false);
+      }
+    };
 
    const handleCancel = () => {
      router.push("/profile");
