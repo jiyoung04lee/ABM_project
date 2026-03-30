@@ -47,6 +47,42 @@ import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
+# ── JWT 쿠키 헬퍼 ──────────────────────────────────────────────────────────
+def _set_jwt_cookies(response, refresh):
+    """access + refresh JWT를 HttpOnly 쿠키로 발급"""
+    is_secure = not settings.DEBUG
+    samesite = "None" if is_secure else "Lax"
+
+    response.set_cookie(
+        key=getattr(settings, "JWT_ACCESS_COOKIE", "access_token"),
+        value=str(refresh.access_token),
+        max_age=60 * 60 * 24,        # 24시간 (ACCESS_TOKEN_LIFETIME과 맞춤)
+        httponly=True,
+        secure=is_secure,
+        samesite=samesite,
+        path="/",
+    )
+    response.set_cookie(
+        key=getattr(settings, "JWT_REFRESH_COOKIE", "refresh_token"),
+        value=str(refresh),
+        max_age=60 * 60 * 24 * 7,    # 7일 (REFRESH_TOKEN_LIFETIME과 맞춤)
+        httponly=True,
+        secure=is_secure,
+        samesite=samesite,
+        path="/",
+    )
+
+
+def _clear_jwt_cookies(response):
+    """JWT 쿠키 삭제"""
+    is_secure = not settings.DEBUG
+    samesite = "None" if is_secure else "Lax"
+    for key in [
+        getattr(settings, "JWT_ACCESS_COOKIE", "access_token"),
+        getattr(settings, "JWT_REFRESH_COOKIE", "refresh_token"),
+    ]:
+        response.delete_cookie(key, path="/", samesite=samesite)
+
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def health_check(request):
@@ -106,33 +142,29 @@ class MeView(generics.RetrieveUpdateAPIView):
 
 
 class LogoutView(generics.GenericAPIView):
-    """
-    로그아웃 API (refresh 토큰 블랙리스트)
-    POST /api/users/logout/
-    Body: {"refresh": "<refresh_token>"}
-    """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
-        refresh = request.data.get("refresh")
+        # 쿠키에서 refresh 토큰 읽기 (바디에 없으면 쿠키에서)
+        refresh = request.data.get("refresh") or request.COOKIES.get(
+            getattr(settings, "JWT_REFRESH_COOKIE", "refresh_token")
+        )
+
+        response = Response({"message": "로그아웃되었습니다."}, status=status.HTTP_200_OK)
+
+        # 쿠키 삭제
+        _clear_jwt_cookies(response)
+
         if not refresh:
-            return Response(
-                {"detail": "refresh 토큰이 필요합니다."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return response
 
         try:
             token = RefreshToken(refresh)
             token.blacklist()
-            return Response(
-                {"message": "로그아웃되었습니다."},
-                status=status.HTTP_200_OK,
-            )
         except TokenError:
-            return Response(
-                {"detail": "유효하지 않거나 이미 블랙리스트된 토큰입니다."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            pass  # 이미 만료/블랙리스트된 토큰은 무시
+
+        return response
 
 
 @api_view(["GET"])
@@ -547,19 +579,21 @@ class KakaoLoginView(APIView):
             )
 
         refresh = RefreshToken.for_user(user)
-
-        return Response(
+        response = Response(
             {
                 "message": "로그인 성공",
                 "needs_profile": False,
                 "user": UserSerializer(user).data,
+                # 하위 호환용으로 tokens도 유지
                 "tokens": {
-                    "access": str(refresh.access_token),  # type: ignore[reportAttributeAccessIssue]
+                    "access": str(refresh.access_token),
                     "refresh": str(refresh),
                 },
             },
             status=status.HTTP_200_OK,
         )
+        _set_jwt_cookies(response, refresh)
+        return response
 
 
 class OnboardingSessionView(APIView):
@@ -653,13 +687,14 @@ class CompleteProfileView(generics.GenericAPIView):
                 "message": "회원가입이 완료되었습니다.",
                 "user": UserSerializer(user).data,
                 "tokens": {
-                    "access": str(refresh.access_token),  # type: ignore[reportAttributeAccessIssue]
+                    "access": str(refresh.access_token),
                     "refresh": str(refresh),
                 },
             },
             status=status.HTTP_200_OK,
         )
         clear_onboarding_signup_cookie(response)
+        _set_jwt_cookies(response, refresh)
         return response
     
 

@@ -51,20 +51,8 @@ export default function NetworkDetailPage() {
     loadData();
   }, []);
 
-  // useEffect(() => {
-  //   api
-  //     .get("users/me/")
-  //     .then((r) => {
-  //       setIsAdmin(!!r.data?.is_staff);
-  //       setCurrentUserId(r.data?.id);
-  //     })
-  //     .catch(() => {});
-  // }, []);
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) return; // 토큰 없으면 아예 요청 안 함
-    api
-      .get("users/me/")
+    api.get("users/me/")
       .then((r) => {
         setIsAdmin(!!r.data?.is_staff);
         setCurrentUserId(r.data?.id);

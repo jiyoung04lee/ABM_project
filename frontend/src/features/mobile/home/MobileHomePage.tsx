@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import api from "@/shared/api/axios";
 import {
   BookOpen,
   Users,
@@ -82,9 +83,9 @@ export default function MobileHomePage() {
   const [latestCommunityPosts, setLatestCommunityPosts] = useState<HomePost[]>([]);
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    setIsLoggedIn(!!token);
+    api.get("users/me/")
+      .then(() => setIsLoggedIn(true))
+      .catch(() => setIsLoggedIn(false));
   }, []);
 
   useEffect(() => {

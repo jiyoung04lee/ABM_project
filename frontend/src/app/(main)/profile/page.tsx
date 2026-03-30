@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import{ API_BASE } from "@/shared/api/api";
+import api from "@/shared/api/axios";
 import { deletePost as deleteCommunityPost, deleteComment as deleteCommunityComment } from "@/shared/api/community";
 import { deletePost as deleteNetworkPost, } from "@/shared/api/network";
 
@@ -112,132 +112,67 @@ function buildYearGradeStatus(user: UserMeResponse | null) {
   const [postsPage, setPostsPage] = useState(1);
   const [commentsPage, setCommentsPage] = useState(1);
 
-   useEffect(() => {
-     const token =
-       typeof window !== "undefined"
-         ? window.localStorage.getItem("access_token")
-         : null;
+  useEffect(() => {
+    const fetchAll = async () => {
+      setLoading(true);
+      setError("");
 
-     if (!token) {
-       router.push("/login");
-       return;
-     }
+      try {
+        const meRes = await api.get("users/me/");
+        setUser(meRes.data);
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          router.push("/login");
+          return;
+        }
+        setError("내 정보를 불러오지 못했습니다.");
+        return;
+      } finally {
+        setLoading(false);
+      }
 
-     const fetchAll = async () => {
-       setLoading(true);
-       setError("");
+      try {
+        const [postsRes, commentsRes, topRes] = await Promise.all([
+          api.get("users/me/posts/"),
+          api.get("users/me/comments/"),
+          api.get("users/top-active/"),
+        ]);
 
-       const headers = {
-         Authorization: `Bearer ${token}`,
-       };
+        setTopUsers(topRes.data);
 
-       try {
-         const meRes = await fetch(`${API_BASE}/api/users/me/`, { headers });
+        const postsData: MyPost[] = Array.isArray(postsRes.data)
+          ? postsRes.data
+          : postsRes.data.results ?? [];
+        setPosts(postsData);
 
-         if (meRes.status === 401) {
-           router.push("/login");
-           return;
-         }
+        const commentsData: MyComment[] = Array.isArray(commentsRes.data)
+          ? commentsRes.data
+          : commentsRes.data.results ?? [];
+        setComments(commentsData);
+      } catch {
+        // 글/댓글만 실패해도 프로필은 이미 보이므로 무시
+      }
+    };
 
-         if (!meRes.ok) {
-           setError(
-             "내 정보를 불러오지 못했습니다. 백엔드 서버(http://localhost:8000)가 실행 중인지 확인해주세요.",
-           );
-           return;
-         }
-
-         const contentType = meRes.headers.get("content-type");
-         if (!contentType || !contentType.includes("application/json")) {
-           setError(
-             "서버 응답 형식 오류입니다. 백엔드 서버가 정상 동작 중인지 확인해주세요.",
-           );
-           return;
-         }
-
-         const meData: UserMeResponse = await meRes.json();
-         setUser(meData);
-       } catch {
-         setError(
-           "내 정보를 불러오지 못했습니다. 백엔드 서버(http://localhost:8000)가 실행 중인지 확인해주세요.",
-         );
-         return;
-       } finally {
-         setLoading(false);
-       }
-
-       try {
-         const [postsRes, commentsRes] = await Promise.all([
-           fetch(`${API_BASE}/api/users/me/posts/`, { headers }),
-           fetch(`${API_BASE}/api/users/me/comments/`, { headers }),
-         ]);
-
-         const topRes = await fetch(`${API_BASE}/api/users/top-active/`);
-
-         if (topRes.ok) {
-           const topData = await topRes.json();
-           setTopUsers(topData);
-         }
-
-         if (postsRes.ok) {
-           const postsJson = await postsRes.json();
-           const postsData: MyPost[] = Array.isArray(postsJson)
-             ? postsJson
-             : postsJson.results ?? [];
-           setPosts(postsData);
-         }
-
-         if (commentsRes.ok) {
-           const commentsJson = await commentsRes.json();
-           const commentsData: MyComment[] = Array.isArray(commentsJson)
-             ? commentsJson
-             : commentsJson.results ?? [];
-           setComments(commentsData);
-         }
-       } catch {
-         // 글/댓글만 실패해도 프로필은 이미 보이므로 무시
-       }
-     };
-
-     fetchAll();
-   }, [router]);
+    fetchAll();
+  }, [router]);
 
   const handleProfileImageChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+      e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    const token =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem("access_token")
-        : null;
-
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      setUploadingImage(true);
-      const formData = new FormData();
-      formData.append("profile_image", file);
-
-      const res = await fetch(`${API_BASE}/api/users/me/`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!res.ok) return;
-
-      const data: UserMeResponse = await res.json();
-      setUser(data);
-    } finally {
-      setUploadingImage(false);
-    }
-  };
+      try {
+        setUploadingImage(true);
+        const formData = new FormData();
+        formData.append("profile_image", file);
+        const res = await api.patch("users/me/", formData);
+        setUser(res.data);
+      } finally {
+        setUploadingImage(false);
+      }
+    };
 
   const postsCount = posts.length;
   const commentsCount = comments.length;
