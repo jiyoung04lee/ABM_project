@@ -1,12 +1,10 @@
 import random
 import time
 from django.core.mail import send_mail
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate, login  
 from django.shortcuts import render, redirect
 from django.contrib.admin import site as admin_site
 from django.conf import settings
-
-from django.contrib.auth import authenticate
 from django.contrib.admin.views.decorators import staff_member_required
 
 User = get_user_model()
@@ -48,14 +46,16 @@ def verify_otp(request):
     if input_code != saved_code:
         return render(request, 'admin_otp/otp_verify.html', {'error': '인증번호가 틀렸어요.'})
 
-    # 인증 성공
+    # 인증 성공 - Django auth 로그인 처리
     user_id = request.session.pop('pre_otp_user_id')
     request.session.pop('otp_code')
     request.session.pop('otp_created_at')
-    request.session['is_admin_verified'] = True
-    request.session['admin_user_id'] = user_id
+
+    user = User.objects.get(id=user_id)
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')  # ✅ 이 한 줄이 핵심
 
     return redirect('/admin-2026-mz9p/')
+
 
 class AdminOTPSite(admin_site.__class__):
     """OTP 흐름이 추가된 커스텀 Admin Site"""
@@ -67,9 +67,7 @@ class AdminOTPSite(admin_site.__class__):
             user = authenticate(request, username=email, password=password)
 
             if user and user.is_staff:
-                # 인증 성공 → OTP 발송 단계로
                 request.session['pre_otp_user_id'] = user.id
                 return redirect('/admin-otp/send/')
 
-        # 인증 실패 시 기본 로그인 페이지
         return super().login(request, extra_context)
