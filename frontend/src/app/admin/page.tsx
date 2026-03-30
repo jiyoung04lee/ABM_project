@@ -430,9 +430,8 @@ export default function AdminPage() {
   const [errorPage, setErrorPage] = useState(1);
   const [errorPageSize] = useState(20);
 
+  // 토큰 체크 없이 바로 API 호출 (쿠키가 자동 첨부됨)
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) { setAuthLoading(false); return; }
     api.get("users/me/")
       .then((res) => { setIsAdmin(res.data.is_staff === true); })
       .catch(() => {})

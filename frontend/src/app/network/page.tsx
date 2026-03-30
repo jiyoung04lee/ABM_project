@@ -12,6 +12,7 @@ import { useNetworkPosts } from "@/shared/hooks/useNetworkPosts";
 import { API_BASE } from "@/shared/api/api";
 import Image from "next/image";
 import { Eye, MessageCircle, Tag, Search } from "lucide-react";
+import api from "@/shared/api/axios";
 
 function resolveImageUrl(url: string | null | undefined): string {
   if (!url) return "";
@@ -1103,9 +1104,9 @@ function NetworkPageContent() {
   } = useNetworkPosts(tab, categorySlug, page);
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    setIsLoggedIn(!!token);
+    api.get("users/me/")
+      .then(() => setIsLoggedIn(true))
+      .catch(() => setIsLoggedIn(false));
   }, []);
 
   useEffect(() => {

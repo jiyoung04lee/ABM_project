@@ -112,11 +112,9 @@ export default function LoginPage() {
         return;
       }
 
-      if (data.tokens?.access) {
-        localStorage.setItem("access_token", data.tokens.access);
-        if (data.tokens.refresh) {
-          localStorage.setItem("refresh_token", data.tokens.refresh);
-        }
+      //  쿠키는 백엔드가 자동 발급, user_id만 유지
+      if (data.tokens?.access || data.user) {
+        // user_id는 비민감 정보라 localStorage 유지 (UI용)
         if (data.user?.id) {
           localStorage.setItem("user_id", String(data.user.id));
         }

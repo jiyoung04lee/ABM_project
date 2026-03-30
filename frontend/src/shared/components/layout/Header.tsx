@@ -18,34 +18,29 @@ export default function Header() {
   const [messageCount, setMessageCount] = useState(0);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    setIsLoggedIn(!!token);
-
-    if (!token) {
-      setIsAdmin(false);
-      setUnreadCount(0);
-      setMessageCount(0);
-      return;
-    }
-
+    // 쿠키 방식: /api/users/me/ 호출로 로그인 여부 판단
     Promise.all([
       api.get("users/me/"),
       api.get("notifications/unread_count/"),
       api.get("messages/messages/unread_count/"),
     ])
       .then(([meRes, notifRes, msgRes]) => {
+        setIsLoggedIn(true);
         setIsAdmin(meRes.data.is_staff === true);
         setUnreadCount(notifRes.data.unread_count ?? 0);
         setMessageCount(msgRes.data.unread_count ?? 0);
       })
-      .catch((err) => {
-        console.error("Header auth/counts:", err);
+      .catch(() => {
+        setIsLoggedIn(false);
+        setIsAdmin(false);
       });
   }, [setUnreadCount]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+  const handleLogout = async () => {
+    // 쿠키 삭제는 백엔드가 처리
+    await api.post("users/logout/").catch(() => {});
+    // user_id만 정리
+    localStorage.removeItem("user_id");
     setIsLoggedIn(false);
     setIsAdmin(false);
     setUnreadCount(0);

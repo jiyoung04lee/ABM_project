@@ -48,13 +48,6 @@ function OnboardingContent() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const jwt = localStorage.getItem("access_token");
-    if (jwt) {
-      setSessionGate("blocked");
-      router.replace("/");
-      return;
-    }
-
     const legacy = searchParams.get("signup_token");
     if (legacy) {
       sessionStorage.setItem(ONBOARDING_SIGNUP_STORAGE_KEY, legacy);
@@ -184,13 +177,9 @@ function OnboardingContent() {
         return;
       }
 
-      if (data.tokens?.access) {
+      if (data.tokens?.access || data.user) {
         sessionStorage.removeItem(ONBOARDING_SIGNUP_STORAGE_KEY);
         sessionStorage.removeItem(ONBOARDING_NONCE_STORAGE_KEY);
-        localStorage.setItem("access_token", data.tokens.access);
-        if (data.tokens.refresh) {
-          localStorage.setItem("refresh_token", data.tokens.refresh);
-        }
         if (data.user?.id) {
           localStorage.setItem("user_id", String(data.user.id));
         }

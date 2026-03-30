@@ -381,6 +381,10 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+# ==================== JWT 쿠키 설정 ====================
+JWT_ACCESS_COOKIE = "access_token"
+JWT_REFRESH_COOKIE = "refresh_token"
+
 # OTP 설정
 OTP_EXPIRY_SECONDS = 300 # 5분 후 만료 
 # 이메일 타임아웃 설정
