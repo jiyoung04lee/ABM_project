@@ -56,7 +56,7 @@ def _set_jwt_cookies(response, refresh):
     response.set_cookie(
         key=getattr(settings, "JWT_ACCESS_COOKIE", "access_token"),
         value=str(refresh.access_token),
-        max_age=60 * 60 * 24,        # 24시간 (ACCESS_TOKEN_LIFETIME과 맞춤)
+        max_age=60 * 60,             # 1시간 (ACCESS_TOKEN_LIFETIME과 맞춤)
         httponly=True,
         secure=is_secure,
         samesite=samesite,
@@ -699,7 +699,7 @@ class CompleteProfileView(generics.GenericAPIView):
     
 
 # 제외할 닉네임 목록
-EXCLUDED_NICKNAMES = {"wldud", "김만덕", "닉네임"}
+EXCLUDED_NICKNAMES = {"wldud", "김만덕", "김승혁"}
 # 순위 불러 오기 
 @api_view(["GET"])
 @permission_classes([AllowAny])
