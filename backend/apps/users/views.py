@@ -44,8 +44,8 @@ from .utils import (
 from .utils_score import give_login_point
 from .utils_score import add_score
 import os
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+
+from .otp_email import send_admin_otp_email
 
 # ── JWT 쿠키 헬퍼 ──────────────────────────────────────────────────────────
 def _set_jwt_cookies(response, refresh):
@@ -368,25 +368,19 @@ class AdminLoginView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # OTP 생성 및 이메일 발송
-        import random, time
-        from django.core.mail import send_mail
+        # OTP 생성 및 이메일 발송 (SendGrid HTTP API — Django admin SMTP 경로와 동일 헬퍼)
+        import random
+
         from django.core.cache import cache
 
         otp_code = str(random.randint(100000, 999999))
         cache.set(f"admin_otp_{user.id}", otp_code, timeout=300)  # 5분
 
-        try:
-            message = Mail(
-                from_email='aive.admin@gmail.com',
-                to_emails=user.email,
-                subject='[AIVE] 관리자 OTP 인증번호',
-                plain_text_content=f'인증번호: {otp_code}\n5분 내로 입력해주세요.'
-            )
-            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-            sg.send(message)
-        except Exception as e:
-            print(f"이메일 발송 실패: {e}")
+        send_admin_otp_email(
+            user.email,
+            otp_code,
+            subject="[AIVE] 관리자 OTP 인증번호",
+        )
 
         return Response(
             {"message": "OTP를 이메일로 발송했습니다.", "user_id": user.id},

@@ -1,7 +1,9 @@
 from __future__ import annotations
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from django.core.cache import cache
+from django.utils import timezone
 
 from .models import EventLog, EventSetting
 
@@ -76,6 +78,15 @@ def refresh_event_setting_cache() -> None:
     cache.set(CACHE_KEY_ACTIVE_EVENT_TYPES, list(active), CACHE_TIMEOUT)
 
 
+def _seconds_until_local_midnight() -> int:
+    """로컬 자정까지 남은 초(최소 60). 로그인 일 1회 중복 방지 TTL용."""
+    now = timezone.localtime()
+    next_midnight = (now + timedelta(days=1)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    return max(60, int((next_midnight - now).total_seconds()))
+
+
 # ---------------------------------------------------------------------------
 # 메인 유틸
 # ---------------------------------------------------------------------------
@@ -109,11 +120,26 @@ def create_event_log(
     관리자(is_staff) 사용자의 이벤트는 기록하지 않음(에러 로그만 유지).
     post_view / like / comment 이벤트는 author_user_type, author_grade_at_event 까지
     함께 저장해야 히트맵 집계가 가능합니다.
+
+    login: 동일 계정(로그인 사용자)은 로컬 일자당 최초 1건만 저장(대시보드 중복 집계 방지).
     """
     if user is not None and getattr(user, "is_staff", False):
         return None
     if event_type not in get_active_event_types():
         return None
+
+    # 로그인: 계정당 하루 1회만 EventLog 생성 (캐시로 원자적 중복 방지)
+    if (
+        event_type == "login"
+        and user is not None
+        and getattr(user, "is_authenticated", False)
+        and getattr(user, "pk", None)
+    ):
+        day = timezone.localdate().isoformat()
+        dedupe_key = f"eventlog:login:dedupe:{user.pk}:{day}"
+        if not cache.add(dedupe_key, 1, timeout=_seconds_until_local_midnight()):
+            return None
+
     return EventLog.objects.create(
         event_type=event_type,
         section=section,
