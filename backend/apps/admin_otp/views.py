@@ -1,11 +1,11 @@
 import random
 import time
-from django.core.mail import send_mail
 from django.contrib.auth import get_user_model, authenticate, login  
 from django.shortcuts import render, redirect
 from django.contrib.admin import site as admin_site
 from django.conf import settings
-from django.contrib.admin.views.decorators import staff_member_required
+
+from apps.users.otp_email import send_admin_otp_email
 
 User = get_user_model()
 
@@ -19,11 +19,10 @@ def send_otp(request):
     request.session['otp_created_at'] = time.time()
 
     user = User.objects.get(id=request.session['pre_otp_user_id'])
-    send_mail(
-        subject='[관리자] OTP 인증번호',
-        message=f'인증번호: {otp_code}\n5분 내로 입력해주세요.',
-        from_email=None,
-        recipient_list=[user.email],
+    send_admin_otp_email(
+        user.email,
+        otp_code,
+        subject="[관리자] OTP 인증번호",
     )
     return render(request, 'admin_otp/otp_verify.html')
 
