@@ -358,3 +358,34 @@ class ScoreHistory(models.Model):
         indexes = [
             models.Index(fields=["user", "score_type"]),
         ]
+
+
+class MonthlyWinner(models.Model):
+    """매월 학년 그룹별 우수 활동자 기록 (수상자는 이후 순위에서 제외)"""
+
+    GRADE_GROUP_CHOICES = (
+        ("1", "1학년"),
+        ("2", "2학년"),
+        ("34", "3·4학년"),
+    )
+
+    year = models.IntegerField()
+    month = models.IntegerField()
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="monthly_wins",
+    )
+    grade_group = models.CharField(max_length=5, choices=GRADE_GROUP_CHOICES)
+    score = models.IntegerField(help_text="수상 시점 점수")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("year", "month", "grade_group")
+        ordering = ["-year", "-month"]
+
+    def __str__(self):
+        return (
+            f"{self.year}-{self.month:02d} {self.grade_group}"
+            f" | {self.user.nickname} ({self.score}점)"
+        )

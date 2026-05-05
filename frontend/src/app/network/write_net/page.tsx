@@ -189,6 +189,7 @@ function WriteContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [category, setCategory] = useState<string | null>(null);
   const [content, setContent] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   const [newImages, setNewImages] = useState<ImageEntry[]>([]);
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
@@ -660,7 +661,7 @@ function WriteContent() {
     formData.append("type", type);
     formData.append("title", title);
     formData.append("content", contentWithPlaceholders);
-    formData.append("is_anonymous", "false");
+    formData.append("is_anonymous", String(isAnonymous));
     formData.append("use_real_name", "false");
     formData.append("category", category);
 
@@ -1032,6 +1033,19 @@ function WriteContent() {
             </div>
           </div>
         )}
+
+        <div className="mb-10 flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="network-write-anonymous-desktop"
+            checked={isAnonymous}
+            onChange={() => setIsAnonymous((v) => !v)}
+            className="h-4 w-4 accent-[#2B7FFF]"
+          />
+          <label htmlFor="network-write-anonymous-desktop" className="cursor-pointer text-sm text-[#6A7282]">
+            익명으로 작성
+          </label>
+        </div>
       </div>
     </div>
   );
@@ -1224,6 +1238,19 @@ function WriteContent() {
             </div>
           </div>
         )}
+
+        <div className="mb-8 flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="network-write-anonymous-mobile"
+            checked={isAnonymous}
+            onChange={() => setIsAnonymous((v) => !v)}
+            className="h-4 w-4 accent-[#2B7FFF]"
+          />
+          <label htmlFor="network-write-anonymous-mobile" className="cursor-pointer text-sm text-[#6A7282]">
+            익명으로 작성
+          </label>
+        </div>
       </div>
 
       {editor && showMobileToolbar && (
