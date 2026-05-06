@@ -935,6 +935,19 @@ function WriteContent() {
               >
                 🔗
               </button>
+
+              <div className="ml-auto flex items-center gap-1.5 border-l border-gray-200 pl-3">
+                <input
+                  type="checkbox"
+                  id="network-write-anonymous-desktop"
+                  checked={isAnonymous}
+                  onChange={() => setIsAnonymous((v) => !v)}
+                  className="h-4 w-4 accent-[#2B7FFF]"
+                />
+                <label htmlFor="network-write-anonymous-desktop" className="cursor-pointer text-sm text-[#6A7282]">
+                  익명
+                </label>
+              </div>
             </div>
           )}
         </div>
@@ -1034,18 +1047,6 @@ function WriteContent() {
           </div>
         )}
 
-        <div className="mb-10 flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="network-write-anonymous-desktop"
-            checked={isAnonymous}
-            onChange={() => setIsAnonymous((v) => !v)}
-            className="h-4 w-4 accent-[#2B7FFF]"
-          />
-          <label htmlFor="network-write-anonymous-desktop" className="cursor-pointer text-sm text-[#6A7282]">
-            익명으로 작성
-          </label>
-        </div>
       </div>
     </div>
   );
@@ -1138,6 +1139,19 @@ function WriteContent() {
               임시저장
             </button>
           )}
+
+          <div className="ml-auto flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              id="network-write-anonymous-mobile"
+              checked={isAnonymous}
+              onChange={() => setIsAnonymous((v) => !v)}
+              className="h-4 w-4 accent-[#2B7FFF]"
+            />
+            <label htmlFor="network-write-anonymous-mobile" className="cursor-pointer text-sm text-[#6A7282]">
+              익명
+            </label>
+          </div>
         </div>
 
         <input
@@ -1239,18 +1253,6 @@ function WriteContent() {
           </div>
         )}
 
-        <div className="mb-8 flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="network-write-anonymous-mobile"
-            checked={isAnonymous}
-            onChange={() => setIsAnonymous((v) => !v)}
-            className="h-4 w-4 accent-[#2B7FFF]"
-          />
-          <label htmlFor="network-write-anonymous-mobile" className="cursor-pointer text-sm text-[#6A7282]">
-            익명으로 작성
-          </label>
-        </div>
       </div>
 
       {editor && showMobileToolbar && (
