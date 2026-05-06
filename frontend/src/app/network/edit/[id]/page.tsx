@@ -558,6 +558,19 @@ function EditContent() {
             </div>
           )}
 
+          <div className="mb-10 flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="network-edit-anonymous"
+              checked={isAnonymous}
+              onChange={() => setIsAnonymous((v) => !v)}
+              className="h-4 w-4 accent-[#2B7FFF]"
+            />
+            <label htmlFor="network-edit-anonymous" className="cursor-pointer text-sm text-[#6A7282]">
+              익명으로 작성
+            </label>
+          </div>
+
         </div>
       </div>
     </div>

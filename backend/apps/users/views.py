@@ -16,7 +16,7 @@ from rest_framework.permissions import AllowAny
 
 from logs.utils import create_event_log
 
-from .models import User
+from .models import User, MonthlyWinner
 from .serializers import (
     UserSerializer,
     UpdateProfileSerializer,
@@ -693,50 +693,40 @@ class CompleteProfileView(generics.GenericAPIView):
     
 
 # 제외할 닉네임 목록
-EXCLUDED_NICKNAMES = {"wldud", "김만덕", "김승혁"}
-# 순위 불러 오기 
+EXCLUDED_NICKNAMES = {"wldud", "김만덕", "김승혁", "도도도", "leewise", "농진", "23", "몽당연필", "에사비"}
+
+
+# 순위 불러 오기 (과거 수상자 제외)
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def top_active_users(request):
-
-    grade1 = (
-        User.objects
-        .filter(user_type="student", grade=1)
-        .exclude(nickname__in=EXCLUDED_NICKNAMES) 
-        .exclude(is_staff=True)    
-        .order_by("-score")
-        .first()
+    past_winner_ids = set(
+        MonthlyWinner.objects.values_list("user_id", flat=True)
     )
 
-    grade2 = (
+    base_qs = (
         User.objects
-        .filter(user_type="student", grade=2)
-        .exclude(nickname__in=EXCLUDED_NICKNAMES) 
-        .exclude(is_staff=True)   
-        .order_by("-score")
-        .first()
-    )
-
-    grade34 = (
-        User.objects
+        .exclude(nickname__in=EXCLUDED_NICKNAMES)
+        .exclude(is_staff=True)
+        .exclude(id__in=past_winner_ids)
         .filter(user_type="student")
-        .filter(Q(grade=3) | Q(grade=4))
-        .exclude(nickname__in=EXCLUDED_NICKNAMES) 
-        .exclude(is_staff=True)   
         .order_by("-score")
-        .first()
     )
+
+    grade1 = base_qs.filter(grade=1).first()
+    grade2 = base_qs.filter(grade=2).first()
+    grade34 = base_qs.filter(Q(grade=3) | Q(grade=4)).first()
 
     users = [u for u in [grade1, grade2, grade34] if u]
 
     result = []
-
     for u in users:
         result.append({
             "id": u.id,
             "nickname": u.nickname,
             "profile_image": u.profile_image.url if u.profile_image else None,
             "level": u.level,
+            "score": u.score,
         })
 
     return Response(result)
