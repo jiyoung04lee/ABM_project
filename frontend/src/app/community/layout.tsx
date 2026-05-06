@@ -9,9 +9,7 @@ export default function CommunityLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-
   const hideHeader = pathname !== "/community";
-
   return (
     <>
       {!hideHeader && <Header />}
