@@ -935,26 +935,13 @@ function WriteContent() {
               >
                 🔗
               </button>
-
-              <div className="ml-auto flex items-center gap-1.5 border-l border-gray-200 pl-3">
-                <input
-                  type="checkbox"
-                  id="network-write-anonymous-desktop"
-                  checked={isAnonymous}
-                  onChange={() => setIsAnonymous((v) => !v)}
-                  className="h-4 w-4 accent-[#2B7FFF]"
-                />
-                <label htmlFor="network-write-anonymous-desktop" className="cursor-pointer text-sm text-[#6A7282]">
-                  익명
-                </label>
-              </div>
             </div>
           )}
         </div>
       </div>
 
       <div className="mx-auto flex-1 w-full max-w-4xl overflow-y-auto px-6 pb-20">
-        <div className="mb-4 mt-12">
+        <div className="mb-4 mt-12 flex items-center gap-3">
           <select
             value={category ?? ""}
             onChange={(e) => setCategory(e.target.value)}
@@ -966,6 +953,20 @@ function WriteContent() {
               </option>
             ))}
           </select>
+
+          <label
+            htmlFor="network-write-anonymous-desktop"
+            className="flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm text-[#6A7282] hover:bg-gray-200"
+          >
+            <input
+              type="checkbox"
+              id="network-write-anonymous-desktop"
+              checked={isAnonymous}
+              onChange={() => setIsAnonymous((v) => !v)}
+              className="h-4 w-4 accent-[#2B7FFF]"
+            />
+            익명
+          </label>
         </div>
 
         <input
@@ -1140,7 +1141,10 @@ function WriteContent() {
             </button>
           )}
 
-          <div className="ml-auto flex items-center gap-1.5">
+          <label
+            htmlFor="network-write-anonymous-mobile"
+            className="ml-auto flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm text-[#6A7282] hover:bg-gray-200"
+          >
             <input
               type="checkbox"
               id="network-write-anonymous-mobile"
@@ -1148,10 +1152,8 @@ function WriteContent() {
               onChange={() => setIsAnonymous((v) => !v)}
               className="h-4 w-4 accent-[#2B7FFF]"
             />
-            <label htmlFor="network-write-anonymous-mobile" className="cursor-pointer text-sm text-[#6A7282]">
-              익명
-            </label>
-          </div>
+            익명
+          </label>
         </div>
 
         <input
