@@ -221,7 +221,13 @@ class PostDetailSerializer(serializers.ModelSerializer):
         return obj.author.nickname if obj.author else "알 수 없음"
 
     def get_author_id(self, obj):
+        # 익명이라도 본인이 자기 글을 보는 경우엔 author_id 노출
+        # (수정/삭제 버튼 권한 체크용). 다른 사용자에겐 마스킹.
         if obj.is_anonymous:
+            request = self.context.get("request")
+            user = getattr(request, "user", None) if request else None
+            if user and user.is_authenticated and obj.author_id == user.id:
+                return obj.author_id
             return None
         return obj.author_id
 
@@ -601,7 +607,18 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_author_id(self, obj):
         author = getattr(obj, "author", None)
-        return author.id if author else None
+        if not author:
+            return None
+
+        # 익명 댓글은 본인이 볼 때만 author_id 노출 (수정/삭제 권한 체크용)
+        if obj.is_anonymous:
+            request = self.context.get("request")
+            user = getattr(request, "user", None) if request else None
+            if user and user.is_authenticated and author.id == user.id:
+                return author.id
+            return None
+
+        return author.id
 
     def get_replies(self, obj):
         replies = obj.replies.select_related("author").filter(is_deleted=False)
