@@ -777,7 +777,7 @@ class AdminOTPVerifyView(APIView):
         # JWT 토큰도 함께 발급
         refresh = RefreshToken.for_user(user)
 
-        return Response(
+        response = Response(
             {
                 "message": "로그인 성공",
                 "needs_profile": False,
@@ -789,6 +789,8 @@ class AdminOTPVerifyView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+        _set_jwt_cookies(response, refresh)
+        return response
 
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
