@@ -59,6 +59,7 @@ export default function LoginPage() {
       const res = await fetch(`${API_BASE}/api/users/admin-login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           email: adminEmail.trim(),
           password: adminPassword,
@@ -99,6 +100,7 @@ export default function LoginPage() {
       const res = await fetch(`${API_BASE}/api/users/admin-otp-verify/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           user_id: otpUserId,
           otp_code: otpCode,
