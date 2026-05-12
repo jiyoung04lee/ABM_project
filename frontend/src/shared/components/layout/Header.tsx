@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Mail, Bell, LayoutDashboard } from "lucide-react";
 import api from "@/shared/api/axios";
+import { TokenStorage } from "@/shared/api/api";
 import { useNotification } from "@/shared/contexts/NotificationContext";
 import Logo from "@/shared/components/layout/Logo";
 
@@ -39,10 +40,9 @@ export default function Header() {
   }, [setUnreadCount]);
 
   const handleLogout = async () => {
-    // 쿠키 삭제는 백엔드가 처리
-    await api.post("users/logout/").catch(() => {});
-    // user_id만 정리
-    localStorage.removeItem("user_id");
+    const refresh = TokenStorage.getRefresh();
+    await api.post("users/logout/", { refresh }).catch(() => {});
+    TokenStorage.clear(); // access_token, refresh_token, user_id 모두 삭제
     setIsLoggedIn(false);
     setIsAdmin(false);
     setUnreadCount(0);
