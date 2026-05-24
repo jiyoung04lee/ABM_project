@@ -69,7 +69,13 @@ import {
   getDashboardKpi,
   getOperationalLogs,
   getSessionAnalytics,
+  getSessionJourney,
+  getPopularByGrade,
+  getPostSegmentViews,
   type HeatmapRow,
+  type PopularByGradeGroup,
+  type PostSegmentViewPost,
+  type SessionTransition,
   type PageVisitorItem,
   type KnowledgeScoreItem,
   type UserManagementUser,
@@ -177,7 +183,8 @@ function getGradeBadgeColor(grade: string) {
     case "2학년": return "bg-green-100 text-green-700";
     case "3학년":
     case "4학년":
-    case "3-4학년": return "bg-purple-100 text-purple-700";
+    case "3-4학년":
+    case "3~4학년": return "bg-purple-100 text-purple-700";
     case "졸업생": return "bg-orange-100 text-orange-700";
     default: return "bg-gray-100 text-gray-700";
   }
@@ -420,6 +427,10 @@ export default function AdminPage() {
   const [sessionStats, setSessionStats] = useState<SessionStats | null>(null);
   const [sessionByGrade, setSessionByGrade] = useState<SessionByGrade[]>([]);
   const [sessionDistribution, setSessionDistribution] = useState<SessionDistributionBucket[]>([]);
+  const [sessionTransitions, setSessionTransitions] = useState<SessionTransition[]>([]);
+  const [popularByGrade, setPopularByGrade] = useState<PopularByGradeGroup[]>([]);
+  const [postSegmentViews, setPostSegmentViews] = useState<PostSegmentViewPost[]>([]);
+  const [expandedPostSegmentIds, setExpandedPostSegmentIds] = useState<Set<number>>(new Set());
   const [loadingSessionAnalytics, setLoadingSessionAnalytics] = useState(false);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
   const [loadingErrors, setLoadingErrors] = useState(false);
@@ -444,13 +455,23 @@ export default function AdminPage() {
     setLoadingAnalytics(true);
     Promise.all([
       getHeatmap().then((r) => r.data.rows),
-      getPageVisitors().then((r) => r.data.by_section),
-      getKnowledgeDeliveryScore().then((r) => r.data.by_grade),
+      getPageVisitors({ days: 30 }).then((r) => r.data.by_section),
+      getKnowledgeDeliveryScore({ days: 30 }).then((r) => r.data.by_grade),
+      getPopularByGrade({ top_n: 5 }).then((r) => r.data.by_grade),
+      getPostSegmentViews({
+        section: "network",
+        top_posts: 10,
+        top_segments: 3,
+        days: 30,
+      }).then((r) => r.data.posts),
     ])
-      .then(([rows, bySection, byGrade]) => {
+      .then(([rows, bySection, byGrade, popular, segmentPosts]) => {
         setHeatmapRows(rows);
         setPageVisitors(bySection);
         setKnowledgeScores(byGrade);
+        setPopularByGrade(popular);
+        setPostSegmentViews(segmentPosts);
+        setExpandedPostSegmentIds(new Set());
       })
       .catch(() => {})
       .finally(() => setLoadingAnalytics(false));
@@ -525,10 +546,14 @@ export default function AdminPage() {
       .then((r) => setSessionStats(r.data))
       .catch(() => {})
       .finally(() => setLoadingSession(false));
-    getSessionAnalytics({ days: 30 })
-      .then((r) => {
-        setSessionByGrade(r.data.by_grade);
-        setSessionDistribution(r.data.distribution);
+    Promise.all([
+      getSessionAnalytics({ days: 30 }),
+      getSessionJourney({ top_n: 10 }),
+    ])
+      .then(([analyticsRes, journeyRes]) => {
+        setSessionByGrade(analyticsRes.data.by_grade);
+        setSessionDistribution(analyticsRes.data.distribution);
+        setSessionTransitions(journeyRes.data.transitions);
       })
       .catch(() => {})
       .finally(() => setLoadingSessionAnalytics(false));
@@ -712,6 +737,9 @@ export default function AdminPage() {
       ["작성된 글", String(dashboardKpi?.today_posts ?? 0)],
       ["댓글", String(dashboardKpi?.today_comments ?? 0)],
       ["검색", String(dashboardKpi?.today_searches ?? 0)],
+      ["게시글 조회", String(dashboardKpi?.post_views ?? 0)],
+      ["참여(좋아요+댓글)", String(dashboardKpi?.engagements ?? 0)],
+      ["참여율(%)", String(dashboardKpi?.engagement_rate ?? 0)],
       [],
       ["페이지 방문수", "방문수"],
       ...pageVisitors.map((v) => [v.section_label, String(v.count)]),
@@ -900,7 +928,7 @@ export default function AdminPage() {
               <div className="mb-8 flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">대시보드</h1>
-                  <p className="text-gray-600">AIVE 플랫폼 전체 현황</p>
+                  <p className="text-gray-600">UGC·참여·검색·세션 KPI (EventLog 집계)</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1 rounded-xl border border-gray-200 p-1 bg-white">
@@ -930,31 +958,40 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
                 {loadingDashboardKpi ? (
                   <div className="col-span-full flex justify-center py-8">
                     <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : (
                   [
-                    { label: dashboardDays === 1 ? "순 방문자" : "순 방문자", value: dashboardKpi?.unique_visitors ?? 0, icon: Eye, color: "bg-cyan-100", iconColor: "text-cyan-600" },
-                    { label: dashboardDays === 1 ? "오늘 로그인" : "로그인", value: dashboardKpi?.today_logins ?? 0, icon: LogIn, color: "bg-blue-100", iconColor: "text-blue-600" },
-                    { label: dashboardDays === 1 ? "신규 가입" : "가입", value: dashboardKpi?.today_signups ?? 0, icon: UserPlus, color: "bg-green-100", iconColor: "text-green-600" },
-                    { label: "작성된 글", value: dashboardKpi?.today_posts ?? 0, icon: FileText, color: "bg-purple-100", iconColor: "text-purple-600" },
-                    { label: "댓글", value: dashboardKpi?.today_comments ?? 0, icon: MessageSquare, color: "bg-orange-100", iconColor: "text-orange-600" },
-                  ].map(({ label, value, icon: Icon, color, iconColor }) => (
-                    <div key={label} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center`}>
-                          <Icon className={`w-6 h-6 ${iconColor}`} />
+                    { label: "순 방문자", value: dashboardKpi?.unique_visitors ?? 0, suffix: "", icon: Eye, color: "bg-cyan-100", iconColor: "text-cyan-600" },
+                    { label: dashboardDays === 1 ? "로그인" : "로그인", value: dashboardKpi?.today_logins ?? 0, suffix: "", icon: LogIn, color: "bg-blue-100", iconColor: "text-blue-600" },
+                    { label: dashboardDays === 1 ? "신규 가입" : "가입", value: dashboardKpi?.today_signups ?? 0, suffix: "", icon: UserPlus, color: "bg-green-100", iconColor: "text-green-600" },
+                    { label: "검색", value: dashboardKpi?.today_searches ?? 0, suffix: "", icon: Search, color: "bg-pink-100", iconColor: "text-pink-600" },
+                    { label: "게시글 조회", value: dashboardKpi?.post_views ?? 0, suffix: "", icon: Eye, color: "bg-indigo-100", iconColor: "text-indigo-600" },
+                    { label: "참여율", value: dashboardKpi?.engagement_rate ?? 0, suffix: "%", icon: TrendingUp, color: "bg-amber-100", iconColor: "text-amber-600", sub: `좋아요+댓글 ${dashboardKpi?.engagements ?? 0}건` },
+                    { label: "작성 글", value: dashboardKpi?.today_posts ?? 0, suffix: "", icon: FileText, color: "bg-purple-100", iconColor: "text-purple-600" },
+                    { label: "댓글", value: dashboardKpi?.today_comments ?? 0, suffix: "", icon: MessageSquare, color: "bg-orange-100", iconColor: "text-orange-600" },
+                  ].map(({ label, value, suffix, sub, icon: Icon, color, iconColor }) => (
+                    <div key={label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center`}>
+                          <Icon className={`w-5 h-5 ${iconColor}`} />
                         </div>
-                        <span className="text-sm font-medium text-gray-600">{label}</span>
+                        <span className="text-xs font-medium text-gray-600">{label}</span>
                       </div>
-                      <div className="text-3xl font-bold text-gray-900">{value}</div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {typeof value === "number" ? value.toLocaleString() : value}{suffix}
+                      </div>
+                      {sub ? <p className="text-xs text-gray-500 mt-1">{sub}</p> : null}
                     </div>
                   ))
                 )}
               </div>
+              <p className="text-xs text-gray-500 mb-6 -mt-2">
+                참여율 = (좋아요 + 댓글) ÷ 게시글 조회 × 100 · GA4(유입·페이지)와 별도로 UGC 행동 지표를 EventLog로 집계합니다.
+              </p>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
@@ -1166,8 +1203,8 @@ export default function AdminPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                    <h3 className="font-semibold text-gray-900 mb-4">페이지별 방문자 수</h3>
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-6">
+                    <h3 className="font-semibold text-gray-900 mb-4">페이지별 방문자 수 (최근 30일)</h3>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={pageVisitors.map((v) => ({ name: v.section_label, visits: v.count }))}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -1177,6 +1214,142 @@ export default function AdminPage() {
                         <Bar dataKey="visits" fill="#2563EB" radius={[8, 8, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
+                  </div>
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                    <h3 className="font-semibold text-gray-900 mb-2">학년별 인기 글 Top 5</h3>
+                    <p className="text-sm text-gray-600 mb-6">조회·좋아요·댓글 가중 점수 기준 (커뮤니티·네트워크)</p>
+                    {popularByGrade.length === 0 ? (
+                      <p className="text-center text-gray-500 py-8">데이터가 없습니다.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {popularByGrade.map((group) => (
+                          <div key={group.viewer_grade} className="border border-gray-100 rounded-xl p-4">
+                            <h4 className="font-semibold text-gray-900 mb-3">{group.viewer_grade_label}</h4>
+                            <ol className="space-y-2">
+                              {group.posts.map((post, idx) => (
+                                <li key={`${post.section}-${post.post_id}`} className="text-sm">
+                                  <span className="text-gray-400 mr-2">{idx + 1}.</span>
+                                  <span className="text-gray-800">{post.title || `글 #${post.post_id}`}</span>
+                                  <span className="text-xs text-gray-500 ml-1">({post.score}점)</span>
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mt-6">
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      네트워크 게시글 · 학년×관심분야 조회
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      조회 Top 10 · 글 제목 클릭 시 세그먼트 Top 3 · 최근 30일 · 로그인·학년·관심분야 있는 조회만
+                    </p>
+                    {postSegmentViews.length === 0 ? (
+                      <p className="text-center text-gray-500 py-8">
+                        아직 데이터가 없습니다. 배포 후 로그인 사용자의 네트워크 글 조회부터 집계됩니다.
+                      </p>
+                    ) : (
+                      <ul className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
+                        {postSegmentViews.map((post) => {
+                          const expanded = expandedPostSegmentIds.has(post.post_id);
+                          const primary = post.primary_segment;
+                          const title = post.title || `글 #${post.post_id}`;
+                          return (
+                            <li key={post.post_id} className="bg-white">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExpandedPostSegmentIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(post.post_id)) next.delete(post.post_id);
+                                    else next.add(post.post_id);
+                                    return next;
+                                  });
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
+                              >
+                                {expanded ? (
+                                  <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                )}
+                                <span
+                                  className="flex-1 min-w-0 font-medium text-gray-900 truncate"
+                                  title={title}
+                                >
+                                  {title}
+                                </span>
+                                {primary ? (
+                                  <span className="flex-shrink-0 flex items-center gap-1.5">
+                                    <span
+                                      className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getGradeBadgeColor(primary.grade_label)}`}
+                                    >
+                                      {primary.grade_label}
+                                    </span>
+                                    <span
+                                      className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getInterestBadgeColor(primary.interest_label)}`}
+                                    >
+                                      {primary.interest_label}
+                                    </span>
+                                    <span className="text-xs text-gray-500 hidden sm:inline">
+                                      주요
+                                    </span>
+                                  </span>
+                                ) : null}
+                                <span className="flex-shrink-0 text-sm font-semibold text-[#2563EB] tabular-nums">
+                                  {post.total_views.toLocaleString()}회
+                                </span>
+                              </button>
+                              {expanded && post.top_segments.length > 0 ? (
+                                <div className="px-4 pb-4 pt-0 bg-gray-50/80 border-t border-gray-100">
+                                  <p className="text-xs text-gray-500 mb-2 pl-7">
+                                    학년 · 관심분야별 조회 Top {post.top_segments.length}
+                                  </p>
+                                  <ol className="space-y-1.5 pl-7">
+                                    {post.top_segments.map((seg) => (
+                                      <li
+                                        key={`${seg.grade_group}-${seg.interest}`}
+                                        className="flex items-center gap-2 text-sm"
+                                      >
+                                        <span className="w-8 text-gray-400 font-medium">
+                                          {seg.rank}위
+                                        </span>
+                                        <span
+                                          className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getGradeBadgeColor(seg.grade_label)}`}
+                                        >
+                                          {seg.grade_label}
+                                        </span>
+                                        <span
+                                          className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getInterestBadgeColor(seg.interest_label)}`}
+                                        >
+                                          {seg.interest_label}
+                                        </span>
+                                        <span className="ml-auto text-gray-700 font-semibold tabular-nums">
+                                          {seg.view_count.toLocaleString()}회
+                                        </span>
+                                      </li>
+                                    ))}
+                                  </ol>
+                                  <div className="mt-3 pl-7">
+                                    <Link
+                                      href={`/network/${post.post_id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-[#2563EB] hover:underline font-medium"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      글 보기 →
+                                    </Link>
+                                  </div>
+                                </div>
+                              ) : null}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
                 </>
               )}
@@ -1640,7 +1813,7 @@ export default function AdminPage() {
                       <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                         <Clock className="w-6 h-6 text-blue-600" />
                       </div>
-                      <span className="text-sm font-medium text-gray-600">평균 세션</span>
+                      <span className="text-sm font-medium text-gray-600">평균 세션 시간</span>
                     </div>
                     <div className="text-3xl font-bold text-gray-900">{sessionStats?.average_session_display ?? "0:00"}</div>
                   </div>
@@ -1649,12 +1822,43 @@ export default function AdminPage() {
                       <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                         <Activity className="w-6 h-6 text-green-600" />
                       </div>
-                      <span className="text-sm font-medium text-gray-600">평균 체류시간</span>
+                      <span className="text-sm font-medium text-gray-600">총 세션 수</span>
                     </div>
-                    <div className="text-3xl font-bold text-gray-900">{sessionStats?.average_session_display ?? "0:00"}</div>
+                    <div className="text-3xl font-bold text-gray-900">{(sessionStats?.total_sessions ?? 0).toLocaleString()}</div>
                   </div>
                 </div>
               )}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-8">
+                <h3 className="font-semibold text-gray-900 mb-2">섹션 전환 흐름 (Funnel)</h3>
+                <p className="text-sm text-gray-600 mb-6">세션 내 페이지뷰 순서 기준 상위 전환 (최근 30일)</p>
+                {loadingSessionAnalytics ? (
+                  <div className="flex justify-center py-8"><div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" /></div>
+                ) : sessionTransitions.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">데이터가 없습니다.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          {["출발", "→", "도착", "전환 수"].map((h) => (
+                            <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {sessionTransitions.map((t) => (
+                          <tr key={`${t.from_section}-${t.to_section}`} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900">{t.from_label}</td>
+                            <td className="px-4 py-3 text-gray-400">→</td>
+                            <td className="px-4 py-3 text-sm text-gray-900">{t.to_label}</td>
+                            <td className="px-4 py-3 text-sm font-bold text-[#2563EB]">{t.count.toLocaleString()}회</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
               {/* 학년별 평균 세션 시간 (분) */}
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-6">
                 <h3 className="font-semibold text-gray-900 mb-4">평균 세션 시간 (분)</h3>

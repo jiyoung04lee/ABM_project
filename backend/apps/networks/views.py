@@ -34,6 +34,7 @@ from logs.utils import (
     create_event_log,
     get_author_grade_info,
     get_viewer_grade_info,
+    get_viewer_interest_info,
 )
 
 from apps.users.utils_score import (
@@ -172,6 +173,9 @@ class PostViewSet(ModelViewSet):
                 user if user.is_authenticated else None
             )
             author = get_author_grade_info(getattr(instance, "author", None))
+            interest = get_viewer_interest_info(
+                user if user.is_authenticated else None
+            )
             create_event_log(
                 event_type="post_view",
                 section="network",
@@ -179,6 +183,7 @@ class PostViewSet(ModelViewSet):
                 user=user if user.is_authenticated else None,
                 **viewer,
                 **author,
+                **interest,
             )
 
         serializer = self.get_serializer(instance)
@@ -229,6 +234,7 @@ class PostViewSet(ModelViewSet):
 
         viewer = get_viewer_grade_info(user)
         author = get_author_grade_info(post.author)
+        interest = get_viewer_interest_info(user)
         create_event_log(
             event_type="like",
             section="network",
@@ -236,6 +242,7 @@ class PostViewSet(ModelViewSet):
             user=user,
             **viewer,
             **author,
+            **interest,
         )
 
         return Response({"liked": True, "like_count": post.like_count})
@@ -314,12 +321,15 @@ class PostViewSet(ModelViewSet):
 
         viewer = get_viewer_grade_info(request.user)
         author = get_author_grade_info(post.author)
+        interest = get_viewer_interest_info(request.user)
         create_event_log(
             event_type="comment",
             section="network",
             post_id=post.pk,
+            user=request.user,
             **viewer,
             **author,
+            **interest,
         )
 
         return Response(

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import LoginLogo from "@/shared/components/layout/LoginLoGo";
-import { API_BASE } from "@/shared/api/api";
+import { API_BASE, TokenStorage } from "@/shared/api/api";
 
 const KAKAO_REST_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY ?? "";
 
@@ -114,14 +114,14 @@ export default function LoginPage() {
         return;
       }
 
-      //  쿠키는 백엔드가 자동 발급, user_id만 유지
-      if (data.tokens?.access || data.user) {
-        // user_id는 비민감 정보라 localStorage 유지 (UI용)
-        if (data.user?.id) {
-          localStorage.setItem("user_id", String(data.user.id));
-        }
-        window.location.href = "/admin";
+      // 쿠키 + axios Authorization(크로스 도메인 대비) 모두 맞춤
+      if (data.tokens?.access && data.tokens?.refresh) {
+        TokenStorage.set(data.tokens.access, data.tokens.refresh);
       }
+      if (data.user?.id) {
+        localStorage.setItem("user_id", String(data.user.id));
+      }
+      window.location.href = "/admin";
 
     } catch {
       setOtpError("네트워크 오류입니다.");
