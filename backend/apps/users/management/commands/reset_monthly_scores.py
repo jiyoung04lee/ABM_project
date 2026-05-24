@@ -16,7 +16,7 @@ from django.db.models import Q
 from apps.users.models import User, ScoreHistory, MonthlyWinner
 
 
-EXCLUDED_NICKNAMES = {"wldud", "김만덕", "김승혁", "도도도", "leewise", "농진", "23", "몽당연필", "에사비"}
+EXCLUDED_NICKNAMES = {"wldud", "김만덕", "김승혁", "도도도", "leewise", "농진", "23", "몽당연필", "에사비", "애사비"}
 
 
 class Command(BaseCommand):

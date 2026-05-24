@@ -693,7 +693,7 @@ class CompleteProfileView(generics.GenericAPIView):
     
 
 # 제외할 닉네임 목록
-EXCLUDED_NICKNAMES = {"wldud", "김만덕", "김승혁", "도도도", "leewise", "농진", "23", "몽당연필", "에사비"}
+EXCLUDED_NICKNAMES = {"wldud", "김만덕", "김승혁", "도도도", "leewise", "농진", "23", "몽당연필", "에사비", "애사비"}
 
 
 # 순위 불러 오기 (과거 수상자 제외)
