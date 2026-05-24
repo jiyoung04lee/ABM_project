@@ -35,6 +35,7 @@ from logs.utils import (
     create_event_log,
     get_author_grade_info,
     get_viewer_grade_info,
+    get_viewer_interest_info,
 )
 
 class PostViewSet(ModelViewSet):
@@ -191,6 +192,7 @@ class PostViewSet(ModelViewSet):
 
             viewer = get_viewer_grade_info(user)
             author = get_author_grade_info(post.author)
+            interest = get_viewer_interest_info(user)
             create_event_log(
                 event_type="like",
                 section="community",
@@ -198,6 +200,7 @@ class PostViewSet(ModelViewSet):
                 user=user,
                 **viewer,
                 **author,
+                **interest,
             )
 
             return Response({
@@ -268,6 +271,7 @@ class PostViewSet(ModelViewSet):
 
         viewer = get_viewer_grade_info(request.user)
         author = get_author_grade_info(post.author)
+        interest = get_viewer_interest_info(request.user)
         create_event_log(
             event_type="comment",
             section="community",
@@ -275,6 +279,7 @@ class PostViewSet(ModelViewSet):
             user=request.user,
             **viewer,
             **author,
+            **interest,
         )
 
         return Response(
@@ -301,6 +306,7 @@ class PostViewSet(ModelViewSet):
 
                 viewer = get_viewer_grade_info(user)
                 author = get_author_grade_info(getattr(instance, "author", None))
+                interest = get_viewer_interest_info(user)
                 create_event_log(
                     event_type="post_view",
                     section="community",
@@ -308,6 +314,7 @@ class PostViewSet(ModelViewSet):
                     user=user,
                     **viewer,
                     **author,
+                    **interest,
                 )
         else:
             # 비로그인 사용자는 IP 기준

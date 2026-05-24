@@ -51,6 +51,16 @@ def get_viewer_grade_info(user: "User | None") -> dict[str, object]:
     }
 
 
+def get_viewer_interest_info(user: "User | None") -> dict[str, str | None]:
+    """온보딩 관심분야(첫 번째 선택) — post_view 등 UGC 이벤트용."""
+    if user is None or not getattr(user, "is_authenticated", False):
+        return {"interest_at_event": None}
+    interests = getattr(user, "interests", None) or []
+    if interests and interests[0] in ("ai", "data", "business"):
+        return {"interest_at_event": interests[0]}
+    return {"interest_at_event": None}
+
+
 # ---------------------------------------------------------------------------
 # 이벤트 설정 캐시 (ON/OFF 토글용)
 # ---------------------------------------------------------------------------
@@ -104,7 +114,7 @@ def create_event_log(
     author_grade_at_event: int | None = None,
     # 검색어
     search_keyword: str | None = None,
-    # 검색 시 행동자 관심분야 (search 이벤트용, ai/data/business)
+    # 검색 시 행동자 관심분야 (search / post_view / like / comment)
     interest_at_event: str | None = None,
     # 세션 식별 (page_view 시 프론트에서 전달, 체류시간 집계용)
     session_id: str | None = None,

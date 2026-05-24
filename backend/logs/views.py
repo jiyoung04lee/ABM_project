@@ -119,12 +119,24 @@ class DashboardKpiView(APIView):
             .count()
         )
 
+        post_views = qs.filter(event_type="post_view").count()
+        engagements = (
+            qs.filter(event_type="like").count()
+            + qs.filter(event_type="comment").count()
+        )
+        engagement_rate = (
+            round(engagements / post_views * 100, 1) if post_views > 0 else 0.0
+        )
+
         return Response({
             "today_logins": qs.filter(event_type="login").count(),
             "today_signups": qs.filter(event_type="signup").count(),
             "today_posts": qs.filter(event_type="post_create").count(),
             "today_comments": qs.filter(event_type="comment").count(),
             "today_searches": qs.filter(event_type="search").count(),
+            "post_views": post_views,
+            "engagements": engagements,
+            "engagement_rate": engagement_rate,
             "unique_visitors": unique_visitors,
             "days": days,
         })
@@ -370,6 +382,238 @@ class PopularByGradeView(APIView):
             })
 
         return Response({"by_grade": result})
+
+
+# ---------------------------------------------------------------------------
+# 2-2. 관심분야별 인기 글 (post_view 조회 수)
+#    GET /api/logs/analytics/popular-by-interest/?section=network&top_n=5&days=30
+# ---------------------------------------------------------------------------
+class PopularByInterestView(APIView):
+    """
+    온보딩 관심분야(ai/data/business)별 post_view 조회 Top N.
+    section: community | network (기본 network).
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request) -> Response:
+        from datetime import timedelta
+
+        section = request.query_params.get("section", "network").strip()
+        if section not in ("community", "network"):
+            section = "network"
+
+        try:
+            top_n = max(1, min(int(request.query_params.get("top_n", 5)), 20))
+        except (ValueError, TypeError):
+            top_n = 5
+
+        days_param = request.query_params.get("days")
+        qs = EventLog.objects.filter(
+            event_type="post_view",
+            section=section,
+            post_id__isnull=False,
+            interest_at_event__in=ALLOWED_INTERESTS,
+        )
+        if days_param is not None:
+            try:
+                days = max(1, min(int(days_param), 90))
+                since = timezone.now() - timedelta(days=days)
+                qs = qs.filter(created_at__gte=since)
+            except (ValueError, TypeError):
+                pass
+
+        rows = (
+            qs.values("interest_at_event", "post_id")
+            .annotate(view_count=Count("id"))
+            .order_by("interest_at_event", "-view_count")
+        )
+
+        by_interest: dict[str, list[dict]] = {k: [] for k in ALLOWED_INTERESTS}
+        for row in rows:
+            interest = row["interest_at_event"]
+            if interest not in by_interest:
+                continue
+            if len(by_interest[interest]) >= top_n:
+                continue
+            by_interest[interest].append(
+                {"post_id": row["post_id"], "view_count": row["view_count"]}
+            )
+
+        post_ids = {
+            item["post_id"]
+            for items in by_interest.values()
+            for item in items
+        }
+        title_map: dict[int, str] = {}
+        if post_ids:
+            if section == "community":
+                from apps.community.models import Post as CommunityPost
+
+                for p in CommunityPost.objects.filter(
+                    id__in=post_ids, is_deleted=False
+                ).values("id", "title"):
+                    title_map[p["id"]] = p["title"]
+            else:
+                from apps.networks.models import Post as NetworkPost
+
+                for p in NetworkPost.objects.filter(
+                    id__in=post_ids, is_deleted=False
+                ).values("id", "title"):
+                    title_map[p["id"]] = p["title"]
+
+        result = []
+        for interest in ALLOWED_INTERESTS:
+            posts = [
+                {
+                    "post_id": item["post_id"],
+                    "title": title_map.get(item["post_id"], ""),
+                    "view_count": item["view_count"],
+                }
+                for item in by_interest[interest]
+            ]
+            result.append({
+                "interest": interest,
+                "interest_label": INTEREST_LABEL[interest],
+                "posts": posts,
+            })
+
+        return Response({"section": section, "by_interest": result})
+
+
+# ---------------------------------------------------------------------------
+# 2-3. 게시글별 학년×관심분야 조회 (제목 중심 + 세그먼트 Top 3)
+#    GET /api/logs/analytics/post-segment-views/?section=network&top_posts=10&top_segments=3&days=30
+# ---------------------------------------------------------------------------
+GRADE_GROUP_LABEL = {1: "1학년", 2: "2학년", 34: "3~4학년"}
+
+
+class PostSegmentViewsView(APIView):
+    """
+    post_view를 게시글(post_id) 단위로 묶고,
+    각 글마다 (학년 그룹 × 관심분야) 조회 Top N 세그먼트와 1위 세그먼트를 반환.
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request) -> Response:
+        from datetime import timedelta
+
+        section = request.query_params.get("section", "network").strip()
+        if section not in ("community", "network"):
+            section = "network"
+
+        try:
+            top_posts = max(1, min(int(request.query_params.get("top_posts", 10)), 30))
+        except (ValueError, TypeError):
+            top_posts = 10
+
+        try:
+            top_segments = max(1, min(int(request.query_params.get("top_segments", 3)), 10))
+        except (ValueError, TypeError):
+            top_segments = 3
+
+        days = 30
+        days_param = request.query_params.get("days")
+        if days_param is not None:
+            try:
+                days = max(1, min(int(days_param), 90))
+            except (ValueError, TypeError):
+                days = 30
+
+        since = timezone.now() - timedelta(days=days)
+        qs = EventLog.objects.filter(
+            event_type="post_view",
+            section=section,
+            post_id__isnull=False,
+            interest_at_event__in=ALLOWED_INTERESTS,
+            grade_at_event__in=GRADES,
+            created_at__gte=since,
+        )
+
+        rows = (
+            qs.annotate(
+                grade_group=Case(
+                    When(grade_at_event=1, then=1),
+                    When(grade_at_event=2, then=2),
+                    When(grade_at_event__in=[3, 4], then=34),
+                    default=0,
+                    output_field=IntegerField(),
+                ),
+            )
+            .filter(grade_group__gt=0)
+            .values("post_id", "grade_group", "interest_at_event")
+            .annotate(view_count=Count("id"))
+        )
+
+        # post_id -> [(grade_group, interest, count), ...]
+        by_post: dict[int, list[tuple[int, str, int]]] = defaultdict(list)
+        for row in rows:
+            by_post[row["post_id"]].append(
+                (row["grade_group"], row["interest_at_event"], row["view_count"])
+            )
+
+        if not by_post:
+            return Response({
+                "section": section,
+                "days": days,
+                "posts": [],
+            })
+
+        # 총 조회수 기준 글 순위
+        post_totals = [
+            (post_id, sum(c for _, _, c in segs))
+            for post_id, segs in by_post.items()
+        ]
+        post_totals.sort(key=lambda x: -x[1])
+        top_post_ids = [pid for pid, _ in post_totals[:top_posts]]
+
+        title_map: dict[int, str] = {}
+        if section == "community":
+            from apps.community.models import Post as CommunityPost
+
+            for p in CommunityPost.objects.filter(
+                id__in=top_post_ids, is_deleted=False
+            ).values("id", "title"):
+                title_map[p["id"]] = p["title"]
+        else:
+            from apps.networks.models import Post as NetworkPost
+
+            for p in NetworkPost.objects.filter(
+                id__in=top_post_ids, is_deleted=False
+            ).values("id", "title"):
+                title_map[p["id"]] = p["title"]
+
+        def segment_payload(grade_group: int, interest: str, count: int, rank: int) -> dict:
+            return {
+                "rank": rank,
+                "grade_group": grade_group,
+                "grade_label": GRADE_GROUP_LABEL.get(grade_group, str(grade_group)),
+                "interest": interest,
+                "interest_label": INTEREST_LABEL.get(interest, interest),
+                "view_count": count,
+            }
+
+        posts_result = []
+        for post_id in top_post_ids:
+            segs = sorted(by_post[post_id], key=lambda x: -x[2])[:top_segments]
+            total = sum(c for _, _, c in by_post[post_id])
+            top_segments_list = [
+                segment_payload(g, i, c, r + 1)
+                for r, (g, i, c) in enumerate(segs)
+            ]
+            primary = top_segments_list[0] if top_segments_list else None
+            posts_result.append({
+                "post_id": post_id,
+                "title": title_map.get(post_id, ""),
+                "total_views": total,
+                "primary_segment": primary,
+                "top_segments": top_segments_list,
+            })
+
+        return Response({
+            "section": section,
+            "days": days,
+            "posts": posts_result,
+        })
 
 
 # ---------------------------------------------------------------------------
