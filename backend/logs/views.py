@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import date
 
 from django.db.models import Avg, Case, Count, IntegerField, Min, Max, Sum, When
 from rest_framework.permissions import AllowAny, IsAdminUser
@@ -81,32 +82,126 @@ def _weight_annotation() -> Case:
     return Case(*whens, default=0, output_field=IntegerField())
 
 
+def _parse_analytics_period(request: Request) -> tuple:
+    """
+    start_date/end_date(YYYY-MM-DD, inclusive) 우선.
+    없으면 days=1|7|30… (기본 1=오늘, 롤링 N일).
+    반환: (start_date|None, end_date|None, days|None)
+    """
+    from django.utils.dateparse import parse_date
+
+    start_s = (request.query_params.get("start_date") or "").strip()
+    end_s = (request.query_params.get("end_date") or "").strip()
+    if start_s and end_s:
+        start = parse_date(start_s)
+        end = parse_date(end_s)
+        if start and end:
+            if start > end:
+                start, end = end, start
+            return start, end, None
+
+    days_param = request.query_params.get("days", "1")
+    try:
+        days = max(1, min(90, int(days_param)))
+    except (ValueError, TypeError):
+        days = 1
+    return None, None, days
+
+
+def _parse_analytics_period_optional(request: Request) -> tuple:
+    """days/start_date 생략 시 전 기간(None). 대시보드 KPI 외 차트용."""
+    from django.utils.dateparse import parse_date
+
+    start_s = (request.query_params.get("start_date") or "").strip()
+    end_s = (request.query_params.get("end_date") or "").strip()
+    if start_s and end_s:
+        start = parse_date(start_s)
+        end = parse_date(end_s)
+        if start and end:
+            if start > end:
+                start, end = end, start
+            return start, end, None
+
+    days_param = request.query_params.get("days")
+    if days_param:
+        try:
+            days = max(1, min(90, int(days_param)))
+            return None, None, days
+        except (ValueError, TypeError):
+            pass
+    return None, None, None
+
+
+def _period_response_meta(
+    start_date: date | None, end_date: date | None, days: int | None
+) -> dict[str, object]:
+    if start_date and end_date:
+        return {
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+        }
+    return {"days": days}
+
+
+def _resolve_analytics_period(
+    request: Request, default_days: int | None = None
+) -> tuple:
+    """optional 파싱 + default_days(예: post-segment 30일)."""
+    start_date, end_date, days = _parse_analytics_period_optional(request)
+    if start_date is None and end_date is None and days is None and default_days is not None:
+        days = default_days
+    return start_date, end_date, days
+
+
+def _filter_eventlog_by_period(qs, start_date, end_date, days):
+    from datetime import timedelta
+
+    if start_date and end_date:
+        return qs.filter(
+            created_at__date__gte=start_date,
+            created_at__date__lte=end_date,
+        )
+    if days == 1:
+        return qs.filter(created_at__date=timezone.localdate())
+    if days is not None:
+        since = timezone.now() - timedelta(days=days)
+        return qs.filter(created_at__gte=since)
+    return qs
+
+
+def _filter_created_at_by_period(qs, start_date, end_date, days):
+    from datetime import timedelta
+
+    if start_date and end_date:
+        return qs.filter(
+            created_at__date__gte=start_date,
+            created_at__date__lte=end_date,
+        )
+    if days == 1:
+        return qs.filter(created_at__date=timezone.localdate())
+    if days is not None:
+        since = timezone.now() - timedelta(days=days)
+        return qs.filter(created_at__gte=since)
+    return qs
+
+
 # ---------------------------------------------------------------------------
 # 0. 대시보드 KPI (기간별 집계)
-#    GET /api/logs/analytics/dashboard-kpi/?days=1|7|30 (기본 1=오늘)
+#    GET /api/logs/analytics/dashboard-kpi/?days=1|7|30
+#    GET /api/logs/analytics/dashboard-kpi/?start_date=2026-05-01&end_date=2026-05-07
 # ---------------------------------------------------------------------------
 class DashboardKpiView(APIView):
     """
     대시보드 상단 KPI: 로그인, 신규 가입, 작성된 글, 댓글, 검색 수.
-    쿼리 days=1(오늘), 7(지난 7일), 30(지난 30일). 기본 1.
+    쿼리 days=1(오늘), 7, 30 또는 start_date/end_date(달력 기간, inclusive).
     """
     permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
-        from datetime import timedelta
-
-        days_param = request.query_params.get("days", "1")
-        try:
-            days = max(1, min(90, int(days_param)))
-        except (ValueError, TypeError):
-            days = 1
-
-        if days == 1:
-            today = timezone.localdate()
-            qs = EventLog.objects.filter(created_at__date=today)
-        else:
-            since = timezone.now() - timedelta(days=days)
-            qs = EventLog.objects.filter(created_at__gte=since)
+        start_date, end_date, days = _parse_analytics_period(request)
+        qs = _filter_eventlog_by_period(
+            EventLog.objects.all(), start_date, end_date, days
+        )
 
         unique_visitors = (
             qs.filter(
@@ -138,7 +233,7 @@ class DashboardKpiView(APIView):
             "engagements": engagements,
             "engagement_rate": engagement_rate,
             "unique_visitors": unique_visitors,
-            "days": days,
+            **_period_response_meta(start_date, end_date, days),
         })
 
 
@@ -224,9 +319,14 @@ class HeatmapView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
+        start_date, end_date, days = _resolve_analytics_period(request)
         rows = (
-            EventLog.objects
-            .filter(event_type__in=INTERACTION_EVENT_TYPES)
+            _filter_eventlog_by_period(
+                EventLog.objects.filter(event_type__in=INTERACTION_EVENT_TYPES),
+                start_date,
+                end_date,
+                days,
+            )
             .annotate(weight=_weight_annotation())
             .values(
                 "author_grade_at_event",
@@ -306,12 +406,14 @@ class PopularByGradeView(APIView):
             top_n = 5
 
         rows = (
-            EventLog.objects
-            .filter(
-                event_type__in=INTERACTION_EVENT_TYPES,
-                grade_at_event__in=GRADES,
-                post_id__isnull=False,
-                section__in=("community", "network"),
+            _filter_eventlog_by_period(
+                EventLog.objects.filter(
+                    event_type__in=INTERACTION_EVENT_TYPES,
+                    grade_at_event__in=GRADES,
+                    post_id__isnull=False,
+                    section__in=("community", "network"),
+                ),
+                *_resolve_analytics_period(request),
             )
             .values("grade_at_event", "section", "post_id")
             .annotate(score=Sum(_weight_annotation()))
@@ -396,8 +498,6 @@ class PopularByInterestView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
-        from datetime import timedelta
-
         section = request.query_params.get("section", "network").strip()
         if section not in ("community", "network"):
             section = "network"
@@ -407,20 +507,18 @@ class PopularByInterestView(APIView):
         except (ValueError, TypeError):
             top_n = 5
 
-        days_param = request.query_params.get("days")
-        qs = EventLog.objects.filter(
-            event_type="post_view",
-            section=section,
-            post_id__isnull=False,
-            interest_at_event__in=ALLOWED_INTERESTS,
+        start_date, end_date, days = _resolve_analytics_period(request)
+        qs = _filter_eventlog_by_period(
+            EventLog.objects.filter(
+                event_type="post_view",
+                section=section,
+                post_id__isnull=False,
+                interest_at_event__in=ALLOWED_INTERESTS,
+            ),
+            start_date,
+            end_date,
+            days,
         )
-        if days_param is not None:
-            try:
-                days = max(1, min(int(days_param), 90))
-                since = timezone.now() - timedelta(days=days)
-                qs = qs.filter(created_at__gte=since)
-            except (ValueError, TypeError):
-                pass
 
         rows = (
             qs.values("interest_at_event", "post_id")
@@ -495,8 +593,6 @@ class PostSegmentViewsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
-        from datetime import timedelta
-
         section = request.query_params.get("section", "network").strip()
         if section not in ("community", "network"):
             section = "network"
@@ -511,22 +607,18 @@ class PostSegmentViewsView(APIView):
         except (ValueError, TypeError):
             top_segments = 3
 
-        days = 30
-        days_param = request.query_params.get("days")
-        if days_param is not None:
-            try:
-                days = max(1, min(int(days_param), 90))
-            except (ValueError, TypeError):
-                days = 30
-
-        since = timezone.now() - timedelta(days=days)
-        qs = EventLog.objects.filter(
-            event_type="post_view",
-            section=section,
-            post_id__isnull=False,
-            interest_at_event__in=ALLOWED_INTERESTS,
-            grade_at_event__in=GRADES,
-            created_at__gte=since,
+        start_date, end_date, days = _resolve_analytics_period(request, default_days=30)
+        qs = _filter_eventlog_by_period(
+            EventLog.objects.filter(
+                event_type="post_view",
+                section=section,
+                post_id__isnull=False,
+                interest_at_event__in=ALLOWED_INTERESTS,
+                grade_at_event__in=GRADES,
+            ),
+            start_date,
+            end_date,
+            days,
         )
 
         rows = (
@@ -554,7 +646,7 @@ class PostSegmentViewsView(APIView):
         if not by_post:
             return Response({
                 "section": section,
-                "days": days,
+                **_period_response_meta(start_date, end_date, days),
                 "posts": [],
             })
 
@@ -611,7 +703,7 @@ class PostSegmentViewsView(APIView):
 
         return Response({
             "section": section,
-            "days": days,
+            **_period_response_meta(start_date, end_date, days),
             "posts": posts_result,
         })
 
@@ -638,10 +730,16 @@ class SearchRankingView(APIView):
         section = request.query_params.get("section")
         interest_param = request.query_params.get("interest")
 
-        qs = EventLog.objects.filter(
-            event_type="search",
-            search_keyword__isnull=False,
-        ).exclude(search_keyword="")
+        start_date, end_date, days = _resolve_analytics_period(request)
+        qs = _filter_eventlog_by_period(
+            EventLog.objects.filter(
+                event_type="search",
+                search_keyword__isnull=False,
+            ).exclude(search_keyword=""),
+            start_date,
+            end_date,
+            days,
+        )
 
         if section:
             qs = qs.filter(section=section)
@@ -771,21 +869,17 @@ class PageVisitorsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
-        from datetime import timedelta
-
         order = ["community", "department", "network", "home"]
-        qs = EventLog.objects.filter(
-            event_type="page_view",
-            section__in=order,
+        start_date, end_date, days = _parse_analytics_period_optional(request)
+        qs = _filter_eventlog_by_period(
+            EventLog.objects.filter(
+                event_type="page_view",
+                section__in=order,
+            ),
+            start_date,
+            end_date,
+            days,
         )
-        days_param = request.query_params.get("days")
-        if days_param:
-            try:
-                days = max(1, min(90, int(days_param)))
-                since = timezone.now() - timedelta(days=days)
-                qs = qs.filter(created_at__gte=since)
-            except (ValueError, TypeError):
-                pass
 
         rows = qs.values("section").annotate(count=Count("id"))
         by_section = {r["section"]: r["count"] for r in rows}
@@ -821,20 +915,16 @@ class SessionStatsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
-        from datetime import timedelta
-
-        qs = (
-            EventLog.objects
-            .filter(event_type="page_view", session_id__isnull=False)
-            .exclude(session_id="")
+        start_date, end_date, days = _resolve_analytics_period(request)
+        qs = _filter_eventlog_by_period(
+            EventLog.objects.filter(
+                event_type="page_view",
+                session_id__isnull=False,
+            ).exclude(session_id=""),
+            start_date,
+            end_date,
+            days,
         )
-        days_param = request.query_params.get("days")
-        if days_param:
-            try:
-                since = timezone.now() - timedelta(days=int(days_param))
-                qs = qs.filter(created_at__gte=since)
-            except (ValueError, TypeError):
-                pass
 
         rows = list(
             qs.values("session_id").annotate(
@@ -890,22 +980,18 @@ class SessionAnalyticsView(APIView):
     ]
 
     def get(self, request: Request) -> Response:
-        from datetime import timedelta
-
-        qs = (
-            EventLog.objects
-            .filter(event_type="page_view", session_id__isnull=False)
-            .exclude(session_id="")
-            .values("session_id", "created_at", "grade_at_event", "user_type")
-            .order_by("session_id", "created_at")
+        start_date, end_date, days = _resolve_analytics_period(request)
+        qs = _filter_eventlog_by_period(
+            EventLog.objects.filter(
+                event_type="page_view",
+                session_id__isnull=False,
+            ).exclude(session_id=""),
+            start_date,
+            end_date,
+            days,
+        ).values("session_id", "created_at", "grade_at_event", "user_type").order_by(
+            "session_id", "created_at"
         )
-        days_param = request.query_params.get("days")
-        if days_param:
-            try:
-                since = timezone.now() - timedelta(days=int(days_param))
-                qs = qs.filter(created_at__gte=since)
-            except (ValueError, TypeError):
-                pass
 
         rows = list(qs)
         # 세션별 그룹: { session_id: [ (created_at, grade_at_event, user_type), ... ] }
@@ -990,20 +1076,11 @@ class KnowledgeDeliveryScoreView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
-        from datetime import timedelta
-
         from apps.users.models import User
         from apps.community.models import Post as CPost, Comment as CComment
         from apps.networks.models import Post as NPost, Comment as NComment
 
-        since = None
-        days_param = request.query_params.get("days")
-        if days_param:
-            try:
-                days = max(1, min(90, int(days_param)))
-                since = timezone.now() - timedelta(days=days)
-            except (ValueError, TypeError):
-                pass
+        start_date, end_date, days = _parse_analytics_period_optional(request)
 
         # 졸업생 가입자가 실제로 존재하는지 확인
         has_graduate_users = User.objects.filter(user_type="graduate").exists()
@@ -1037,11 +1114,10 @@ class KnowledgeDeliveryScoreView(APIView):
         n_post_qs = NPost.objects.filter(is_deleted=False)
         c_comment_qs = CComment.objects.filter(is_deleted=False)
         n_comment_qs = NComment.objects.filter(is_deleted=False)
-        if since is not None:
-            c_post_qs = c_post_qs.filter(created_at__gte=since)
-            n_post_qs = n_post_qs.filter(created_at__gte=since)
-            c_comment_qs = c_comment_qs.filter(created_at__gte=since)
-            n_comment_qs = n_comment_qs.filter(created_at__gte=since)
+        c_post_qs = _filter_created_at_by_period(c_post_qs, start_date, end_date, days)
+        n_post_qs = _filter_created_at_by_period(n_post_qs, start_date, end_date, days)
+        c_comment_qs = _filter_created_at_by_period(c_comment_qs, start_date, end_date, days)
+        n_comment_qs = _filter_created_at_by_period(n_comment_qs, start_date, end_date, days)
 
         # P, L 기본치: Post/Comment 테이블 기준
         for row in c_post_qs.values("author_id", "like_count"):
@@ -1078,8 +1154,9 @@ class KnowledgeDeliveryScoreView(APIView):
             author_grade_at_event__in=GRADES,
             grade_at_event__in=GRADES,
         )
-        if since is not None:
-            like_log_qs = like_log_qs.filter(created_at__gte=since)
+        like_log_qs = _filter_eventlog_by_period(
+            like_log_qs, start_date, end_date, days
+        )
         for row in like_log_qs.values("author_grade_at_event", "grade_at_event"):
             author_g = row["author_grade_at_event"]
             consumer_g = row["grade_at_event"]
@@ -1100,8 +1177,9 @@ class KnowledgeDeliveryScoreView(APIView):
             author_grade_at_event__in=GRADES,
             grade_at_event__in=GRADES,
         )
-        if since is not None:
-            comment_log_qs = comment_log_qs.filter(created_at__gte=since)
+        comment_log_qs = _filter_eventlog_by_period(
+            comment_log_qs, start_date, end_date, days
+        )
         for row in comment_log_qs.values("author_grade_at_event", "grade_at_event"):
             author_g = row["author_grade_at_event"]
             consumer_g = row["grade_at_event"]
@@ -1334,16 +1412,18 @@ class SessionJourneyView(APIView):
         except (ValueError, TypeError):
             top_n = 15
 
-        # session_id 있고 section 있는 page_view 로그만
-        qs = (
-            EventLog.objects
-            .filter(
+        start_date, end_date, days = _resolve_analytics_period(request)
+        qs = _filter_eventlog_by_period(
+            EventLog.objects.filter(
                 event_type="page_view",
                 session_id__isnull=False,
                 section__isnull=False,
-            )
-            .values("session_id", "section", "created_at")
-            .order_by("session_id", "created_at")
+            ),
+            start_date,
+            end_date,
+            days,
+        ).values("session_id", "section", "created_at").order_by(
+            "session_id", "created_at"
         )
 
         # 세션별로 섹션 순서 묶기 → 전환 쌍(from→to) 카운트
@@ -1379,8 +1459,15 @@ class SessionJourneyView(APIView):
 
         # 섹션별 방문 빈도 (여정맵 보조 정보)
         section_visits = (
-            EventLog.objects
-            .filter(event_type="page_view", section__isnull=False)
+            _filter_eventlog_by_period(
+                EventLog.objects.filter(
+                    event_type="page_view",
+                    section__isnull=False,
+                ),
+                start_date,
+                end_date,
+                days,
+            )
             .values("section")
             .annotate(visits=Count("id"))
             .order_by("-visits")
