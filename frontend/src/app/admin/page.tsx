@@ -104,6 +104,89 @@ type ViewType =
   | "sessions"
   | "announcements";
 
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function dashboardPresetRange(preset: 1 | 7 | 30): { start: string; end: string } {
+  const end = new Date();
+  const start = new Date();
+  if (preset > 1) {
+    start.setDate(start.getDate() - (preset - 1));
+  }
+  return { start: formatLocalDate(start), end: formatLocalDate(end) };
+}
+
+type AdminPeriodPreset = 1 | 7 | 30 | "custom";
+
+function toPeriodParams(startDate: string, endDate: string) {
+  return { start_date: startDate, end_date: endDate };
+}
+
+function PeriodRangeControls({
+  preset,
+  startDate,
+  endDate,
+  onPreset,
+  onStartDateChange,
+  onEndDateChange,
+}: {
+  preset: AdminPeriodPreset;
+  startDate: string;
+  endDate: string;
+  onPreset: (preset: 1 | 7 | 30) => void;
+  onStartDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-1 rounded-xl border border-gray-200 p-1 bg-white">
+        {([1, 7, 30] as const).map((d) => (
+          <button
+            key={d}
+            type="button"
+            onClick={() => onPreset(d)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              preset === d
+                ? "bg-[#2563EB] text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            {d === 1 ? "오늘" : d === 7 ? "7일" : "30일"}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-1.5">
+        <label className="flex items-center gap-1.5 text-sm text-gray-600">
+          <span className="sr-only">시작일</span>
+          <input
+            type="date"
+            value={startDate}
+            max={endDate}
+            onChange={(e) => onStartDateChange(e.target.value)}
+            className="rounded-lg border-0 bg-transparent text-sm text-gray-900 focus:ring-2 focus:ring-[#2563EB] p-0"
+          />
+        </label>
+        <span className="text-gray-400 text-sm">~</span>
+        <label className="flex items-center gap-1.5 text-sm text-gray-600">
+          <span className="sr-only">종료일</span>
+          <input
+            type="date"
+            value={endDate}
+            min={startDate}
+            max={formatLocalDate(new Date())}
+            onChange={(e) => onEndDateChange(e.target.value)}
+            className="rounded-lg border-0 bg-transparent text-sm text-gray-900 focus:ring-2 focus:ring-[#2563EB] p-0"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
 // 이벤트 상세 패널용 타입 (EventDetailPanel에서 사용)
 interface OperationalLog {
   id: number;
@@ -397,7 +480,25 @@ export default function AdminPage() {
   const [notificationToCurrentList, setNotificationToCurrentList] = useState(false);
   const [notificationSending, setNotificationSending] = useState(false);
   const [notificationError, setNotificationError] = useState("");
-  const [dashboardDays, setDashboardDays] = useState<1 | 7 | 30>(1);
+  const [dashboardPreset, setDashboardPreset] = useState<1 | 7 | 30 | "custom">(1);
+  const [dashboardStartDate, setDashboardStartDate] = useState(
+    () => dashboardPresetRange(1).start
+  );
+  const [dashboardEndDate, setDashboardEndDate] = useState(
+    () => dashboardPresetRange(1).end
+  );
+  const defaultAnalyticsRange = dashboardPresetRange(30);
+  const [analyticsPreset, setAnalyticsPreset] = useState<AdminPeriodPreset>(30);
+  const [analyticsStartDate, setAnalyticsStartDate] = useState(defaultAnalyticsRange.start);
+  const [analyticsEndDate, setAnalyticsEndDate] = useState(defaultAnalyticsRange.end);
+  const defaultSessionsRange = dashboardPresetRange(30);
+  const [sessionsPreset, setSessionsPreset] = useState<AdminPeriodPreset>(30);
+  const [sessionsStartDate, setSessionsStartDate] = useState(defaultSessionsRange.start);
+  const [sessionsEndDate, setSessionsEndDate] = useState(defaultSessionsRange.end);
+  const defaultSearchRange = dashboardPresetRange(30);
+  const [searchPreset, setSearchPreset] = useState<AdminPeriodPreset>(30);
+  const [searchStartDate, setSearchStartDate] = useState(defaultSearchRange.start);
+  const [searchEndDate, setSearchEndDate] = useState(defaultSearchRange.end);
   const [siteNotices, setSiteNotices] = useState<SiteNoticeItem[]>([]);
   const [loadingSiteNotices, setLoadingSiteNotices] = useState(false);
   const [noticeModalOpen, setNoticeModalOpen] = useState(false);
@@ -452,17 +553,19 @@ export default function AdminPage() {
   // 행동 분석
   useEffect(() => {
     if (!isAdmin || currentView !== "analytics") return;
+    if (!analyticsStartDate || !analyticsEndDate) return;
     setLoadingAnalytics(true);
+    const periodParams = toPeriodParams(analyticsStartDate, analyticsEndDate);
     Promise.all([
-      getHeatmap().then((r) => r.data.rows),
-      getPageVisitors({ days: 30 }).then((r) => r.data.by_section),
-      getKnowledgeDeliveryScore({ days: 30 }).then((r) => r.data.by_grade),
-      getPopularByGrade({ top_n: 5 }).then((r) => r.data.by_grade),
+      getHeatmap(periodParams).then((r) => r.data.rows),
+      getPageVisitors(periodParams).then((r) => r.data.by_section),
+      getKnowledgeDeliveryScore(periodParams).then((r) => r.data.by_grade),
+      getPopularByGrade({ top_n: 5, ...periodParams }).then((r) => r.data.by_grade),
       getPostSegmentViews({
         section: "network",
         top_posts: 10,
         top_segments: 3,
-        days: 30,
+        ...periodParams,
       }).then((r) => r.data.posts),
     ])
       .then(([rows, bySection, byGrade, popular, segmentPosts]) => {
@@ -475,7 +578,7 @@ export default function AdminPage() {
       })
       .catch(() => {})
       .finally(() => setLoadingAnalytics(false));
-  }, [isAdmin, currentView]);
+  }, [isAdmin, currentView, analyticsStartDate, analyticsEndDate]);
 
   // 에러 모니터링
   useEffect(() => {
@@ -526,29 +629,32 @@ export default function AdminPage() {
   // 검색 분석
   useEffect(() => {
     if (!isAdmin || currentView !== "searchAnalytics") return;
+    if (!searchStartDate || !searchEndDate) return;
     setLoadingSearch(true);
     const interest = searchInterestFilter === "all" ? undefined : searchInterestFilter === "AI" ? "ai" : searchInterestFilter === "데이터" ? "data" : "business";
-    getSearchRanking({ top_n: 10, interest })
+    getSearchRanking({ top_n: 10, interest, ...toPeriodParams(searchStartDate, searchEndDate) })
       .then((r) => {
         setSearchTotal(r.data.total_search_count);
         setSearchRanking(r.data.ranking);
       })
       .catch(() => {})
       .finally(() => setLoadingSearch(false));
-  }, [isAdmin, currentView, searchInterestFilter]);
+  }, [isAdmin, currentView, searchInterestFilter, searchStartDate, searchEndDate]);
 
   // 세션 분석
   useEffect(() => {
     if (!isAdmin || currentView !== "sessions") return;
+    if (!sessionsStartDate || !sessionsEndDate) return;
     setLoadingSession(true);
     setLoadingSessionAnalytics(true);
-    getSessionStats({ days: 30 })
+    const periodParams = toPeriodParams(sessionsStartDate, sessionsEndDate);
+    getSessionStats(periodParams)
       .then((r) => setSessionStats(r.data))
       .catch(() => {})
       .finally(() => setLoadingSession(false));
     Promise.all([
-      getSessionAnalytics({ days: 30 }),
-      getSessionJourney({ top_n: 10 }),
+      getSessionAnalytics(periodParams),
+      getSessionJourney({ top_n: 10, ...periodParams }),
     ])
       .then(([analyticsRes, journeyRes]) => {
         setSessionByGrade(analyticsRes.data.by_grade);
@@ -557,17 +663,18 @@ export default function AdminPage() {
       })
       .catch(() => {})
       .finally(() => setLoadingSessionAnalytics(false));
-  }, [isAdmin, currentView]);
+  }, [isAdmin, currentView, sessionsStartDate, sessionsEndDate]);
 
   // 대시보드 KPI + 페이지방문 + 지식전달
   useEffect(() => {
     if (!isAdmin || currentView !== "dashboard") return;
+    if (!dashboardStartDate || !dashboardEndDate) return;
     setLoadingDashboardKpi(true);
-    const days = dashboardDays;
+    const periodParams = toPeriodParams(dashboardStartDate, dashboardEndDate);
     Promise.all([
-      getDashboardKpi({ days }).then((r) => r.data),
-      getPageVisitors({ days }).then((r) => r.data.by_section),
-      getKnowledgeDeliveryScore({ days }).then((r) => r.data.by_grade),
+      getDashboardKpi(periodParams).then((r) => r.data),
+      getPageVisitors(periodParams).then((r) => r.data.by_section),
+      getKnowledgeDeliveryScore(periodParams).then((r) => r.data.by_grade),
     ])
       .then(([kpi, bySection, byGrade]) => {
         setDashboardKpi(kpi);
@@ -576,7 +683,7 @@ export default function AdminPage() {
       })
       .catch(() => setDashboardKpi(null))
       .finally(() => setLoadingDashboardKpi(false));
-  }, [isAdmin, currentView, dashboardDays]);
+  }, [isAdmin, currentView, dashboardStartDate, dashboardEndDate]);
 
   // 운영 로그 목록 (event_type: all->빈값, post->post_create)
   const operationalEventType =
@@ -724,7 +831,7 @@ export default function AdminPage() {
   };
 
   const handleExportCsv = () => {
-    const periodLabel = dashboardDays === 1 ? "오늘" : dashboardDays === 7 ? "지난 7일" : "지난 30일";
+    const periodLabel = `${dashboardStartDate} ~ ${dashboardEndDate}`;
     const rows: string[][] = [
       ["AIVE 대시보드 내보내기", ""],
       ["기간", periodLabel],
@@ -766,7 +873,7 @@ export default function AdminPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `aive-dashboard-${dashboardDays}days-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `aive-dashboard-${dashboardStartDate}_${dashboardEndDate}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -925,32 +1032,38 @@ export default function AdminPage() {
           {/* ── 대시보드 ── */}
           {currentView === "dashboard" && (
             <>
-              <div className="mb-8 flex items-center justify-between">
+              <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">대시보드</h1>
                   <p className="text-gray-600">UGC·참여·검색·세션 KPI (EventLog 집계)</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    집계 기간: {dashboardStartDate} ~ {dashboardEndDate}
+                  </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 rounded-xl border border-gray-200 p-1 bg-white">
-                    {([1, 7, 30] as const).map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => setDashboardDays(d)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          dashboardDays === d
-                            ? "bg-[#2563EB] text-white"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
-                      >
-                        {d === 1 ? "오늘" : d === 7 ? "지난 7일" : "지난 30일"}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex flex-col items-stretch sm:items-end gap-3">
+                  <PeriodRangeControls
+                    preset={dashboardPreset}
+                    startDate={dashboardStartDate}
+                    endDate={dashboardEndDate}
+                    onPreset={(d) => {
+                      const range = dashboardPresetRange(d);
+                      setDashboardPreset(d);
+                      setDashboardStartDate(range.start);
+                      setDashboardEndDate(range.end);
+                    }}
+                    onStartDateChange={(v) => {
+                      setDashboardStartDate(v);
+                      setDashboardPreset("custom");
+                    }}
+                    onEndDateChange={(v) => {
+                      setDashboardEndDate(v);
+                      setDashboardPreset("custom");
+                    }}
+                  />
                   <button
                     type="button"
                     onClick={handleExportCsv}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white rounded-xl hover:shadow-lg transition-all"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white rounded-xl hover:shadow-lg transition-all self-end"
                   >
                     <Download className="w-4 h-4" />
                     <span className="text-sm font-semibold">Export CSV</span>
@@ -966,8 +1079,8 @@ export default function AdminPage() {
                 ) : (
                   [
                     { label: "순 방문자", value: dashboardKpi?.unique_visitors ?? 0, suffix: "", icon: Eye, color: "bg-cyan-100", iconColor: "text-cyan-600" },
-                    { label: dashboardDays === 1 ? "로그인" : "로그인", value: dashboardKpi?.today_logins ?? 0, suffix: "", icon: LogIn, color: "bg-blue-100", iconColor: "text-blue-600" },
-                    { label: dashboardDays === 1 ? "신규 가입" : "가입", value: dashboardKpi?.today_signups ?? 0, suffix: "", icon: UserPlus, color: "bg-green-100", iconColor: "text-green-600" },
+                    { label: "로그인", value: dashboardKpi?.today_logins ?? 0, suffix: "", icon: LogIn, color: "bg-blue-100", iconColor: "text-blue-600" },
+                    { label: dashboardStartDate === dashboardEndDate ? "신규 가입" : "가입", value: dashboardKpi?.today_signups ?? 0, suffix: "", icon: UserPlus, color: "bg-green-100", iconColor: "text-green-600" },
                     { label: "검색", value: dashboardKpi?.today_searches ?? 0, suffix: "", icon: Search, color: "bg-pink-100", iconColor: "text-pink-600" },
                     { label: "게시글 조회", value: dashboardKpi?.post_views ?? 0, suffix: "", icon: Eye, color: "bg-indigo-100", iconColor: "text-indigo-600" },
                     { label: "참여율", value: dashboardKpi?.engagement_rate ?? 0, suffix: "%", icon: TrendingUp, color: "bg-amber-100", iconColor: "text-amber-600", sub: `좋아요+댓글 ${dashboardKpi?.engagements ?? 0}건` },
@@ -1148,11 +1261,33 @@ export default function AdminPage() {
           {/* ── 행동 분석 ── */}
           {currentView === "analytics" && (
             <>
-              <div className="mb-8 flex items-center justify-between">
+              <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">행동 분석: 학년 간 연결성</h1>
                   <p className="text-gray-600">학년 간 상호작용 및 지식 전달 패턴</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    집계 기간: {analyticsStartDate} ~ {analyticsEndDate}
+                  </p>
                 </div>
+                <PeriodRangeControls
+                  preset={analyticsPreset}
+                  startDate={analyticsStartDate}
+                  endDate={analyticsEndDate}
+                  onPreset={(d) => {
+                    const range = dashboardPresetRange(d);
+                    setAnalyticsPreset(d);
+                    setAnalyticsStartDate(range.start);
+                    setAnalyticsEndDate(range.end);
+                  }}
+                  onStartDateChange={(v) => {
+                    setAnalyticsStartDate(v);
+                    setAnalyticsPreset("custom");
+                  }}
+                  onEndDateChange={(v) => {
+                    setAnalyticsEndDate(v);
+                    setAnalyticsPreset("custom");
+                  }}
+                />
               </div>
               {loadingAnalytics ? (
                 <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" /></div>
@@ -1204,7 +1339,7 @@ export default function AdminPage() {
                     </ResponsiveContainer>
                   </div>
                   <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">페이지별 방문자 수 (최근 30일)</h3>
+                    <h3 className="font-semibold text-gray-900 mb-4">페이지별 방문자 수</h3>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={pageVisitors.map((v) => ({ name: v.section_label, visits: v.count }))}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -1244,7 +1379,7 @@ export default function AdminPage() {
                       네트워크 게시글 · 학년×관심분야 조회
                     </h3>
                     <p className="text-sm text-gray-600 mb-6">
-                      조회 Top 10 · 글 제목 클릭 시 세그먼트 Top 3 · 최근 30일 · 로그인·학년·관심분야 있는 조회만
+                      조회 Top 10 · 글 제목 클릭 시 세그먼트 Top 3 · 로그인·학년·관심분야 있는 조회만
                     </p>
                     {postSegmentViews.length === 0 ? (
                       <p className="text-center text-gray-500 py-8">
@@ -1706,9 +1841,33 @@ export default function AdminPage() {
           {/* ── 검색 분석 ── */}
           {currentView === "searchAnalytics" && (
             <>
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">검색 분석: 인기 키워드</h1>
-                <p className="text-gray-600">학생들이 가장 관심을 두는 키워드 분석</p>
+              <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">검색 분석: 인기 키워드</h1>
+                  <p className="text-gray-600">학생들이 가장 관심을 두는 키워드 분석</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    집계 기간: {searchStartDate} ~ {searchEndDate}
+                  </p>
+                </div>
+                <PeriodRangeControls
+                  preset={searchPreset}
+                  startDate={searchStartDate}
+                  endDate={searchEndDate}
+                  onPreset={(d) => {
+                    const range = dashboardPresetRange(d);
+                    setSearchPreset(d);
+                    setSearchStartDate(range.start);
+                    setSearchEndDate(range.end);
+                  }}
+                  onStartDateChange={(v) => {
+                    setSearchStartDate(v);
+                    setSearchPreset("custom");
+                  }}
+                  onEndDateChange={(v) => {
+                    setSearchEndDate(v);
+                    setSearchPreset("custom");
+                  }}
+                />
               </div>
               {loadingSearch ? (
                 <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" /></div>
@@ -1799,9 +1958,33 @@ export default function AdminPage() {
           {/* ── 세션 분석 ── */}
           {currentView === "sessions" && (
             <>
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">세션 분석</h1>
-                <p className="text-gray-600">평균 세션·체류시간, 학년별 평균 세션 시간, 세션 시간 분포 (최근 30일)</p>
+              <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">세션 분석</h1>
+                  <p className="text-gray-600">평균 세션·체류시간, 학년별 평균 세션 시간, 세션 시간 분포</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    집계 기간: {sessionsStartDate} ~ {sessionsEndDate}
+                  </p>
+                </div>
+                <PeriodRangeControls
+                  preset={sessionsPreset}
+                  startDate={sessionsStartDate}
+                  endDate={sessionsEndDate}
+                  onPreset={(d) => {
+                    const range = dashboardPresetRange(d);
+                    setSessionsPreset(d);
+                    setSessionsStartDate(range.start);
+                    setSessionsEndDate(range.end);
+                  }}
+                  onStartDateChange={(v) => {
+                    setSessionsStartDate(v);
+                    setSessionsPreset("custom");
+                  }}
+                  onEndDateChange={(v) => {
+                    setSessionsEndDate(v);
+                    setSessionsPreset("custom");
+                  }}
+                />
               </div>
               {/* KPI 카드 */}
               {loadingSession ? (
@@ -1830,7 +2013,7 @@ export default function AdminPage() {
               )}
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-8">
                 <h3 className="font-semibold text-gray-900 mb-2">섹션 전환 흐름 (Funnel)</h3>
-                <p className="text-sm text-gray-600 mb-6">세션 내 페이지뷰 순서 기준 상위 전환 (최근 30일)</p>
+                <p className="text-sm text-gray-600 mb-6">세션 내 페이지뷰 순서 기준 상위 전환</p>
                 {loadingSessionAnalytics ? (
                   <div className="flex justify-center py-8"><div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" /></div>
                 ) : sessionTransitions.length === 0 ? (
