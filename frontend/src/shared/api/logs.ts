@@ -18,7 +18,13 @@ export function sendPageView(section: string, page?: string, sessionId?: string)
   });
 }
 
-// ─── 대시보드 KPI (기간별 집계, days=1|7|30) ───
+// ─── 대시보드 KPI (기간별 집계) ───
+export interface AnalyticsPeriodParams {
+  days?: number;
+  start_date?: string;
+  end_date?: string;
+}
+
 export interface DashboardKpi {
   today_logins: number;
   today_signups: number;
@@ -30,8 +36,10 @@ export interface DashboardKpi {
   engagement_rate: number;
   unique_visitors: number;
   days?: number;
+  start_date?: string;
+  end_date?: string;
 }
-export const getDashboardKpi = (params?: { days?: number }) =>
+export const getDashboardKpi = (params?: AnalyticsPeriodParams) =>
   api.get<DashboardKpi>("logs/analytics/dashboard-kpi/", { params });
 
 // ─── 운영 로그 (EventLog 목록) ───
@@ -65,8 +73,8 @@ export interface HeatmapRow {
   author_grade_label: string;
   cols: { viewer_grade: number | string; viewer_grade_label: string; score: number }[];
 }
-export const getHeatmap = () =>
-  api.get<{ rows: HeatmapRow[] }>("logs/analytics/heatmap/");
+export const getHeatmap = (params?: AnalyticsPeriodParams) =>
+  api.get<{ rows: HeatmapRow[] }>("logs/analytics/heatmap/", { params });
 
 // ─── 학년별 인기 글 ───
 export interface PopularByGradePost {
@@ -80,7 +88,7 @@ export interface PopularByGradeGroup {
   viewer_grade_label: string;
   posts: PopularByGradePost[];
 }
-export const getPopularByGrade = (params?: { top_n?: number }) =>
+export const getPopularByGrade = (params?: AnalyticsPeriodParams & { top_n?: number }) =>
   api.get<{ by_grade: PopularByGradeGroup[] }>(
     "logs/analytics/popular-by-grade/",
     { params }
@@ -97,10 +105,9 @@ export interface PopularByInterestGroup {
   interest_label: string;
   posts: PopularByInterestPost[];
 }
-export const getPopularByInterest = (params?: {
+export const getPopularByInterest = (params?: AnalyticsPeriodParams & {
   section?: string;
   top_n?: number;
-  days?: number;
 }) =>
   api.get<{ section: string; by_interest: PopularByInterestGroup[] }>(
     "logs/analytics/popular-by-interest/",
@@ -123,13 +130,18 @@ export interface PostSegmentViewPost {
   primary_segment: PostSegmentItem | null;
   top_segments: PostSegmentItem[];
 }
-export const getPostSegmentViews = (params?: {
+export const getPostSegmentViews = (params?: AnalyticsPeriodParams & {
   section?: string;
   top_posts?: number;
   top_segments?: number;
-  days?: number;
 }) =>
-  api.get<{ section: string; days: number; posts: PostSegmentViewPost[] }>(
+  api.get<{
+    section: string;
+    days?: number;
+    start_date?: string;
+    end_date?: string;
+    posts: PostSegmentViewPost[];
+  }>(
     "logs/analytics/post-segment-views/",
     { params }
   );
@@ -140,7 +152,7 @@ export interface PageVisitorItem {
   section_label: string;
   count: number;
 }
-export const getPageVisitors = (params?: { days?: number }) =>
+export const getPageVisitors = (params?: AnalyticsPeriodParams) =>
   api.get<{ by_section: PageVisitorItem[] }>("logs/analytics/page-visitors/", {
     params,
   });
@@ -157,7 +169,7 @@ export interface KnowledgeScoreItem {
   like_score: number;
   total_score: number;
 }
-export const getKnowledgeDeliveryScore = (params?: { days?: number }) =>
+export const getKnowledgeDeliveryScore = (params?: AnalyticsPeriodParams) =>
   api.get<{ by_grade: KnowledgeScoreItem[] }>(
     "logs/analytics/knowledge-delivery-score/",
     { params }
@@ -266,7 +278,7 @@ export interface SearchRankingItem {
   main_interest: string | null;
   main_interest_label: string;
 }
-export const getSearchRanking = (params?: {
+export const getSearchRanking = (params?: AnalyticsPeriodParams & {
   section?: string;
   top_n?: number;
   interest?: string;
@@ -282,7 +294,7 @@ export interface SessionStats {
   average_session_display: string;
   total_sessions: number;
 }
-export const getSessionStats = (params?: { days?: number }) =>
+export const getSessionStats = (params?: AnalyticsPeriodParams) =>
   api.get<SessionStats>("logs/analytics/session-stats/", { params });
 
 // ─── Session analytics (학년별 평균 세션 시간 + 세션 시간 분포) ───
@@ -296,7 +308,7 @@ export interface SessionDistributionBucket {
   bucket: string;
   count: number;
 }
-export const getSessionAnalytics = (params?: { days?: number }) =>
+export const getSessionAnalytics = (params?: AnalyticsPeriodParams) =>
   api.get<{
     by_grade: SessionByGrade[];
     distribution: SessionDistributionBucket[];
@@ -315,7 +327,7 @@ export interface SectionVisit {
   label: string;
   visits: number;
 }
-export const getSessionJourney = (params?: { top_n?: number }) =>
+export const getSessionJourney = (params?: AnalyticsPeriodParams & { top_n?: number }) =>
   api.get<{ transitions: SessionTransition[]; section_visits: SectionVisit[] }>(
     "logs/analytics/session-journey/",
     { params }
