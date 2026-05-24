@@ -1365,7 +1365,6 @@ export default function AdminPage() {
                                 <li key={`${post.section}-${post.post_id}`} className="text-sm">
                                   <span className="text-gray-400 mr-2">{idx + 1}.</span>
                                   <span className="text-gray-800">{post.title || `글 #${post.post_id}`}</span>
-                                  <span className="text-xs text-gray-500 ml-1">({post.score}점)</span>
                                 </li>
                               ))}
                             </ol>
