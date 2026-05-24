@@ -25,6 +25,9 @@ export interface DashboardKpi {
   today_posts: number;
   today_comments: number;
   today_searches: number;
+  post_views: number;
+  engagements: number;
+  engagement_rate: number;
   unique_visitors: number;
   days?: number;
 }
@@ -64,6 +67,72 @@ export interface HeatmapRow {
 }
 export const getHeatmap = () =>
   api.get<{ rows: HeatmapRow[] }>("logs/analytics/heatmap/");
+
+// ─── 학년별 인기 글 ───
+export interface PopularByGradePost {
+  post_id: number;
+  section: string;
+  title: string;
+  score: number;
+}
+export interface PopularByGradeGroup {
+  viewer_grade: number;
+  viewer_grade_label: string;
+  posts: PopularByGradePost[];
+}
+export const getPopularByGrade = (params?: { top_n?: number }) =>
+  api.get<{ by_grade: PopularByGradeGroup[] }>(
+    "logs/analytics/popular-by-grade/",
+    { params }
+  );
+
+// ─── 관심분야별 인기 글 (post_view) ───
+export interface PopularByInterestPost {
+  post_id: number;
+  title: string;
+  view_count: number;
+}
+export interface PopularByInterestGroup {
+  interest: string;
+  interest_label: string;
+  posts: PopularByInterestPost[];
+}
+export const getPopularByInterest = (params?: {
+  section?: string;
+  top_n?: number;
+  days?: number;
+}) =>
+  api.get<{ section: string; by_interest: PopularByInterestGroup[] }>(
+    "logs/analytics/popular-by-interest/",
+    { params }
+  );
+
+// ─── 게시글별 학년×관심분야 조회 ───
+export interface PostSegmentItem {
+  rank: number;
+  grade_group: number;
+  grade_label: string;
+  interest: string;
+  interest_label: string;
+  view_count: number;
+}
+export interface PostSegmentViewPost {
+  post_id: number;
+  title: string;
+  total_views: number;
+  primary_segment: PostSegmentItem | null;
+  top_segments: PostSegmentItem[];
+}
+export const getPostSegmentViews = (params?: {
+  section?: string;
+  top_posts?: number;
+  top_segments?: number;
+  days?: number;
+}) =>
+  api.get<{ section: string; days: number; posts: PostSegmentViewPost[] }>(
+    "logs/analytics/post-segment-views/",
+    { params }
+  );
 
 // ─── Page visitors ───
 export interface PageVisitorItem {

@@ -12,6 +12,8 @@ from .views import (
     PageViewLogView,
     PageVisitorsView,
     PopularByGradeView,
+    PopularByInterestView,
+    PostSegmentViewsView,
     SearchRankingView,
     SessionAnalyticsView,
     SessionJourneyView,
@@ -26,6 +28,16 @@ urlpatterns = [
     path("analytics/operational-logs/", OperationalLogListView.as_view(), name="operational-logs"),
     path("analytics/heatmap/", HeatmapView.as_view(), name="heatmap"),
     path("analytics/popular-by-grade/", PopularByGradeView.as_view(), name="popular-by-grade"),
+    path(
+        "analytics/popular-by-interest/",
+        PopularByInterestView.as_view(),
+        name="popular-by-interest",
+    ),
+    path(
+        "analytics/post-segment-views/",
+        PostSegmentViewsView.as_view(),
+        name="post-segment-views",
+    ),
     path("analytics/search-ranking/", SearchRankingView.as_view(), name="search-ranking"),
     path(
         "analytics/knowledge-delivery-score/",
