@@ -14,8 +14,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-import os
-
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -35,8 +33,8 @@ schema_view = get_schema_view(
         default_version="v1",
         description="커뮤니티 백엔드 API 문서",
     ),
-    public=True,
-    permission_classes=[permissions.AllowAny],
+    public=settings.DEBUG,
+    permission_classes=[permissions.AllowAny if settings.DEBUG else permissions.IsAdminUser],
 )
 # Admin site를 OTP 버전으로 교체
 admin.site.__class__ = AdminOTPSite
@@ -46,7 +44,7 @@ def health_root(request):
 
 urlpatterns = [
     path("", health_root), 
-    path(f'{os.environ.get("ADMIN_URL_PATH", "admin").strip("/")}/', admin.site.urls),
+    path(f"{settings.ADMIN_URL_PATH}/", admin.site.urls),
     path('admin-otp/send/', otp_views.send_otp, name='admin_otp_send'),
     path('admin-otp/verify/', otp_views.verify_otp, name='admin_otp_verify'),
     path('api/users/', include('apps.users.urls')),
@@ -57,10 +55,13 @@ urlpatterns = [
     path('api/announcements/', include('apps.announcements.urls')),
     path('api/logs/', include('logs.urls')),
 
-    # Swagger
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0)),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0)),
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path('swagger/', schema_view.with_ui('swagger', cache_timeout=0)),
+        path('redoc/', schema_view.with_ui('redoc', cache_timeout=0)),
+    ]
 
 # 개발 환경에서 로컬 media 파일 서빙 (R2 사용 시에는 불필요)
 if settings.DEBUG and hasattr(settings, "MEDIA_ROOT"):

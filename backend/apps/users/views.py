@@ -1,4 +1,5 @@
 import requests
+import hmac
 from typing import Any, cast
 from django.conf import settings
 from django.contrib.auth import authenticate
@@ -12,6 +13,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.permissions import AllowAny
 
 from logs.utils import create_event_log
@@ -52,11 +54,17 @@ def _set_jwt_cookies(response, refresh):
     """access + refresh JWT를 HttpOnly 쿠키로 발급"""
     is_secure = not settings.DEBUG
     samesite = "None" if is_secure else "Lax"
+    access_max_age = int(
+        settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds()
+    )
+    refresh_max_age = int(
+        settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()
+    )
 
     response.set_cookie(
         key=getattr(settings, "JWT_ACCESS_COOKIE", "access_token"),
         value=str(refresh.access_token),
-        max_age=60 * 60,             # 1시간 (ACCESS_TOKEN_LIFETIME과 맞춤)
+        max_age=access_max_age,
         httponly=True,
         secure=is_secure,
         samesite=samesite,
@@ -65,7 +73,7 @@ def _set_jwt_cookies(response, refresh):
     response.set_cookie(
         key=getattr(settings, "JWT_REFRESH_COOKIE", "refresh_token"),
         value=str(refresh),
-        max_age=60 * 60 * 24 * 7,    # 7일 (REFRESH_TOKEN_LIFETIME과 맞춤)
+        max_age=refresh_max_age,
         httponly=True,
         secure=is_secure,
         samesite=samesite,
@@ -163,6 +171,61 @@ class LogoutView(generics.GenericAPIView):
             token.blacklist()
         except TokenError:
             pass  # 이미 만료/블랙리스트된 토큰은 무시
+
+        return response
+
+
+class CookieTokenRefreshView(TokenRefreshView):
+    """
+    Refresh token rotation endpoint.
+    Body refresh 토큰을 우선 사용하고, 없으면 HttpOnly refresh cookie를 사용한다.
+    SIMPLE_JWT의 ROTATE_REFRESH_TOKENS/BLACKLIST_AFTER_ROTATION 설정에 따라
+    재발급된 refresh token은 cookie와 JSON 응답에 함께 반영된다.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        cookie_name = getattr(settings, "JWT_REFRESH_COOKIE", "refresh_token")
+        data = request.data.copy()
+        if not data.get("refresh"):
+            data["refresh"] = request.COOKIES.get(cookie_name, "")
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        payload = serializer.validated_data
+        response = Response(payload, status=status.HTTP_200_OK)
+
+        is_secure = not settings.DEBUG
+        samesite = "None" if is_secure else "Lax"
+        access_max_age = int(
+            settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds()
+        )
+        refresh_max_age = int(
+            settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()
+        )
+
+        if payload.get("access"):
+            response.set_cookie(
+                key=getattr(settings, "JWT_ACCESS_COOKIE", "access_token"),
+                value=payload["access"],
+                max_age=access_max_age,
+                httponly=True,
+                secure=is_secure,
+                samesite=samesite,
+                path="/",
+            )
+        if payload.get("refresh"):
+            response.set_cookie(
+                key=cookie_name,
+                value=payload["refresh"],
+                max_age=refresh_max_age,
+                httponly=True,
+                secure=is_secure,
+                samesite=samesite,
+                path="/",
+            )
 
         return response
 
@@ -761,7 +824,7 @@ class AdminOTPVerifyView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if otp_code != saved_code:
+        if not hmac.compare_digest(str(otp_code), str(saved_code or "")):
             return Response(
                 {"detail": "인증번호가 틀렸어요."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -770,6 +833,11 @@ class AdminOTPVerifyView(APIView):
         # 인증 성공
         cache.delete(f"admin_otp_{user_id}")
         user = User.objects.get(id=user_id)
+        if not user.is_staff:
+            return Response(
+                {"detail": "관리자 계정만 OTP 로그인을 완료할 수 있습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # Django 세션 로그인 (admin 패널 접근용)
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')

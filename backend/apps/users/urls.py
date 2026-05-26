@@ -20,6 +20,7 @@ urlpatterns = [
     path("top-active/", top_active_users),
 
     # 로그아웃
+    path("token/refresh/", views.CookieTokenRefreshView.as_view(), name="token_refresh"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
 
     # 중복 확인

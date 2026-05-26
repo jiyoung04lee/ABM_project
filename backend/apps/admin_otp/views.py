@@ -1,18 +1,26 @@
 import random
 import time
+import hmac
 from django.contrib.auth import get_user_model, authenticate, login  
 from django.shortcuts import render, redirect
 from django.contrib.admin import site as admin_site
 from django.conf import settings
+from django.views.decorators.csrf import csrf_protect
 
 from apps.users.otp_email import send_admin_otp_email
 
 User = get_user_model()
 
+def _admin_url(path: str = "") -> str:
+    base = "/" + getattr(settings, "ADMIN_URL_PATH", "admin").strip("/") + "/"
+    return base + path.lstrip("/")
+
+
+@csrf_protect
 def send_otp(request):
     """관리자 로그인 후 OTP 발송"""
     if not request.session.get('pre_otp_user_id'):
-        return redirect('/admin-2026-mz9p/login/')
+        return redirect(_admin_url("login/"))
 
     otp_code = str(random.randint(100000, 999999))
     request.session['otp_code'] = otp_code
@@ -26,11 +34,11 @@ def send_otp(request):
     )
     return render(request, 'admin_otp/otp_verify.html')
 
-
+@csrf_protect
 def verify_otp(request):
     """OTP 검증"""
     if request.method != 'POST':
-        return redirect('/admin-2026-mz9p/login/')
+        return redirect(_admin_url("login/"))
 
     input_code = request.POST.get('otp_code', '')
     saved_code = request.session.get('otp_code')
@@ -42,7 +50,7 @@ def verify_otp(request):
         return render(request, 'admin_otp/otp_verify.html', {'error': '인증번호가 만료됐어요. 다시 로그인해주세요.'})
 
     # 코드 확인
-    if input_code != saved_code:
+    if not hmac.compare_digest(str(input_code), str(saved_code or "")):
         return render(request, 'admin_otp/otp_verify.html', {'error': '인증번호가 틀렸어요.'})
 
     # 인증 성공 - Django auth 로그인 처리
@@ -51,9 +59,11 @@ def verify_otp(request):
     request.session.pop('otp_created_at')
 
     user = User.objects.get(id=user_id)
+    if not user.is_staff:
+        return redirect(_admin_url("login/"))
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')  # ✅ 이 한 줄이 핵심
 
-    return redirect('/admin-2026-mz9p/')
+    return redirect(_admin_url())
 
 
 class AdminOTPSite(admin_site.__class__):
