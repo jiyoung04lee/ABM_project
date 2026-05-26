@@ -5,6 +5,8 @@ from django.contrib.auth.models import (
     BaseUserManager,
 )
 
+from .utils_encryption import encrypt, hash_value
+
 
 class UserManager(BaseUserManager):
     """Custom user manager for email-based authentication."""
@@ -255,6 +257,32 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.email}({self.nickname})"
 
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        if self.email:
+            self.email_encrypted = encrypt(self.email)
+            self.email_hash = hash_value(self.email)
+        else:
+            self.email_encrypted = None
+            self.email_hash = None
+
+        if self.student_id:
+            self.student_id_encrypted = encrypt(self.student_id)
+            self.student_id_hash = hash_value(self.student_id)
+        else:
+            self.student_id_encrypted = None
+            self.student_id_hash = None
+
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {
+                "email_encrypted",
+                "email_hash",
+                "student_id_encrypted",
+                "student_id_hash",
+            }
+
+        super().save(*args, **kwargs)
+
     @property
     def is_social_user(self):
         return self.social_provider != self.SOCIAL_PROVIDER_EMAIL
@@ -329,6 +357,32 @@ class StudentRegistry(models.Model):
 
     def __str__(self) -> str:
         return f"{self.student_id} - {self.name}"
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        if self.student_id:
+            self.student_id_encrypted = encrypt(self.student_id)
+            self.student_id_hash = hash_value(self.student_id)
+        else:
+            self.student_id_encrypted = None
+            self.student_id_hash = None
+
+        if self.name:
+            self.name_encrypted = encrypt(self.name)
+            self.name_hash = hash_value(self.name)
+        else:
+            self.name_encrypted = None
+            self.name_hash = None
+
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {
+                "student_id_encrypted",
+                "student_id_hash",
+                "name_encrypted",
+                "name_hash",
+            }
+
+        super().save(*args, **kwargs)
     
 
 class ScoreHistory(models.Model):

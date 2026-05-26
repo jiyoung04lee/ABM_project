@@ -41,6 +41,7 @@ from .utils import (
     generate_onboarding_nonce,
     verify_onboarding_nonce,
     delete_onboarding_nonce,
+    generate_private_media_url,
 )
 
 from .utils_score import give_login_point
@@ -887,7 +888,11 @@ def multi_major_image_view(request, user_id):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    return Response(
-        {"url": user.multi_major_image.url},
-        status=status.HTTP_200_OK,
-    )
+    signed_url = generate_private_media_url(user.multi_major_image)
+    if not signed_url:
+        return Response(
+            {"detail": "이미지 URL을 생성할 수 없습니다."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    return Response({"url": signed_url}, status=status.HTTP_200_OK)

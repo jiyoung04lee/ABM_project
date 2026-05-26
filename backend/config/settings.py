@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import timedelta
 
 import dj_database_url
+from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -26,10 +27,23 @@ _allowed = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [x.strip() for x in _allowed.split(",") if x.strip()]
 ADMIN_URL_PATH = os.environ.get("ADMIN_URL_PATH", "admin").strip("/") or "admin"
 
+FERNET_KEY = os.environ.get("FERNET_KEY", "").strip()
+if not FERNET_KEY or FERNET_KEY == "replace-with-fernet-key":
+    raise ImproperlyConfigured("FERNET_KEY must be set to a real Fernet key.")
+try:
+    Fernet(FERNET_KEY.encode())
+except Exception as exc:
+    raise ImproperlyConfigured("FERNET_KEY is not a valid Fernet key.") from exc
+
 # Railway 배포 헬스체크는 Host: healthcheck.railway.app 사용
 # https://docs.railway.app/deploy/healthchecks
 if "healthcheck.railway.app" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("healthcheck.railway.app")
+
+if not DEBUG and ADMIN_URL_PATH == "admin":
+    raise ImproperlyConfigured(
+        "ADMIN_URL_PATH must be changed from the default in production."
+    )
 
 
 # Application definition
@@ -64,6 +78,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.common.middleware.ContentSecurityPolicyMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -378,6 +393,23 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_CONTENT_TYPE_NOSNIFF = True
     REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+CSP_ENABLED = os.environ.get("CSP_ENABLED", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+)
+CSP_POLICY = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+]
 
 # ==================== django-axes 설정 ====================
 AXES_FAILURE_LIMIT = 5        # 5회 실패 시 잠금
