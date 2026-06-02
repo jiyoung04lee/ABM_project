@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AdminInsightView,
     DashboardKpiView,
     ErrorLogListView,
     ErrorLogStatsView,
@@ -25,6 +26,7 @@ app_name = "logs"
 
 urlpatterns = [
     path("analytics/dashboard-kpi/", DashboardKpiView.as_view(), name="dashboard-kpi"),
+    path("analytics/insights/", AdminInsightView.as_view(), name="admin-insights"),
     path("analytics/operational-logs/", OperationalLogListView.as_view(), name="operational-logs"),
     path("analytics/heatmap/", HeatmapView.as_view(), name="heatmap"),
     path("analytics/popular-by-grade/", PopularByGradeView.as_view(), name="popular-by-grade"),
