@@ -1561,6 +1561,117 @@ class EventSettingListView(APIView):
         return Response({"results": results})
 
 
+class AdminInsightView(APIView):
+    """
+    현재 집계 데이터를 Claude API에 보내 마케팅/UX 인사이트를 반환.
+    GET /api/logs/analytics/insights/?days=7
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request) -> Response:
+        import os, json
+        from datetime import timedelta
+
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            return Response({"detail": "ANTHROPIC_API_KEY가 설정되지 않았습니다."}, status=503)
+
+        start_date, end_date, days = _parse_analytics_period(request)
+        qs = _filter_eventlog_by_period(EventLog.objects.all(), start_date, end_date, days)
+
+        # ── KPI 집계 ──
+        post_views = qs.filter(event_type="post_view").count()
+        engagements = qs.filter(event_type="like").count() + qs.filter(event_type="comment").count()
+        kpi = {
+            "logins": qs.filter(event_type="login").count(),
+            "signups": qs.filter(event_type="signup").count(),
+            "posts_created": qs.filter(event_type="post_create").count(),
+            "comments": qs.filter(event_type="comment").count(),
+            "searches": qs.filter(event_type="search").count(),
+            "post_views": post_views,
+            "engagements": engagements,
+            "engagement_rate_pct": round(engagements / post_views * 100, 1) if post_views else 0.0,
+            "unique_sessions": (
+                qs.filter(event_type="page_view", session_id__isnull=False)
+                .exclude(session_id="").values("session_id").distinct().count()
+            ),
+        }
+
+        # ── 섹션별 방문수 ──
+        order = ["community", "department", "network", "home"]
+        sec_rows = (
+            qs.filter(event_type="page_view", section__in=order)
+            .values("section").annotate(count=Count("id"))
+        )
+        by_section = {r["section"]: r["count"] for r in sec_rows}
+        page_visitors = {SECTION_LABELS.get(s, s): by_section.get(s, 0) for s in order}
+
+        # ── 학년별 이벤트 비중 ──
+        grade_rows = (
+            qs.filter(event_type__in=["login", "post_view", "post_create"])
+            .values("grade_at_event", "event_type").annotate(cnt=Count("id"))
+        )
+        grade_summary: dict = {}
+        for r in grade_rows:
+            g = f"{r['grade_at_event']}학년" if r["grade_at_event"] else "미상/졸업생"
+            grade_summary.setdefault(g, {})[r["event_type"]] = r["cnt"]
+
+        # ── 검색어 Top 5 ──
+        search_top = list(
+            qs.filter(event_type="search", search_keyword__isnull=False)
+            .exclude(search_keyword="")
+            .values("search_keyword").annotate(cnt=Count("id"))
+            .order_by("-cnt")[:5]
+            .values_list("search_keyword", "cnt")
+        )
+
+        data = {
+            "period": _period_response_meta(start_date, end_date, days),
+            "kpi": kpi,
+            "page_visitors": page_visitors,
+            "grade_activity": grade_summary,
+            "top_searches": [{"keyword": k, "count": c} for k, c in search_top],
+        }
+
+        # ── Claude API 호출 ──
+        try:
+            from anthropic import Anthropic
+            client = Anthropic(api_key=api_key)
+            system = (
+                "너는 AIVE 학과 아카이브 플랫폼의 데이터 분석가야. "
+                "주어진 운영 데이터를 분석해서 관리자가 바로 행동할 수 있는 인사이트를 한국어로 작성해줘. "
+                "관점은 두 축: (1) 마케터 관점 — 유입·전환·성장, (2) UX 관점 — 이탈·콘텐츠 참여·섹션 쏠림.\n\n"
+                "반드시 아래 JSON 형식만 출력해 (머리말·설명 금지):\n"
+                '{"summary":"전체 상황 한 줄 요약",'
+                '"key_findings":["발견1","발견2","발견3"],'
+                '"action_items":[{"priority":"high","action":"...","reason":"..."}],'
+                '"metrics_highlight":{"지표명":"값+짧은 해석"}}'
+            )
+            resp = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=1500,
+                system=system,
+                messages=[{
+                    "role": "user",
+                    "content": "AIVE 운영 데이터:\n\n" + json.dumps(data, ensure_ascii=False, indent=2),
+                }],
+            )
+            text = "".join(
+                b.text for b in resp.content if getattr(b, "type", None) == "text"
+            ).strip()
+            # JSON 펜스 제거
+            if text.startswith("```"):
+                text = text.split("```", 2)[1]
+                if text.startswith("json"):
+                    text = text[4:]
+                text = text.strip().strip("`").strip()
+            insight = json.loads(text)
+        except Exception as e:
+            return Response({"detail": f"AI 인사이트 생성 실패: {e}"}, status=502)
+
+        return Response({"period": data["period"], "insight": insight})
+
+
 class EventSettingToggleView(APIView):
     """event_type별 is_active 토글. PATCH body: {"is_active": true|false}. 호출 후 캐시 갱신."""
     permission_classes = [IsAdminUser]
