@@ -72,6 +72,8 @@ import {
   getSessionJourney,
   getPopularByGrade,
   getPostSegmentViews,
+  getAdminInsights,
+  type AdminInsight,
   type HeatmapRow,
   type PopularByGradeGroup,
   type PostSegmentViewPost,
@@ -542,6 +544,11 @@ export default function AdminPage() {
   const [errorPage, setErrorPage] = useState(1);
   const [errorPageSize] = useState(20);
 
+  // AI 인사이트
+  const [insight, setInsight] = useState<AdminInsight | null>(null);
+  const [loadingInsight, setLoadingInsight] = useState(false);
+  const [insightError, setInsightError] = useState("");
+
   // 토큰 체크 없이 바로 API 호출 (쿠키가 자동 첨부됨)
   useEffect(() => {
     api.get("users/me/")
@@ -827,6 +834,24 @@ export default function AdminPage() {
       );
     } catch {
       // keep UI state
+    }
+  };
+
+  const handleGenerateInsight = async () => {
+    setLoadingInsight(true);
+    setInsightError("");
+    setInsight(null);
+    try {
+      const res = await getAdminInsights(
+        dashboardStartDate && dashboardEndDate
+          ? { start_date: dashboardStartDate, end_date: dashboardEndDate }
+          : { days: 7 }
+      );
+      setInsight(res.data.insight);
+    } catch {
+      setInsightError("AI 인사이트 생성에 실패했습니다. ANTHROPIC_API_KEY 설정을 확인하세요.");
+    } finally {
+      setLoadingInsight(false);
     }
   };
 
@@ -1131,6 +1156,99 @@ export default function AdminPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
+              </div>
+
+              {/* ── AI 인사이트 ── */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">AI 인사이트</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">현재 기간 데이터를 Claude가 분석해 액션 아이템을 제안합니다.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGenerateInsight}
+                    disabled={loadingInsight}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-60"
+                  >
+                    {loadingInsight ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Activity className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-semibold">
+                      {loadingInsight ? "분석 중..." : "AI 인사이트 생성"}
+                    </span>
+                  </button>
+                </div>
+
+                {insightError && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl text-sm text-red-700">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {insightError}
+                  </div>
+                )}
+
+                {insight && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 rounded-xl">
+                      <p className="text-sm font-semibold text-blue-900">{insight.summary}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">주요 발견</h4>
+                      <ul className="space-y-1.5">
+                        {insight.key_findings.map((f, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                            <span className="mt-0.5 w-5 h-5 flex-shrink-0 rounded-full bg-blue-100 text-blue-700 text-xs flex items-center justify-center font-bold">{i + 1}</span>
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">액션 아이템</h4>
+                      <div className="space-y-2">
+                        {insight.action_items.map((item, i) => (
+                          <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
+                            <span className={`mt-0.5 px-2 py-0.5 rounded-md text-xs font-semibold flex-shrink-0 ${
+                              item.priority === "high" ? "bg-red-100 text-red-700" :
+                              item.priority === "medium" ? "bg-yellow-100 text-yellow-700" :
+                              "bg-green-100 text-green-700"
+                            }`}>
+                              {item.priority === "high" ? "높음" : item.priority === "medium" ? "중간" : "낮음"}
+                            </span>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{item.action}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">{item.reason}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {Object.keys(insight.metrics_highlight).length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">주목할 지표</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {Object.entries(insight.metrics_highlight).map(([k, v]) => (
+                            <div key={k} className="p-3 bg-purple-50 rounded-xl">
+                              <p className="text-xs text-purple-600 font-semibold">{k}</p>
+                              <p className="text-sm text-gray-800 mt-0.5">{v}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!insight && !loadingInsight && !insightError && (
+                  <div className="text-center py-8 text-gray-400 text-sm">
+                    버튼을 눌러 AI 인사이트를 생성하세요.
+                  </div>
+                )}
               </div>
             </>
           )}

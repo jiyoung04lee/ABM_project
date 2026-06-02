@@ -332,3 +332,16 @@ export const getSessionJourney = (params?: AnalyticsPeriodParams & { top_n?: num
     "logs/analytics/session-journey/",
     { params }
   );
+
+export interface AdminInsight {
+  summary: string;
+  key_findings: string[];
+  action_items: { priority: "high" | "medium" | "low"; action: string; reason: string }[];
+  metrics_highlight: Record<string, string>;
+}
+
+export const getAdminInsights = (params?: AnalyticsPeriodParams) =>
+  api.get<{ period: Record<string, string | number>; insight: AdminInsight }>(
+    "logs/analytics/insights/",
+    { params }
+  );
