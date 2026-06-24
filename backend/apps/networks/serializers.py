@@ -8,6 +8,8 @@ from io import BytesIO
 import os
 import re
 
+from apps.common.security import sanitize_html
+
 from .models import Post, PostFile, Comment, Category, Draft
 
 
@@ -309,6 +311,9 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "thumbnail_file",
             "files",
         ]
+
+    def validate_content(self, value):
+        return sanitize_html(value)
 
     def validate_category(self, category):
         post_type = self.initial_data.get("type")

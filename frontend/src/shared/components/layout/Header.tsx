@@ -40,8 +40,7 @@ export default function Header() {
   }, [setUnreadCount]);
 
   const handleLogout = async () => {
-    const refresh = TokenStorage.getRefresh();
-    await api.post("users/logout/", { refresh }).catch(() => {});
+    await api.post("users/logout/", {}).catch(() => {});
     TokenStorage.clear(); // access_token, refresh_token, user_id 모두 삭제
     setIsLoggedIn(false);
     setIsAdmin(false);

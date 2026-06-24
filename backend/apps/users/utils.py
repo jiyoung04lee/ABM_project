@@ -111,3 +111,35 @@ def verify_onboarding_nonce(signup_token: str, nonce: str) -> bool:
 def delete_onboarding_nonce(signup_token: str) -> None:
     """온보딩 완료 시 nonce 삭제."""
     cache.delete(f"onboarding_nonce:{signup_token}")
+
+
+def generate_private_media_url(file_field, expires_in: int = 300) -> str | None:
+    """Return a short-lived signed URL for sensitive R2 media when configured."""
+    if not file_field:
+        return None
+
+    storage_options = (
+        getattr(settings, "STORAGES", {})
+        .get("default", {})
+        .get("OPTIONS", {})
+    )
+    bucket_name = storage_options.get("bucket_name")
+    if not bucket_name:
+        return file_field.url
+
+    try:
+        import boto3
+
+        client = boto3.client(
+            "s3",
+            endpoint_url=storage_options["endpoint_url"],
+            aws_access_key_id=storage_options["access_key"],
+            aws_secret_access_key=storage_options["secret_key"],
+        )
+        return client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket_name, "Key": file_field.name},
+            ExpiresIn=expires_in,
+        )
+    except Exception:
+        return None

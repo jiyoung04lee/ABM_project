@@ -6,6 +6,8 @@ from rest_framework.exceptions import ValidationError
 
 import os
 
+from apps.common.security import sanitize_html
+
 from .models import Post, PostFile, Comment, Category
 
 
@@ -234,6 +236,8 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "thumbnail_index",
         ]
 
+    def validate_content(self, value):
+        return sanitize_html(value)
 
     def validate_files(self, files):
         allowed_image_ext = [".jpg", ".jpeg", ".png", ".webp"]

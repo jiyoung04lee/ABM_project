@@ -15,4 +15,7 @@ __pycache__/
 backend/db.sqlite3
 *.sqlite3
 
-media/  
+media/
+
+# local/production data exports
+backend/backup*.json

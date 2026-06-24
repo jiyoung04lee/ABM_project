@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import timedelta
 
 import dj_database_url
+from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -24,11 +25,25 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 _allowed = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [x.strip() for x in _allowed.split(",") if x.strip()]
+ADMIN_URL_PATH = os.environ.get("ADMIN_URL_PATH", "admin").strip("/") or "admin"
+
+FERNET_KEY = os.environ.get("FERNET_KEY", "").strip()
+if not FERNET_KEY or FERNET_KEY == "replace-with-fernet-key":
+    raise ImproperlyConfigured("FERNET_KEY must be set to a real Fernet key.")
+try:
+    Fernet(FERNET_KEY.encode())
+except Exception as exc:
+    raise ImproperlyConfigured("FERNET_KEY is not a valid Fernet key.") from exc
 
 # Railway 배포 헬스체크는 Host: healthcheck.railway.app 사용
 # https://docs.railway.app/deploy/healthchecks
 if "healthcheck.railway.app" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("healthcheck.railway.app")
+
+if not DEBUG and ADMIN_URL_PATH == "admin":
+    raise ImproperlyConfigured(
+        "ADMIN_URL_PATH must be changed from the default in production."
+    )
 
 
 # Application definition
@@ -63,6 +78,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.common.middleware.ContentSecurityPolicyMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -251,9 +267,12 @@ REST_FRAMEWORK = {
 }
 
 # Simple JWT 설정
+JWT_ACCESS_TOKEN_MINUTES = int(os.environ.get("JWT_ACCESS_TOKEN_MINUTES", "60"))
+JWT_REFRESH_TOKEN_DAYS = int(os.environ.get("JWT_REFRESH_TOKEN_DAYS", "7"))
+
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=JWT_ACCESS_TOKEN_MINUTES),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=JWT_REFRESH_TOKEN_DAYS),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
@@ -281,6 +300,7 @@ SWAGGER_SETTINGS = {
 
 # CORS: 환경변수 CORS_ALLOWED_ORIGINS 에 콤마 구분 도메인 목록 설정.
 # 미설정 시 로컬 개발 도메인만 허용.
+CORS_ALLOW_ALL_ORIGINS = False
 _cors_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
 if _cors_env:
     CORS_ALLOWED_ORIGINS = [x.strip() for x in _cors_env.split(",") if x.strip()]
@@ -364,11 +384,32 @@ DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_TIMEOUT = 10
 
 # ==================== 보안 설정 ====================
+SESSION_COOKIE_AGE = 3600
+X_FRAME_OPTIONS = "DENY"
+
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
-    SESSION_COOKIE_AGE = 3600  # 세션 1시간 후 만료
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+CSP_ENABLED = os.environ.get("CSP_ENABLED", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+)
+CSP_POLICY = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+]
 
 # ==================== django-axes 설정 ====================
 AXES_FAILURE_LIMIT = 5        # 5회 실패 시 잠금

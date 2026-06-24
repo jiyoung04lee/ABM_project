@@ -22,6 +22,7 @@ import {
 import api from "@/shared/api/axios";
 import { API_BASE } from "@/shared/api/api";
 import PostMeta from "@/features/post/components/PostMeta";
+import { sanitizeRichHtml } from "@/shared/utils/sanitizeHtml";
 
 function resolveImageUrl(url: string | null | undefined): string {
   if (!url) return "";
@@ -363,7 +364,7 @@ export default function NetworkDetailPage() {
               }
             );
 
-            return html;
+            return sanitizeRichHtml(html);
           })(),
         }}
       />

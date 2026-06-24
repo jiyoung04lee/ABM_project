@@ -8,7 +8,6 @@ import {
   API_BASE,
   ONBOARDING_SIGNUP_STORAGE_KEY,
   ONBOARDING_NONCE_STORAGE_KEY,
-  TokenStorage,
 } from "@/shared/api/api";
 
 
@@ -77,12 +76,6 @@ function KakaoCallbackContent() {
           return;
         }
 
-        if (data.tokens?.access && data.tokens?.refresh) {
-          TokenStorage.set(data.tokens.access, data.tokens.refresh);
-        }
-        if (data.user?.id) {
-          localStorage.setItem("user_id", String(data.user.id));
-        }
         window.location.href = "/";
         return;
 
