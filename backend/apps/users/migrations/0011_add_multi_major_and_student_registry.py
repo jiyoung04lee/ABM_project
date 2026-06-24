@@ -1,6 +1,48 @@
 from django.db import migrations, models
 
 
+def _table_exists(schema_editor, table_name):
+    return table_name in schema_editor.connection.introspection.table_names()
+
+
+def _column_exists(schema_editor, table_name, column_name):
+    with schema_editor.connection.cursor() as cursor:
+        columns = schema_editor.connection.introspection.get_table_description(
+            cursor,
+            table_name,
+        )
+    return any(column.name == column_name for column in columns)
+
+
+def _add_user_column_if_missing(column_name, column_sql):
+    def forwards(apps, schema_editor):
+        if _column_exists(schema_editor, "users", column_name):
+            return
+        schema_editor.execute(
+            f'ALTER TABLE "users" ADD COLUMN "{column_name}" {column_sql};'
+        )
+
+    return forwards
+
+
+def _create_student_registry_if_missing(apps, schema_editor):
+    if _table_exists(schema_editor, "users_studentregistry"):
+        return
+
+    if schema_editor.connection.vendor == "sqlite":
+        id_sql = '"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT'
+    else:
+        id_sql = '"id" bigserial NOT NULL PRIMARY KEY'
+
+    schema_editor.execute(
+        'CREATE TABLE "users_studentregistry" ('
+        f"{id_sql}, "
+        '"student_id" varchar(8) NOT NULL UNIQUE, '
+        '"name" varchar(50) NOT NULL'
+        ");"
+    )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -13,16 +55,12 @@ class Migration(migrations.Migration):
         # 컬럼 존재 여부에 따라 안전하게 동작하도록 RunSQL + SeparateDatabaseAndState 사용
         migrations.SeparateDatabaseAndState(
             database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        'ALTER TABLE "users" '
-                        'ADD COLUMN IF NOT EXISTS "is_multi_major" boolean '
-                        'NOT NULL DEFAULT false;'
+                migrations.RunPython(
+                    _add_user_column_if_missing(
+                        "is_multi_major",
+                        "boolean NOT NULL DEFAULT false",
                     ),
-                    reverse_sql=(
-                        'ALTER TABLE "users" '
-                        'DROP COLUMN IF EXISTS "is_multi_major";'
-                    ),
+                    reverse_code=migrations.RunPython.noop,
                 ),
             ],
             state_operations=[
@@ -39,15 +77,12 @@ class Migration(migrations.Migration):
         # 프로덕션 DB에 이미 있을 수 있으므로 IF NOT EXISTS 사용
         migrations.SeparateDatabaseAndState(
             database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        'ALTER TABLE "users" '
-                        'ADD COLUMN IF NOT EXISTS "multi_major_image" varchar(100) NULL;'
+                migrations.RunPython(
+                    _add_user_column_if_missing(
+                        "multi_major_image",
+                        "varchar(100) NULL",
                     ),
-                    reverse_sql=(
-                        'ALTER TABLE "users" '
-                        'DROP COLUMN IF EXISTS "multi_major_image";'
-                    ),
+                    reverse_code=migrations.RunPython.noop,
                 ),
             ],
             state_operations=[
@@ -65,16 +100,12 @@ class Migration(migrations.Migration):
         ),
         migrations.SeparateDatabaseAndState(
             database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        'ALTER TABLE "users" '
-                        'ADD COLUMN IF NOT EXISTS "multi_major_approved" boolean '
-                        'NOT NULL DEFAULT false;'
+                migrations.RunPython(
+                    _add_user_column_if_missing(
+                        "multi_major_approved",
+                        "boolean NOT NULL DEFAULT false",
                     ),
-                    reverse_sql=(
-                        'ALTER TABLE "users" '
-                        'DROP COLUMN IF EXISTS "multi_major_approved";'
-                    ),
+                    reverse_code=migrations.RunPython.noop,
                 ),
             ],
             state_operations=[
@@ -92,17 +123,9 @@ class Migration(migrations.Migration):
         # 프로덕션 DB에 users_studentregistry가 이미 있을 수 있으므로 IF NOT EXISTS 사용
         migrations.SeparateDatabaseAndState(
             database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        'CREATE TABLE IF NOT EXISTS "users_studentregistry" ('
-                        '"id" bigserial NOT NULL PRIMARY KEY, '
-                        '"student_id" varchar(8) NOT NULL UNIQUE, '
-                        '"name" varchar(50) NOT NULL'
-                        ");"
-                    ),
-                    reverse_sql=(
-                        'DROP TABLE IF EXISTS "users_studentregistry";'
-                    ),
+                migrations.RunPython(
+                    _create_student_registry_if_missing,
+                    reverse_code=migrations.RunPython.noop,
                 ),
             ],
             state_operations=[
