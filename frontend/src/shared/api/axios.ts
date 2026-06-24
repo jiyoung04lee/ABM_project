@@ -6,6 +6,14 @@ const api = axios.create({
   withCredentials: true,
 });
 
+api.interceptors.request.use((config) => {
+  const access = TokenStorage.getAccess();
+  if (access) {
+    config.headers.Authorization = `Bearer ${access}`;
+  }
+  return config;
+});
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
