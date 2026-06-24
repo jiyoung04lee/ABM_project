@@ -1,102 +1,76 @@
-# ABM Project
+# AIVE
 
+> 국민대학교 AI빅데이터융합경영학과 학생들을 위한 학과 커뮤니티 플랫폼
+
+AIVE는 학과 학생들이 수업 후기, 진로 정보, 대외활동 경험, 학과 생활 정보를 공유하고 탐색할 수 있는 학과 전용 커뮤니티 서비스입니다.
+
+---
+
+## 🔗 Service
+
+- 서비스 URL: https://aive.vercel.app
+- 대상 사용자: 국민대학교 AI빅데이터융합경영학과 재학생 및 관련 구성원
+
+---
 
 ## 📌 프로젝트 개요
 
-ABM Project는 하나의 GitHub Repository에서 **프론트엔드와 백엔드를 분리하여 관리하는 모노레포 구조**를 사용합니다.
+학과 정보는 에브리타임, 카카오톡, 인스타그램, 개인 네트워크 등에 흩어져 있어 필요한 정보를 찾기 어렵습니다.
 
-* Frontend: 사용자 화면(UI) 및 UX 구현
-* Backend: API, 비즈니스 로직, 데이터 관리
+AIVE는 이러한 문제를 해결하기 위해 학과 구성원들이 직접 경험을 기록하고, 필요한 정보를 쉽게 탐색하며, 선후배 간 정보를 공유할 수 있는 공간을 제공하는 것을 목표로 합니다.
 
 ---
 
-## 📂 Repository 구조
+## 🧩 주요 기능
 
-```
+- 카카오 로그인
+- 사용자 온보딩
+- 학과 인증 및 사용자 상태 관리
+- 네트워크 게시판
+- 커뮤니티 게시판
+- 게시글 작성, 조회, 댓글, 좋아요
+- 관리자 기능
+- 사용자 행동 로그 수집
+- GA4 기반 서비스 분석
+
+---
+
+## 🛠 기술 스택
+
+### Frontend
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Kakao JavaScript SDK
+
+### Backend
+
+- Django
+- Django REST Framework
+- PostgreSQL
+- Simple JWT
+
+### Deploy & Infra
+
+- Vercel
+- Railway
+- Cloudflare
+- GitHub
+
+### Analytics
+
+- Google Analytics 4
+- Custom Event Logging
+
+---
+
+## 📁 Repository Structure
+
+```text
 ABM_project/
-├─ frontend/        # 프론트엔드 (Next.js)
-├─ backend/         # 백엔드 (Django)
-├─ .github/
-│  ├─ ISSUE_TEMPLATE/
-│  └─ PULL_REQUEST_TEMPLATE.md
-├─ .gitignore
-└─ README.md
-```
-
----
-
-## 🌿 Git Flow 전략
-
-본 프로젝트는 Git Flow를 기반으로 브랜치를 운영합니다.
-
-```
-main   ← 배포 브랜치
-  ↑
-develop ← 기본 개발 브랜치 (default)
-  ↑
-feature/* ← 기능 / 페이지 단위 브랜치
-```
-
-### 브랜치 역할
-
-* **main**: 배포 전용 브랜치 (직접 작업 ❌, PR로만 merge)
-* **develop**: 개발 브랜치 (기본 브랜치)
-* **feature/***: 이슈 단위 작업 브랜치
-
----
-
-## 🌱 브랜치 네이밍 규칙
-
-모든 기능 개발은 **Issue 기반 feature 브랜치**에서 진행합니다.
-
-```
-feature/{issue번호}-{fe|be}-{기능명}
-```
-
-### 예시
-
-```
-feature/12-fe-home
-feature/18-be-user-api
-```
-
----
-
-## 📝 Issue 관리 규칙
-
-* 모든 작업은 **Issue 생성 후 진행**합니다.
-* Issue Template을 사용합니다.
-
-  * Frontend Feature
-  * Backend Feature
-  * Bug
-* Issue 제목 규칙:
-
-  * `[FE] 기능명`
-  * `[BE] 기능명`
-  * `[BUG] 버그 내용`
-
----
-
-## 🔀 Pull Request(PR) 규칙
-
-* 모든 PR은 **develop 브랜치로 merge**합니다.
-* main 브랜치는 배포 시에만 develop에서 merge합니다.
-* PR 작성 시 **PR Template 필수 사용**
-
-### PR 체크리스트
-
-* 기능 정상 동작 확인
-* 로컬 테스트 완료
-* 불필요한 코드 제거
-* 이슈 연결 (`close #이슈번호`)
-
----
-
-## 👥 협업 규칙
-
-* 작업 시작 전 항상 최신 develop 브랜치 pull
-* 하나의 PR에는 **하나의 이슈만** 포함
-* 큰 작업은 기능 단위로 나누어 Issue 생성
-
----
+├── frontend/        # 프론트엔드 Next.js
+├── backend/         # 백엔드 Django
+├── .github/         # GitHub 템플릿 및 워크플로우
+├── .gitignore
+└── README.md
