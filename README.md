@@ -8,7 +8,7 @@ AIVE는 학과 학생들이 수업 후기, 진로 정보, 대외활동 경험, �
 
 ## 🔗 Service
 
-- 서비스 URL: https://aive.vercel.app
+- 서비스 URL: https://abmaive.com
 - 대상 사용자: 국민대학교 AI빅데이터융합경영학과 재학생 및 관련 구성원
 
 ---
