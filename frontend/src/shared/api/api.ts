@@ -1,5 +1,6 @@
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Keep browser requests on the frontend origin. Next.js proxies this path to
+// Django so Safari does not treat authentication cookies as third-party.
+export const API_BASE = "/backend-api";
 
 export const ONBOARDING_SIGNUP_STORAGE_KEY = "onboarding_signup_token";
 export const ONBOARDING_NONCE_STORAGE_KEY = "onboarding_nonce";

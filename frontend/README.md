@@ -33,4 +33,9 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
+Set `BACKEND_API_URL` to the Django/Railway origin. Browser API calls use the
+same-origin `/backend-api/*` proxy so authentication cookies remain first-party
+on Safari and mobile browsers. `NEXT_PUBLIC_API_BASE_URL` is supported as a
+legacy fallback.
+
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
