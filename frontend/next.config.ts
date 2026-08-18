@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        // The wildcard does not retain the trailing slash. Add it explicitly
+        // because Django's API URLs are slash-terminated.
+        source: "/backend-api/api/:path*",
+        destination: `${backendApiUrl}/api/:path*/`,
+      },
+      {
         source: "/backend-api/:path*",
         destination: `${backendApiUrl}/:path*`,
       },
