@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import LoginLogo from "@/shared/components/layout/LoginLoGo";
-import { API_BASE } from "@/shared/api/api";
+import { API_BASE, TokenStorage } from "@/shared/api/api";
 
 const KAKAO_REST_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY ?? "";
 
@@ -114,6 +114,7 @@ export default function LoginPage() {
         return;
       }
 
+      TokenStorage.set(data?.tokens?.access, data?.tokens?.refresh);
       window.location.href = "/admin";
 
     } catch {
