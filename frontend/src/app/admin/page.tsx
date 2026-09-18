@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Shield,
@@ -34,6 +34,7 @@ import {
   Pencil,
   Trash2,
   Bell,
+  RefreshCw,
 } from "lucide-react";
 import {
   BarChart,
@@ -67,6 +68,8 @@ import {
   getSearchRanking,
   getSessionStats,
   getDashboardKpi,
+  getActiveUserStats,
+  getReactivationAnalysis,
   getOperationalLogs,
   getSessionAnalytics,
   getSessionJourney,
@@ -89,6 +92,8 @@ import {
   type SessionByGrade,
   type SessionDistributionBucket,
   type DashboardKpi,
+  type ActiveUserStats,
+  type ReactivationAnalysis,
   type OperationalLogItem,
 } from "@/shared/api/logs";
 
@@ -208,6 +213,361 @@ interface OperationalLog {
 }
 
 // 학년 숫자 → 라벨 (백엔드 grade: 1,2,3,4 / 34 / "graduate")
+// ──────────────────────────────────────────
+// 사용자 유지 (DAU/WAU/MAU · 재방문율 · 주간 유지율)
+// ──────────────────────────────────────────
+const PENDING_LABEL = "집계 중";
+
+function formatDotDate(iso: string | null): string {
+  if (!iso) return "-";
+  const [y, m, d] = iso.split("-");
+  return `${y}.${m}.${d}`;
+}
+
+function formatRangeShort(start: string, end: string): string {
+  const s = start.split("-");
+  const e = end.split("-");
+  return `${Number(s[1])}/${Number(s[2])} ~ ${Number(e[1])}/${Number(e[2])}`;
+}
+
+/**
+ * 오늘 기준 고정 윈도우 지표. 기간 선택기의 영향을 받지 않으므로
+ * 상단 KPI 그리드와 별도 섹션으로 둔다.
+ *
+ * 측정 시작(tracking_since) 이전 데이터가 없어 초기에는 재방문율/주간
+ * 유지율이 왜곡되므로, 0%가 아니라 "집계 중"으로 표시한다.
+ */
+function UserRetentionSection({
+  stats,
+  loading,
+  onRefresh,
+}: {
+  stats: ActiveUserStats | null;
+  loading: boolean;
+  onRefresh: () => void;
+}) {
+  const ret = stats?.returning_user_rate;
+  const wr = stats?.weekly_retention;
+
+  const windowSub = (m?: ActiveUserStats["wau"]) => {
+    if (!m) return "";
+    const range = formatRangeShort(m.window.start, m.window.end);
+    if (m.status === "ready") return range;
+    return `${range} · 누적 ${m.days_covered}/${m.days_expected}일`;
+  };
+
+  const cards = [
+    {
+      label: "DAU",
+      value: stats?.dau ?? 0,
+      suffix: "",
+      sub: "오늘 활성 사용자",
+      icon: Activity,
+      color: "bg-cyan-100",
+      iconColor: "text-cyan-600",
+    },
+    {
+      label: "WAU",
+      value: stats?.wau.value ?? 0,
+      suffix: "",
+      sub: windowSub(stats?.wau),
+      icon: Users,
+      color: "bg-blue-100",
+      iconColor: "text-blue-600",
+    },
+    {
+      label: "MAU",
+      value: stats?.mau.value ?? 0,
+      suffix: "",
+      sub: windowSub(stats?.mau),
+      icon: BarChart3,
+      color: "bg-indigo-100",
+      iconColor: "text-indigo-600",
+    },
+    {
+      label: "DAU/MAU",
+      value: stats?.dau_mau_ratio ?? PENDING_LABEL,
+      suffix: stats?.dau_mau_ratio != null ? "%" : "",
+      sub: "일간/월간 활성 비율",
+      icon: TrendingUp,
+      color: "bg-amber-100",
+      iconColor: "text-amber-600",
+    },
+    {
+      label: "재방문율",
+      value: ret?.rate ?? PENDING_LABEL,
+      suffix: ret?.rate != null ? "%" : "",
+      sub:
+        ret?.rate != null
+          ? `오늘 ${ret.active_users}명 중 ${ret.returning_users}명 재방문`
+          : "이전 방문 기록이 쌓이면 표시됩니다",
+      icon: LogIn,
+      color: "bg-green-100",
+      iconColor: "text-green-600",
+    },
+    {
+      label: "주간 유지율",
+      value: wr?.rate ?? PENDING_LABEL,
+      suffix: wr?.rate != null ? "%" : "",
+      sub:
+        wr?.rate != null
+          ? `지난주 ${wr.last_week_active_users}명 중 ${wr.retained_users}명 재방문` +
+            (wr.this_week_in_progress ? " · 이번주 집계 중" : "")
+          : "지난주 데이터가 쌓이면 표시됩니다",
+      icon: Clock,
+      color: "bg-purple-100",
+      iconColor: "text-purple-600",
+    },
+  ];
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+        <div className="flex items-baseline gap-2">
+          <h3 className="font-semibold text-gray-900">사용자 유지</h3>
+          <span className="text-xs text-gray-500">
+            오늘 기준 · 위 기간 선택과 무관
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+            {stats?.tracking_since
+              ? `${formatDotDate(stats.tracking_since)}부터 측정`
+              : "측정 시작 전"}
+          </span>
+          {/* 기간 선택기에 연동되지 않아 자동 갱신 계기가 없으므로 수동 새로고침 제공 */}
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={loading}
+            aria-label="사용자 유지 지표 새로고침"
+            title="새로고침"
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+            />
+            새로고침
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {cards.map(({ label, value, suffix, sub, icon: Icon, color, iconColor }) => (
+            <div
+              key={label}
+              className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div
+                  className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center`}
+                >
+                  <Icon className={`w-5 h-5 ${iconColor}`} />
+                </div>
+                <span className="text-xs font-medium text-gray-600">{label}</span>
+              </div>
+              <div
+                className={
+                  typeof value === "number"
+                    ? "text-2xl font-bold text-gray-900"
+                    : "text-base font-semibold text-gray-400"
+                }
+              >
+                {typeof value === "number" ? value.toLocaleString() : value}
+                {suffix}
+              </div>
+              {sub ? <p className="text-xs text-gray-500 mt-1">{sub}</p> : null}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs text-gray-500 mt-2">
+        주간 유지율 = 지난주(월~일) 활성 사용자 중 이번주에도 방문한 사용자 비율 ·
+        재방문율 = 오늘 활성 사용자 중 이전에도 방문한 적 있는 사용자 비율 ·
+        로그인 여부와 무관하게 인증된 요청을 방문으로 집계합니다(한국 날짜 기준).
+      </p>
+    </div>
+  );
+}
+
+/**
+ * 비활성 사용자 복귀 분석.
+ *
+ * 전역 기간 선택기와 연결하지 않는다 — 정책 시행일 기준의 독립 분석이다.
+ * [분석] 버튼을 눌렀을 때만 호출한다.
+ */
+function ReactivationSection({ trackingSince }: { trackingSince: string | null }) {
+  const [policyDate, setPolicyDate] = useState("");
+  const [inactiveDays, setInactiveDays] = useState(14);
+  const [observationDays, setObservationDays] = useState(14);
+  const [result, setResult] = useState<ReactivationAnalysis | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const run = () => {
+    if (!policyDate) {
+      setError("정책 시행일을 선택해 주세요.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    getReactivationAnalysis({
+      policy_date: policyDate,
+      inactive_days: inactiveDays,
+      observation_days: observationDays,
+    })
+      .then((r) => setResult(r.data))
+      .catch((e) => {
+        setResult(null);
+        setError(e?.response?.data?.detail ?? "분석에 실패했습니다.");
+      })
+      .finally(() => setLoading(false));
+  };
+
+  const notice = (() => {
+    if (!result) return null;
+    switch (result.unavailable_reason) {
+      case "policy_date_in_future":
+        return "정책 시행일이 아직 오지 않았습니다.";
+      case "inactive_window_not_tracked":
+        return `비활성 판정 구간이 측정 시작일(${
+          trackingSince ? formatDotDate(trackingSince) : "미측정"
+        }) 이전이라 비활성 여부를 판정할 수 없습니다.`;
+      case "no_inactive_users":
+        return "해당 조건에 맞는 비활성 회원이 없어 복귀율을 계산할 수 없습니다.";
+      default:
+        return result.status === "partial"
+          ? `측정 시작일 이후 구간만 확인할 수 있어(${result.inactive_window.days_covered}/${result.inactive_window.days}일), 비활성 회원이 실제보다 많게 집계될 수 있습니다.`
+          : null;
+    }
+  })();
+
+  return (
+    <div className="mb-6 bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+      <div className="flex items-baseline gap-2 mb-1">
+        <h3 className="font-semibold text-gray-900">비활성 사용자 복귀 분석</h3>
+        <span className="text-xs text-gray-500">독립 분석 · 위 기간 선택과 무관</span>
+      </div>
+      <p className="text-xs text-gray-500 mb-4">
+        정책 시행 전 일정 기간 방문하지 않던 기존 회원이, 시행 후 다시 방문했는지 확인합니다.
+      </p>
+
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-gray-600">정책 시행일</span>
+          <input
+            type="date"
+            value={policyDate}
+            onChange={(e) => setPolicyDate(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-gray-600">비활성 기준(시행 전, 일)</span>
+          <input
+            type="number"
+            min={1}
+            max={180}
+            value={inactiveDays}
+            onChange={(e) => setInactiveDays(Number(e.target.value))}
+            className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-gray-600">관찰 기간(시행 후, 일)</span>
+          <input
+            type="number"
+            min={1}
+            max={180}
+            value={observationDays}
+            onChange={(e) => setObservationDays(Number(e.target.value))}
+            className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          />
+        </label>
+        <button
+          onClick={run}
+          disabled={loading}
+          className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1d4ed8] disabled:opacity-50"
+        >
+          {loading ? "분석 중..." : "분석"}
+        </button>
+      </div>
+
+      {error ? <p className="text-sm text-red-600 mb-3">{error}</p> : null}
+
+      {result ? (
+        <>
+          <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm mb-4 pb-4 border-b border-gray-100">
+            <div className="flex justify-between sm:block">
+              <dt className="text-gray-500 text-xs">정책 시행일</dt>
+              <dd className="text-gray-900 font-medium">
+                {formatDotDate(result.policy_date)}
+              </dd>
+            </div>
+            <div className="flex justify-between sm:block">
+              <dt className="text-gray-500 text-xs">비활성 기준</dt>
+              <dd className="text-gray-900 font-medium">
+                시행 전 {result.inactive_window.days}일 미방문
+              </dd>
+            </div>
+            <div className="flex justify-between sm:block">
+              <dt className="text-gray-500 text-xs">관찰 기간</dt>
+              <dd className="text-gray-900 font-medium">
+                시행 후 {result.observation_window.days}일
+                {result.observation_in_progress
+                  ? ` · 진행 중 (${result.observation_window.days_elapsed}일 경과)`
+                  : ""}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "대상 기존 회원", value: result.eligible_users, unit: "명" },
+              { label: "비활성 회원", value: result.inactive_users, unit: "명" },
+              { label: "복귀 회원", value: result.returned_users, unit: "명" },
+              { label: "복귀율", value: result.reactivation_rate, unit: "%" },
+            ].map(({ label, value, unit }) => (
+              <div key={label} className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs text-gray-600 mb-1">{label}</p>
+                <p
+                  className={
+                    value == null
+                      ? "text-base font-semibold text-gray-400"
+                      : "text-2xl font-bold text-gray-900"
+                  }
+                >
+                  {value == null ? PENDING_LABEL : `${value.toLocaleString()}${unit}`}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {notice ? (
+            <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-3">
+              {notice}
+            </p>
+          ) : null}
+
+          <p className="text-xs text-gray-500 mt-3">
+            대상 기존 회원 = 시행일 이전 가입자 중 운영자·비활성 계정·다부전공 미승인 회원을 제외한 수 ·
+            비활성 판정 {formatDotDate(result.inactive_window.start)} ~{" "}
+            {formatDotDate(result.inactive_window.end)} · 관찰{" "}
+            {formatDotDate(result.observation_window.start)} ~{" "}
+            {formatDotDate(result.observation_window.end)}
+          </p>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function gradeToLabel(
   g: number | string | null,
   userType?: "student" | "graduate"
@@ -463,6 +823,8 @@ export default function AdminPage() {
   const [selectedOperationalLog, setSelectedOperationalLog] = useState<OperationalLogItem | null>(null);
   const [dashboardKpi, setDashboardKpi] = useState<DashboardKpi | null>(null);
   const [loadingDashboardKpi, setLoadingDashboardKpi] = useState(false);
+  const [activeUserStats, setActiveUserStats] = useState<ActiveUserStats | null>(null);
+  const [loadingActiveUsers, setLoadingActiveUsers] = useState(false);
   const [operationalLogs, setOperationalLogs] = useState<OperationalLogItem[]>([]);
   const [operationalLogsCount, setOperationalLogsCount] = useState(0);
   const [operationalLogsPage, setOperationalLogsPage] = useState(1);
@@ -691,6 +1053,22 @@ export default function AdminPage() {
       .catch(() => setDashboardKpi(null))
       .finally(() => setLoadingDashboardKpi(false));
   }, [isAdmin, currentView, dashboardStartDate, dashboardEndDate]);
+
+  // 활성 사용자 지표 (DAU/WAU/MAU · 재방문율 · 주간 유지율)
+  // 기간 선택기와 무관한 '오늘 기준' 고정 윈도우 지표이므로 날짜 의존성을 두지 않는다.
+  // 그래서 자동 갱신 계기가 없고, 섹션의 새로고침 버튼이 이 함수를 다시 호출한다.
+  const fetchActiveUserStats = useCallback(() => {
+    setLoadingActiveUsers(true);
+    getActiveUserStats()
+      .then((r) => setActiveUserStats(r.data))
+      .catch(() => setActiveUserStats(null))
+      .finally(() => setLoadingActiveUsers(false));
+  }, []);
+
+  useEffect(() => {
+    if (!isAdmin || currentView !== "dashboard") return;
+    fetchActiveUserStats();
+  }, [isAdmin, currentView, fetchActiveUserStats]);
 
   // 운영 로그 목록 (event_type: all->빈값, post->post_create)
   const operationalEventType =
@@ -1130,6 +1508,16 @@ export default function AdminPage() {
               <p className="text-xs text-gray-500 mb-6 -mt-2">
                 참여율 = (좋아요 + 댓글) ÷ 게시글 조회 × 100 · GA4(유입·페이지)와 별도로 UGC 행동 지표를 EventLog로 집계합니다.
               </p>
+
+              <UserRetentionSection
+                stats={activeUserStats}
+                loading={loadingActiveUsers}
+                onRefresh={fetchActiveUserStats}
+              />
+
+              <ReactivationSection
+                trackingSince={activeUserStats?.tracking_since ?? null}
+              />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">

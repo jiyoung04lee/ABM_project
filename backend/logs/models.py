@@ -72,6 +72,41 @@ class EventLog(models.Model):
         return f"{self.event_type} - {self.section} - {self.created_at}"
 
 
+class DailyActiveUser(models.Model):
+    """
+    인증 사용자의 일별 활성 기록. user당 하루 최대 1행.
+
+    DAU / WAU / MAU · 재방문율 · 주간 유지율 전용.
+    EventLog(개인 식별 X)와 의도적으로 분리 — 개인 식별 정보는 이 테이블에만 존재한다.
+    EventSetting ON/OFF 대상이 아니다(page_view를 꺼도 DAU는 계속 쌓여야 함).
+
+    date는 settings.ANALYTICS_TIME_ZONE(기본값 = TIME_ZONE = Asia/Seoul) 기준 날짜.
+    DateField에 날짜를 직접 저장하므로, 저장 시점의 기준 타임존이 곧 집계 기준이다.
+    """
+
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="active_days",
+    )
+    date = models.DateField(verbose_name="활성 일자(KST)")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "date"],
+                name="uniq_daily_active_user_user_date",
+            ),
+        ]
+        indexes = [models.Index(fields=["date"])]
+        verbose_name = "일별 활성 사용자"
+        verbose_name_plural = "일별 활성 사용자"
+
+    def __str__(self):
+        return f"user={self.user_id} @ {self.date}"
+
+
 class EventSetting(models.Model):
     """
     이벤트 추적 ON/OFF. create_event_log 호출 시 is_active=True인 경우만 저장.

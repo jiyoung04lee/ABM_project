@@ -42,6 +42,97 @@ export interface DashboardKpi {
 export const getDashboardKpi = (params?: AnalyticsPeriodParams) =>
   api.get<DashboardKpi>("logs/analytics/dashboard-kpi/", { params });
 
+// ─── 활성 사용자 지표 (DAU/WAU/MAU · 재방문율 · 주간 유지율) ───
+// DailyActiveUser 기반. 기간 선택기와 무관한 '오늘 기준' 고정 윈도우 지표.
+// 측정 시작 이전 데이터가 없으므로 status로 집계 가능 여부를 구분한다.
+//   ready | partial(측정 시작일이 구간 안 → 과소집계 가능) | pending(계산 불가)
+export type MetricStatus = "ready" | "partial" | "pending";
+
+export interface RollingWindowMetric {
+  value: number;
+  status: MetricStatus;
+  window: { start: string; end: string };
+  effective_start: string | null;
+  days_covered: number;
+  days_expected: number;
+}
+
+export interface ActiveUserStats {
+  as_of: string;
+  tracking_since: string | null;
+  tracking_days: number;
+  timezone: string;
+
+  dau: number;
+  wau: RollingWindowMetric;
+  mau: RollingWindowMetric;
+  dau_mau_ratio: number | null;
+
+  returning_user_rate: {
+    status: MetricStatus;
+    rate: number | null;
+    returning_users: number | null;
+    new_users: number | null;
+    active_users: number;
+  };
+
+  weekly_retention: {
+    status: MetricStatus;
+    rate: number | null;
+    retained_users: number | null;
+    last_week_active_users: number | null;
+    last_week: { start: string; end: string };
+    this_week: { start: string; end: string };
+    this_week_in_progress: boolean;
+  };
+}
+
+export const getActiveUserStats = () =>
+  api.get<ActiveUserStats>("logs/analytics/active-users/");
+
+// ─── 비활성 사용자 복귀 분석 ───
+// "정책 시행 전 N일간 안 오던 기존 회원이, 시행 후 M일 안에 다시 왔는가?"
+// 대시보드 전역 기간 선택기와 무관하게 자체 파라미터로만 동작한다.
+export type ReactivationUnavailableReason =
+  | "policy_date_in_future"
+  | "inactive_window_not_tracked"
+  | "no_inactive_users";
+
+export interface ReactivationAnalysis {
+  as_of: string;
+  policy_date: string;
+  tracking_since: string | null;
+
+  inactive_window: {
+    start: string;
+    end: string;
+    days: number;
+    effective_start: string | null;
+    days_covered: number;
+  };
+  observation_window: {
+    start: string;
+    end: string;
+    days: number;
+    days_elapsed: number;
+  };
+
+  eligible_users: number;
+  inactive_users: number | null;
+  returned_users: number | null;
+  reactivation_rate: number | null;
+
+  status: MetricStatus;
+  observation_in_progress: boolean;
+  unavailable_reason?: ReactivationUnavailableReason;
+}
+
+export const getReactivationAnalysis = (params: {
+  policy_date: string;
+  inactive_days?: number;
+  observation_days?: number;
+}) => api.get<ReactivationAnalysis>("logs/analytics/reactivation/", { params });
+
 // ─── 운영 로그 (EventLog 목록) ───
 export interface OperationalLogItem {
   id: number;
