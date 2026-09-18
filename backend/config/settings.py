@@ -167,7 +167,15 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+# 서비스가 국민대 구성원 대상이므로 날짜 경계를 한국 시간으로 통일한다.
+# USE_TZ=True라 DB에는 여전히 UTC(timestamptz)로 저장되고, 조회/표시 시점의
+# 해석만 KST가 된다. 즉 기존 데이터의 마이그레이션은 필요 없다.
+TIME_ZONE = "Asia/Seoul"
+
+# 분석 집계(DailyActiveUser 등)의 날짜 기준 타임존.
+# 기본값이 TIME_ZONE이라 둘이 어긋날 수 없다. 분석만 다른 기준이 필요해지는
+# 경우에 한해 환경변수로 분리할 수 있게 남겨둔다.
+ANALYTICS_TIME_ZONE = os.environ.get("ANALYTICS_TIME_ZONE", TIME_ZONE)
 
 USE_I18N = True
 

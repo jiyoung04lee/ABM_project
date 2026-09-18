@@ -6,12 +6,18 @@
 3. ScoreHistory 삭제 (좋아요 중복 방지 기록 리셋)
 
 Railway Cron Schedule (UTC): 0 15 L * *   ← 한국 시간 다음 달 1일 00:00
+(Railway cron 표현식 자체는 UTC이므로 그대로 두어야 한다.)
+
+결산 대상 달은 실행 시점의 '전월'로 명시 계산한다.
+예전에는 서버 OS가 UTC라 date.today()가 전달 말일이 되는 것에 기대고 있었는데,
+TIME_ZONE을 Asia/Seoul로 통일하면서 그 우연이 성립하지 않으므로 직접 계산한다.
 """
 
-from datetime import date
+from datetime import timedelta
 
 from django.core.management.base import BaseCommand
 from django.db.models import Q
+from django.utils import timezone
 
 from apps.users.models import User, ScoreHistory, MonthlyWinner
 
@@ -23,12 +29,11 @@ class Command(BaseCommand):
     help = "매월 점수 초기화 및 우수 활동자 기록"
 
     def handle(self, *args, **options):
-        today = date.today()
-        # 이 커맨드는 "이번 달 결산"을 위한 것이므로,
-        # 한국 기준 1일 00:00에 돌리면 전달 성적을 저장하는 셈.
-        # (실제 실행 시점이 UTC 전날 15시이므로 today가 전달 말일)
-        year = today.year
-        month = today.month
+        # 한국 기준 1일 00:00에 실행되므로, 결산 대상은 직전 달이다.
+        today = timezone.localdate()
+        last_month_end = today.replace(day=1) - timedelta(days=1)
+        year = last_month_end.year
+        month = last_month_end.month
 
         past_winner_ids = set(
             MonthlyWinner.objects.values_list("user_id", flat=True)
