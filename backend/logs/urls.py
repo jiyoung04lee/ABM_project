@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    ActiveUserStatsView,
     AdminInsightView,
     DashboardKpiView,
     ErrorLogListView,
@@ -14,6 +15,7 @@ from .views import (
     PageVisitorsView,
     PopularByGradeView,
     PopularByInterestView,
+    ReactivationAnalysisView,
     PostSegmentViewsView,
     SearchRankingView,
     SessionAnalyticsView,
@@ -50,6 +52,8 @@ urlpatterns = [
     path("analytics/session-stats/", SessionStatsView.as_view(), name="session-stats"),
     path("analytics/session-analytics/", SessionAnalyticsView.as_view(), name="session-analytics"),
     path("analytics/session-journey/", SessionJourneyView.as_view(), name="session-journey"),
+    path("analytics/active-users/", ActiveUserStatsView.as_view(), name="active-users"),
+    path("analytics/reactivation/", ReactivationAnalysisView.as_view(), name="reactivation"),
     path("analytics/user-management/", UserManagementView.as_view(), name="user-management"),
     path("analytics/errors/", ErrorLogListView.as_view(), name="error-log-list"),
     path("analytics/errors/stats/", ErrorLogStatsView.as_view(), name="error-log-stats"),
