@@ -25,9 +25,12 @@ class UserAdmin(BaseUserAdmin):
         "is_profile_complete",
         "is_verified",
         "is_staff",
+        "is_operator",
         "is_active",
         "created_at",
     )
+
+    list_editable = ("is_operator",)
 
     list_filter = (
         "user_type",
@@ -35,6 +38,7 @@ class UserAdmin(BaseUserAdmin):
         "is_profile_complete",
         "is_verified",
         "is_staff",
+        "is_operator",
         "is_active",
         "created_at",
     )

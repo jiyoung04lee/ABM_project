@@ -1721,12 +1721,26 @@ STATUS_PARTIAL = "partial"
 STATUS_PENDING = "pending"
 
 
+def _member_dau_qs():
+    """
+    운영자·운영진을 제외한 DailyActiveUser 기본 쿼리셋.
+
+    수집 단계에서도 제외하지만 조회 단계에서 한 번 더 거른다.
+    운영진 지정이 나중에 바뀌어도 과거 구간까지 같은 기준으로 재계산되어야
+    추세가 일관되기 때문이다. (수집 시점에만 걸러내면, 지정한 날을 기점으로
+    실제로는 없었던 DAU 하락이 그래프에 생긴다.)
+    """
+    from apps.users.exclusions import excluded_user_ids
+
+    return DailyActiveUser.objects.exclude(user_id__in=excluded_user_ids())
+
+
 def _distinct_user_ids(start: date, end: date) -> set[int]:
-    """[start, end] 구간(양끝 포함)에 활성이었던 user_id 집합."""
+    """[start, end] 구간(양끝 포함)에 활성이었던 회원 user_id 집합."""
     return set(
-        DailyActiveUser.objects.filter(
-            date__gte=start, date__lte=end
-        ).values_list("user_id", flat=True)
+        _member_dau_qs()
+        .filter(date__gte=start, date__lte=end)
+        .values_list("user_id", flat=True)
     )
 
 
@@ -1784,12 +1798,11 @@ class ActiveUserStatsView(APIView):
 
     def get(self, request: Request) -> Response:
         today = analytics_today()
-        tracking_since = DailyActiveUser.objects.aggregate(
-            v=Min("date")
-        )["v"]
+        member_qs = _member_dau_qs()
+        tracking_since = member_qs.aggregate(v=Min("date"))["v"]
 
         # ── DAU (unique는 UniqueConstraint로 이미 보장됨) ──
-        dau = DailyActiveUser.objects.filter(date=today).count()
+        dau = member_qs.filter(date=today).count()
 
         # ── WAU / MAU (오늘 포함 롤링 7일 / 30일) ──
         wau = _window_block(today - timedelta(days=6), today, tracking_since)
@@ -1853,9 +1866,8 @@ class ActiveUserStatsView(APIView):
             }
 
         returning = (
-            DailyActiveUser.objects.filter(
-                user_id__in=today_ids, date__lt=today
-            )
+            _member_dau_qs()
+            .filter(user_id__in=today_ids, date__lt=today)
             .values("user_id")
             .distinct()
             .count()
@@ -1959,19 +1971,19 @@ def _eligible_user_ids(policy_date: date) -> set[int]:
     정책 시행일 T 이전에 가입한 '복귀 가능한' 기존 회원.
 
     제외 대상과 이유:
-      - is_staff          : 운영자. create_event_log/DAU 집계와 동일 정책
-      - is_active=False   : 비활성 계정. 복귀 자체가 불가능
-      - 다부전공 미승인   : PendingAwareJWTAuthentication이 비로그인 취급하므로
-                            DailyActiveUser 행이 생길 수 없음. 분모에 넣으면
-                            영구 미복귀로 잡혀 복귀율이 구조적으로 낮아진다.
+      - is_staff / is_operator : 운영자·운영진. 다른 집계와 동일 정책
+      - is_active=False        : 비활성 계정. 복귀 자체가 불가능
+      - 다부전공 미승인        : PendingAwareJWTAuthentication이 비로그인
+                                 취급하므로 DailyActiveUser 행이 생길 수 없음.
+                                 분모에 넣으면 영구 미복귀로 잡혀 복귀율이
+                                 구조적으로 낮아진다.
     """
+    from apps.users.exclusions import exclude_non_members
     from apps.users.models import User
 
-    qs = (
+    qs = exclude_non_members(
         User.objects.filter(created_at__date__lt=policy_date, is_active=True)
-        .exclude(is_staff=True)
-        .exclude(is_multi_major=True, multi_major_approved=False)
-    )
+    ).exclude(is_multi_major=True, multi_major_approved=False)
     return set(qs.values_list("id", flat=True))
 
 
@@ -2024,9 +2036,8 @@ class ReactivationAnalysisView(APIView):
             )
 
         today = analytics_today()
-        tracking_since = DailyActiveUser.objects.aggregate(
-            v=Min("date")
-        )["v"]
+        member_qs = _member_dau_qs()
+        tracking_since = member_qs.aggregate(v=Min("date"))["v"]
 
         iw_start = policy_date - timedelta(days=inactive_days)
         iw_end = policy_date - timedelta(days=1)
@@ -2082,7 +2093,7 @@ class ReactivationAnalysisView(APIView):
 
         # ── 비활성자 = 기존 회원 중 판정 구간에 방문 기록이 없는 사람 ──
         active_in_window = set(
-            DailyActiveUser.objects.filter(
+            member_qs.filter(
                 user_id__in=eligible_ids,
                 date__gte=iw_start,
                 date__lte=iw_end,
@@ -2102,7 +2113,7 @@ class ReactivationAnalysisView(APIView):
             return Response(payload)
 
         returned = (
-            DailyActiveUser.objects.filter(
+            member_qs.filter(
                 user_id__in=inactive_ids,
                 date__gte=ow_start,
                 date__lte=ow_end,

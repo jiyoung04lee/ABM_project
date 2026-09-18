@@ -543,3 +543,84 @@ class ReactivationAnalysisTests(JwtClientMixin, TestCase):
             body["observation_window"]["end"],
             (self.policy_date + timedelta(days=13)).isoformat(),
         )
+
+
+class OperatorExclusionTests(JwtClientMixin, TestCase):
+    """
+    운영진(is_operator) 제외.
+
+    수집 시점과 조회 시점 양쪽에서 걸러지는지 확인한다. 조회 시점 제외가
+    중요한 이유는, 나중에 운영진으로 지정해도 과거 구간까지 같은 기준으로
+    재계산되어야 추세에 가짜 하락이 생기지 않기 때문이다.
+    """
+
+    def setUp(self):
+        cache.clear()
+        self.today = analytics_today()
+        self.admin = make_user("opadmin@kookmin.ac.kr", nickname="opadmin",
+                               is_staff=True)
+
+    def test_operator_visit_not_collected(self):
+        op = make_user("op@kookmin.ac.kr", nickname="운영진A")
+        User.objects.filter(pk=op.pk).update(is_operator=True)
+        op.refresh_from_db()
+
+        record_daily_active_user(op)
+        self.assertEqual(DailyActiveUser.objects.count(), 0)
+
+    def test_operator_api_request_not_collected(self):
+        op = make_user("op2@kookmin.ac.kr", nickname="운영진B")
+        User.objects.filter(pk=op.pk).update(is_operator=True)
+
+        self.authenticate(op)
+        self.client.get("/api/users/me/")
+        self.assertEqual(DailyActiveUser.objects.count(), 0)
+
+    def test_existing_rows_excluded_retroactively(self):
+        """
+        이미 쌓인 행도 운영진 지정 시 과거까지 집계에서 빠져야 한다.
+        (수집 시점에만 걸렀다면 지정일을 기점으로 없던 하락이 생긴다.)
+        """
+        member = make_user("m@kookmin.ac.kr", nickname="일반회원")
+        later_op = make_user("lateop@kookmin.ac.kr", nickname="나중운영진")
+        for u in (member, later_op):
+            DailyActiveUser.objects.create(user=u, date=self.today)
+
+        self.authenticate(self.admin)
+        url = reverse("logs:active-users")
+        self.assertEqual(self.client.get(url).json()["dau"], 2)
+
+        # 나중에 운영진으로 지정
+        User.objects.filter(pk=later_op.pk).update(is_operator=True)
+        self.assertEqual(self.client.get(url).json()["dau"], 1)
+
+    def test_operator_excluded_from_reactivation_base(self):
+        op = make_user("op3@kookmin.ac.kr", nickname="운영진C")
+        member = make_user("m2@kookmin.ac.kr", nickname="일반회원2")
+        policy_date = self.today - timedelta(days=20)
+        joined = datetime.combine(
+            policy_date - timedelta(days=30),
+            datetime.min.time(),
+            tzinfo=ZoneInfo("Asia/Seoul"),
+        )
+        User.objects.filter(pk__in=[op.pk, member.pk]).update(created_at=joined)
+        User.objects.filter(pk=op.pk).update(is_operator=True)
+
+        self.authenticate(self.admin)
+        body = self.client.get(
+            reverse("logs:reactivation"),
+            {"policy_date": policy_date.isoformat()},
+        ).json()
+        self.assertEqual(body["eligible_users"], 1)  # 일반회원2만
+
+    def test_operator_event_log_not_recorded(self):
+        """EventLog는 user_id가 없어 소급 제외가 불가하므로 수집 시점에 막는다."""
+        from .models import EventLog
+        from .utils import create_event_log
+
+        op = make_user("op4@kookmin.ac.kr", nickname="운영진D")
+        User.objects.filter(pk=op.pk).update(is_operator=True)
+        op.refresh_from_db()
+
+        create_event_log(event_type="page_view", section="home", user=op)
+        self.assertEqual(EventLog.objects.count(), 0)

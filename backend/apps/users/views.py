@@ -756,22 +756,18 @@ class CompleteProfileView(generics.GenericAPIView):
         return response
     
 
-# 제외할 닉네임 목록
-EXCLUDED_NICKNAMES = {"wldud", "김만덕", "김승혁", "도도도", "leewise", "농진", "23", "몽당연필", "에사비", "애사비"}
-
-
 # 순위 불러 오기 (과거 수상자 제외)
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def top_active_users(request):
+    from .exclusions import exclude_non_members
+
     past_winner_ids = set(
         MonthlyWinner.objects.values_list("user_id", flat=True)
     )
 
     base_qs = (
-        User.objects
-        .exclude(nickname__in=EXCLUDED_NICKNAMES)
-        .exclude(is_staff=True)
+        exclude_non_members(User.objects.all())
         .exclude(id__in=past_winner_ids)
         .filter(user_type="student")
         .order_by("-score")

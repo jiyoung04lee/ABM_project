@@ -19,10 +19,8 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.utils import timezone
 
+from apps.users.exclusions import exclude_non_members
 from apps.users.models import User, ScoreHistory, MonthlyWinner
-
-
-EXCLUDED_NICKNAMES = {"wldud", "김만덕", "김승혁", "도도도", "leewise", "농진", "23", "몽당연필", "에사비", "애사비"}
 
 
 class Command(BaseCommand):
@@ -40,9 +38,7 @@ class Command(BaseCommand):
         )
 
         base_qs = (
-            User.objects
-            .exclude(nickname__in=EXCLUDED_NICKNAMES)
-            .exclude(is_staff=True)
+            exclude_non_members(User.objects.all())
             .exclude(id__in=past_winner_ids)
             .filter(user_type="student", score__gt=0)
             .order_by("-score")

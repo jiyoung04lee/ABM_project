@@ -143,11 +143,15 @@ def record_daily_active_user(user: "User | None") -> None:
     캐시는 순전히 하루 1회로 DB 접근을 줄이기 위한 것이다.
     (캐시가 빗나가도 get_or_create가 기존 행을 되돌려줄 뿐 중복 생성은 없다.)
 
-    관리자(is_staff)는 create_event_log와 동일하게 집계에서 제외한다.
+    운영자(is_staff)·운영진(is_operator)은 집계에서 제외한다. 다만 이 행은
+    ActiveUserStatsView 쪽에서 조회 시점에도 한 번 더 걸러지는데, 운영진 지정이
+    나중에 바뀌어도 과거 구간까지 같은 기준으로 재계산되게 하기 위함이다.
     """
+    from apps.users.exclusions import is_excluded_account
+
     if user is None or not getattr(user, "is_authenticated", False):
         return
-    if getattr(user, "is_staff", False):
+    if is_excluded_account(user):
         return
     user_pk = getattr(user, "pk", None)
     if not user_pk:
@@ -191,13 +195,16 @@ def create_event_log(
     개인 식별 없이 집계용 이벤트 로그 저장.
 
     EventSetting에서 해당 event_type이 is_active=True일 때만 저장.
-    관리자(is_staff) 사용자의 이벤트는 기록하지 않음(에러 로그만 유지).
+    운영자(is_staff)·운영진(is_operator) 이벤트는 기록하지 않음(에러 로그만 유지).
+    EventLog에는 user_id가 없어 소급 제외가 불가능하므로 수집 시점에 걸러야 한다.
     post_view / like / comment 이벤트는 author_user_type, author_grade_at_event 까지
     함께 저장해야 히트맵 집계가 가능합니다.
 
     login: 동일 계정(로그인 사용자)은 로컬 일자당 최초 1건만 저장(대시보드 중복 집계 방지).
     """
-    if user is not None and getattr(user, "is_staff", False):
+    from apps.users.exclusions import is_excluded_account
+
+    if is_excluded_account(user):
         return None
     if event_type not in get_active_event_types():
         return None

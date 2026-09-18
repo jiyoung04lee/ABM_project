@@ -222,6 +222,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name="활성화",
     )
 
+    # 운영진 계정 표시. is_staff와 별개로, 관리자 권한은 없지만 통계에서
+    # 빼야 하는 운영진 일반 계정을 위한 플래그다.
+    # 닉네임 하드코딩(구 EXCLUDED_NICKNAMES)을 대체한다 — 닉네임은 변경 가능해서
+    # 조용히 집계에 다시 포함되는 문제가 있었다.
+    is_operator = models.BooleanField(
+        default=False,  # type: ignore[reportArgumentType]
+        verbose_name="운영진(집계·랭킹 제외)",
+        help_text="점수 랭킹, 월간 결산, DAU/재방문율/복귀 분석에서 모두 제외됩니다.",
+    )
+
     # 타임스탬프
     created_at = models.DateTimeField(
         auto_now_add=True,
