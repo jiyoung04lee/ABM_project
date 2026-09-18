@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ApiErrorLog, EventLog, EventSetting
+from .models import ApiErrorLog, DailyActiveUser, EventLog, EventSetting
 
 
 @admin.register(EventLog)
@@ -47,3 +47,11 @@ class ApiErrorLogAdmin(admin.ModelAdmin):
     search_fields = ("path", "message")
     ordering = ("-created_at",)
     readonly_fields = ("path", "method", "status_code", "message", "created_at")
+
+@admin.register(DailyActiveUser)
+class DailyActiveUserAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "date", "created_at")
+    list_filter = ("date",)
+    search_fields = ("user__nickname", "user__email")
+    ordering = ("-date", "-id")
+    readonly_fields = ("user", "date", "created_at")

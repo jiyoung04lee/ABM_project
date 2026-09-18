@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 
 from django.db.models import Avg, Case, Count, IntegerField, Min, Max, Sum, When
 from rest_framework.permissions import AllowAny, IsAdminUser
@@ -13,10 +13,12 @@ from django.db.models import Q
 from django.db.models.functions import Extract
 from django.utils import timezone
 
-from .models import ApiErrorLog, EventLog, EventSetting
+from .models import ApiErrorLog, DailyActiveUser, EventLog, EventSetting
 from .utils import (
     EVENT_WEIGHTS,
     INTERACTION_EVENT_TYPES,
+    analytics_today,
+    get_analytics_timezone,
     refresh_event_setting_cache,
 )
 
@@ -1698,3 +1700,420 @@ class EventSettingToggleView(APIView):
             "category": setting.category,
             "is_active": setting.is_active,
         })
+
+
+# ---------------------------------------------------------------------------
+# 9. 활성 사용자 지표 (DAU / WAU / MAU / 재방문율 / 주간 유지율)
+#    GET /api/logs/analytics/active-users/
+#
+# DailyActiveUser 기반. 모든 날짜는 ANALYTICS_TIME_ZONE(Asia/Seoul) 기준.
+# 주(week)는 월요일 시작 ~ 일요일 종료.
+#
+# 측정 시작일(tracking_since) 이전 데이터가 없으므로, 배포 초기에는
+# 재방문율/주간 유지율이 구조적으로 왜곡된다. 0%로 오해되지 않도록
+# rate를 null로 두고 status로 집계 가능 여부를 함께 반환한다.
+#   ready   : 정상 집계
+#   partial : 계산은 되나 측정 시작일이 구간 안에 있어 과소집계 가능
+#   pending : 분모가 성립하지 않아 계산 불가 (집계 중)
+# ---------------------------------------------------------------------------
+STATUS_READY = "ready"
+STATUS_PARTIAL = "partial"
+STATUS_PENDING = "pending"
+
+
+def _distinct_user_ids(start: date, end: date) -> set[int]:
+    """[start, end] 구간(양끝 포함)에 활성이었던 user_id 집합."""
+    return set(
+        DailyActiveUser.objects.filter(
+            date__gte=start, date__lte=end
+        ).values_list("user_id", flat=True)
+    )
+
+
+def _window_block(
+    label_start: date,
+    end: date,
+    tracking_since: date | None,
+) -> dict[str, object]:
+    """
+    WAU/MAU용 롤링 윈도우 블록.
+
+    측정 시작일이 윈도우 시작보다 늦으면 실제로 커버된 구간은 그만큼 짧다.
+    프론트에서 '현재까지 누적된 범위'임을 표시할 수 있도록
+    effective_start / days_covered / days_expected를 함께 반환한다.
+    """
+    days_expected = (end - label_start).days + 1
+    if tracking_since is None:
+        return {
+            "value": 0,
+            "status": STATUS_PENDING,
+            "window": {
+                "start": label_start.isoformat(),
+                "end": end.isoformat(),
+            },
+            "effective_start": None,
+            "days_covered": 0,
+            "days_expected": days_expected,
+        }
+
+    effective_start = max(label_start, tracking_since)
+    value = len(_distinct_user_ids(effective_start, end))
+    days_covered = (end - effective_start).days + 1
+    status = STATUS_READY if tracking_since <= label_start else STATUS_PARTIAL
+    return {
+        "value": value,
+        "status": status,
+        "window": {
+            "start": label_start.isoformat(),
+            "end": end.isoformat(),
+        },
+        "effective_start": effective_start.isoformat(),
+        "days_covered": days_covered,
+        "days_expected": days_expected,
+    }
+
+
+class ActiveUserStatsView(APIView):
+    """
+    DAU / WAU / MAU / DAU·MAU / 재방문율 / 주간 유지율.
+
+    기간 선택기의 영향을 받지 않는 '오늘 기준' 고정 윈도우 지표다.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request) -> Response:
+        today = analytics_today()
+        tracking_since = DailyActiveUser.objects.aggregate(
+            v=Min("date")
+        )["v"]
+
+        # ── DAU (unique는 UniqueConstraint로 이미 보장됨) ──
+        dau = DailyActiveUser.objects.filter(date=today).count()
+
+        # ── WAU / MAU (오늘 포함 롤링 7일 / 30일) ──
+        wau = _window_block(today - timedelta(days=6), today, tracking_since)
+        mau = _window_block(today - timedelta(days=29), today, tracking_since)
+
+        mau_value = mau["value"]
+        dau_mau_ratio = (
+            round(dau / mau_value * 100, 1) if mau_value else None
+        )
+
+        return Response({
+            "as_of": today.isoformat(),
+            "tracking_since": (
+                tracking_since.isoformat() if tracking_since else None
+            ),
+            "tracking_days": (
+                (today - tracking_since).days + 1 if tracking_since else 0
+            ),
+            "timezone": str(get_analytics_timezone()),
+
+            "dau": dau,
+            "wau": wau,
+            "mau": mau,
+            "dau_mau_ratio": dau_mau_ratio,
+
+            "returning_user_rate": self._returning_user_rate(
+                today, tracking_since
+            ),
+            "weekly_retention": self._weekly_retention(today, tracking_since),
+        })
+
+    # -- 재방문율 -----------------------------------------------------------
+    def _returning_user_rate(
+        self, today: date, tracking_since: date | None
+    ) -> dict[str, object]:
+        """
+        오늘 활성 사용자 중, 오늘 이전에도 활성이었던 적 있는 사용자 비율.
+
+        측정 시작일이 오늘이면 '이전 기록'이 존재할 수 없어 0%가 되는데,
+        이는 재방문이 없다는 뜻이 아니라 데이터가 없다는 뜻이므로 pending 처리.
+        """
+        today_ids = _distinct_user_ids(today, today)
+        active_users = len(today_ids)
+
+        if tracking_since is None or tracking_since >= today:
+            return {
+                "status": STATUS_PENDING,
+                "rate": None,
+                "returning_users": None,
+                "new_users": None,
+                "active_users": active_users,
+            }
+
+        if not today_ids:
+            return {
+                "status": STATUS_READY,
+                "rate": 0.0,
+                "returning_users": 0,
+                "new_users": 0,
+                "active_users": 0,
+            }
+
+        returning = (
+            DailyActiveUser.objects.filter(
+                user_id__in=today_ids, date__lt=today
+            )
+            .values("user_id")
+            .distinct()
+            .count()
+        )
+        return {
+            "status": STATUS_READY,
+            "rate": round(returning / active_users * 100, 1),
+            "returning_users": returning,
+            "new_users": active_users - returning,
+            "active_users": active_users,
+        }
+
+    # -- 주간 유지율 ---------------------------------------------------------
+    def _weekly_retention(
+        self, today: date, tracking_since: date | None
+    ) -> dict[str, object]:
+        """
+        지난주 활성 사용자 중 이번주에도 활성인 사용자의 비율.
+        주는 월요일 시작 ~ 일요일 종료.
+
+        이번주는 아직 진행 중일 수 있어 분자가 과소 집계되므로
+        this_week_in_progress로 알린다.
+        """
+        this_monday = today - timedelta(days=today.weekday())
+        last_monday = this_monday - timedelta(days=7)
+        last_sunday = this_monday - timedelta(days=1)
+        this_sunday = this_monday + timedelta(days=6)
+
+        block: dict[str, object] = {
+            "last_week": {
+                "start": last_monday.isoformat(),
+                "end": last_sunday.isoformat(),
+            },
+            "this_week": {
+                "start": this_monday.isoformat(),
+                "end": this_sunday.isoformat(),
+            },
+            "this_week_in_progress": today < this_sunday,
+        }
+
+        # 지난주 데이터가 아예 없으면 분모가 성립하지 않음
+        if tracking_since is None or tracking_since > last_sunday:
+            block.update({
+                "status": STATUS_PENDING,
+                "rate": None,
+                "retained_users": None,
+                "last_week_active_users": None,
+            })
+            return block
+
+        last_week_ids = _distinct_user_ids(last_monday, last_sunday)
+        if not last_week_ids:
+            block.update({
+                "status": STATUS_PENDING,
+                "rate": None,
+                "retained_users": None,
+                "last_week_active_users": 0,
+            })
+            return block
+
+        this_week_ids = _distinct_user_ids(this_monday, today)
+        retained = len(last_week_ids & this_week_ids)
+
+        # 측정 시작일이 지난주 안에 있으면 분모가 과소 집계됨
+        status = (
+            STATUS_READY if tracking_since <= last_monday else STATUS_PARTIAL
+        )
+        block.update({
+            "status": status,
+            "rate": round(retained / len(last_week_ids) * 100, 1),
+            "retained_users": retained,
+            "last_week_active_users": len(last_week_ids),
+        })
+        return block
+
+
+# ---------------------------------------------------------------------------
+# 10. 비활성 사용자 복귀 분석
+#     GET /api/logs/analytics/reactivation/
+#         ?policy_date=2026-10-01&inactive_days=14&observation_days=14
+#
+# 질문: "정책 시행 전 일정 기간 방문하지 않던 기존 회원이, 시행 후 다시 왔는가?"
+#
+# 정책 시행일 T에 대해
+#   비활성 판정 구간 = [T - inactive_days, T - 1]
+#   복귀 관찰 구간   = [T, T + observation_days - 1]
+#
+# DailyActiveUser(user, date) + User만으로 계산한다(신규 테이블 없음).
+# 쿼리는 구간별 user_id 집합 3번으로 고정 — N+1이 발생하지 않는다.
+#
+# status는 ActiveUserStatsView와 같은 의미로 쓴다.
+#   ready   : 비활성 판정 구간 전체가 측정 범위 안
+#   partial : 구간 일부만 측정됨 → 비활성자가 과대 집계될 수 있음
+#   pending : 판정 불가(측정 이전 구간 / 미래 시행일) 또는 분모 0 → rate=null
+# ---------------------------------------------------------------------------
+REACTIVATION_MAX_DAYS = 180
+
+
+def _eligible_user_ids(policy_date: date) -> set[int]:
+    """
+    정책 시행일 T 이전에 가입한 '복귀 가능한' 기존 회원.
+
+    제외 대상과 이유:
+      - is_staff          : 운영자. create_event_log/DAU 집계와 동일 정책
+      - is_active=False   : 비활성 계정. 복귀 자체가 불가능
+      - 다부전공 미승인   : PendingAwareJWTAuthentication이 비로그인 취급하므로
+                            DailyActiveUser 행이 생길 수 없음. 분모에 넣으면
+                            영구 미복귀로 잡혀 복귀율이 구조적으로 낮아진다.
+    """
+    from apps.users.models import User
+
+    qs = (
+        User.objects.filter(created_at__date__lt=policy_date, is_active=True)
+        .exclude(is_staff=True)
+        .exclude(is_multi_major=True, multi_major_approved=False)
+    )
+    return set(qs.values_list("id", flat=True))
+
+
+class ReactivationAnalysisView(APIView):
+    """
+    비활성 회원 복귀 분석. 대시보드 전역 기간 선택기와 무관하게
+    policy_date / inactive_days / observation_days만으로 동작한다.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request) -> Response:
+        from rest_framework import status as http_status
+        from django.utils.dateparse import parse_date
+
+        raw_policy = (request.query_params.get("policy_date") or "").strip()
+        if not raw_policy:
+            return Response(
+                {"detail": "policy_date는 필수입니다 (YYYY-MM-DD)."},
+                status=http_status.HTTP_400_BAD_REQUEST,
+            )
+        policy_date = parse_date(raw_policy)
+        if policy_date is None:
+            return Response(
+                {"detail": "policy_date 형식이 올바르지 않습니다 (YYYY-MM-DD)."},
+                status=http_status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            inactive_days = int(request.query_params.get("inactive_days", 14))
+            observation_days = int(
+                request.query_params.get("observation_days", 14)
+            )
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "inactive_days/observation_days는 정수여야 합니다."},
+                status=http_status.HTTP_400_BAD_REQUEST,
+            )
+        if not (1 <= inactive_days <= REACTIVATION_MAX_DAYS) or not (
+            1 <= observation_days <= REACTIVATION_MAX_DAYS
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "inactive_days/observation_days는 "
+                        f"1~{REACTIVATION_MAX_DAYS} 범위여야 합니다."
+                    )
+                },
+                status=http_status.HTTP_400_BAD_REQUEST,
+            )
+
+        today = analytics_today()
+        tracking_since = DailyActiveUser.objects.aggregate(
+            v=Min("date")
+        )["v"]
+
+        iw_start = policy_date - timedelta(days=inactive_days)
+        iw_end = policy_date - timedelta(days=1)
+        ow_start = policy_date
+        ow_end = policy_date + timedelta(days=observation_days - 1)
+
+        eligible_ids = _eligible_user_ids(policy_date)
+
+        payload: dict[str, object] = {
+            "as_of": today.isoformat(),
+            "policy_date": policy_date.isoformat(),
+            "tracking_since": (
+                tracking_since.isoformat() if tracking_since else None
+            ),
+            "inactive_window": {
+                "start": iw_start.isoformat(),
+                "end": iw_end.isoformat(),
+                "days": inactive_days,
+                "effective_start": None,
+                "days_covered": 0,
+            },
+            "observation_window": {
+                "start": ow_start.isoformat(),
+                "end": ow_end.isoformat(),
+                "days": observation_days,
+                "days_elapsed": max(
+                    0, min(observation_days, (today - ow_start).days + 1)
+                ),
+            },
+            "observation_in_progress": today < ow_end,
+            "eligible_users": len(eligible_ids),
+            "inactive_users": None,
+            "returned_users": None,
+            "reactivation_rate": None,
+            "status": STATUS_PENDING,
+        }
+
+        # ── 판정 불가: 시행일이 미래이거나, 비활성 구간이 측정 이전 ──
+        if policy_date > today:
+            payload["unavailable_reason"] = "policy_date_in_future"
+            return Response(payload)
+        if tracking_since is None or tracking_since > iw_end:
+            payload["unavailable_reason"] = "inactive_window_not_tracked"
+            return Response(payload)
+
+        effective_start = max(iw_start, tracking_since)
+        payload["inactive_window"]["effective_start"] = (
+            effective_start.isoformat()
+        )
+        payload["inactive_window"]["days_covered"] = (
+            (iw_end - effective_start).days + 1
+        )
+
+        # ── 비활성자 = 기존 회원 중 판정 구간에 방문 기록이 없는 사람 ──
+        active_in_window = set(
+            DailyActiveUser.objects.filter(
+                user_id__in=eligible_ids,
+                date__gte=iw_start,
+                date__lte=iw_end,
+            ).values_list("user_id", flat=True)
+        )
+        inactive_ids = eligible_ids - active_in_window
+        payload["inactive_users"] = len(inactive_ids)
+
+        coverage_status = (
+            STATUS_READY if tracking_since <= iw_start else STATUS_PARTIAL
+        )
+
+        # ── 분모 0: 0%가 아니라 계산 불가로 둔다 (주간 유지율과 동일 규칙) ──
+        if not inactive_ids:
+            payload["status"] = STATUS_PENDING
+            payload["unavailable_reason"] = "no_inactive_users"
+            return Response(payload)
+
+        returned = (
+            DailyActiveUser.objects.filter(
+                user_id__in=inactive_ids,
+                date__gte=ow_start,
+                date__lte=ow_end,
+            )
+            .values("user_id")
+            .distinct()
+            .count()
+        )
+        payload["returned_users"] = returned
+        payload["reactivation_rate"] = round(
+            returned / len(inactive_ids) * 100, 1
+        )
+        payload["status"] = coverage_status
+        return Response(payload)

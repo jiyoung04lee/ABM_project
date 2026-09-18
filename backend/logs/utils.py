@@ -1,11 +1,13 @@
 from __future__ import annotations
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo
 
+from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
-from .models import EventLog, EventSetting
+from .models import DailyActiveUser, EventLog, EventSetting
 
 if TYPE_CHECKING:
     from apps.users.models import User
@@ -13,6 +15,12 @@ if TYPE_CHECKING:
 # 이벤트 ON/OFF 설정 캐시 키 (active event_type set)
 CACHE_KEY_ACTIVE_EVENT_TYPES = "logs:event_setting:active_set"
 CACHE_TIMEOUT = 60 * 60 * 24  # 24시간
+
+# 일별 활성 사용자 dedupe 캐시 키 프리픽스
+CACHE_KEY_DAU_PREFIX = "logs:dau"
+
+# 분석 기준 타임존 fallback (settings.ANALYTICS_TIME_ZONE 미설정 시)
+DEFAULT_ANALYTICS_TIME_ZONE = "Asia/Seoul"
 
 # ---------------------------------------------------------------------------
 # 상호작용 가중치 (히트맵 / 학년별 인기 글 집계에 사용)
@@ -95,6 +103,62 @@ def _seconds_until_local_midnight() -> int:
         hour=0, minute=0, second=0, microsecond=0
     )
     return max(60, int((next_midnight - now).total_seconds()))
+
+
+# ---------------------------------------------------------------------------
+# 분석 기준 날짜
+#
+# ANALYTICS_TIME_ZONE은 기본값이 TIME_ZONE(Asia/Seoul)이라 지금은 둘이 같다.
+# 그래도 헬퍼를 남겨두는 이유는, DailyActiveUser가 date를 직접 저장하기 때문에
+# "어느 타임존으로 날짜를 찍는가"가 저장 시점에 확정되기 때문이다.
+# 집계 기준을 바꾸려면 이 한 곳만 보면 된다.
+# ---------------------------------------------------------------------------
+def get_analytics_timezone() -> ZoneInfo:
+    """분석 집계 기준 타임존."""
+    name = getattr(
+        settings, "ANALYTICS_TIME_ZONE", DEFAULT_ANALYTICS_TIME_ZONE
+    )
+    return ZoneInfo(name)
+
+
+def analytics_today() -> date:
+    """분석 기준(Asia/Seoul) 오늘 날짜."""
+    return timezone.now().astimezone(get_analytics_timezone()).date()
+
+
+def _seconds_until_analytics_midnight() -> int:
+    """분석 기준 타임존의 자정까지 남은 초(최소 60). DAU dedupe TTL용."""
+    now = timezone.now().astimezone(get_analytics_timezone())
+    next_midnight = (now + timedelta(days=1)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    return max(60, int((next_midnight - now).total_seconds()))
+
+
+def record_daily_active_user(user: "User | None") -> None:
+    """
+    인증 사용자의 '오늘 방문'을 DailyActiveUser에 1행 기록.
+
+    정확성은 DB의 UniqueConstraint(user, date)가 보장하고,
+    캐시는 순전히 하루 1회로 DB 접근을 줄이기 위한 것이다.
+    (캐시가 빗나가도 get_or_create가 기존 행을 되돌려줄 뿐 중복 생성은 없다.)
+
+    관리자(is_staff)는 create_event_log와 동일하게 집계에서 제외한다.
+    """
+    if user is None or not getattr(user, "is_authenticated", False):
+        return
+    if getattr(user, "is_staff", False):
+        return
+    user_pk = getattr(user, "pk", None)
+    if not user_pk:
+        return
+
+    today = analytics_today()
+    cache_key = f"{CACHE_KEY_DAU_PREFIX}:{user_pk}:{today.isoformat()}"
+    if not cache.add(cache_key, 1, timeout=_seconds_until_analytics_midnight()):
+        return  # 오늘 이미 기록됨 → DB 접근 없음
+
+    DailyActiveUser.objects.get_or_create(user_id=user_pk, date=today)
 
 
 # ---------------------------------------------------------------------------

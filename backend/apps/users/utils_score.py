@@ -1,5 +1,5 @@
 from django.db.models import F
-from datetime import date
+from django.utils import timezone
 from apps.users.models import ScoreHistory, User
 
 MAX_SCORE = 300
@@ -25,7 +25,9 @@ def add_score(user, point):
 
 def give_login_point(user):
 
-    today = date.today()
+    # 서버 OS 시간이 아니라 서비스 기준 시간(TIME_ZONE = Asia/Seoul)의 날짜.
+    # logs의 login 이벤트 일 1회 dedupe와 같은 경계를 쓰기 위함.
+    today = timezone.localdate()
 
     if user.last_login_point_date != today:
 
