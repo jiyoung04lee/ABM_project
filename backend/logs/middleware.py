@@ -1,6 +1,9 @@
 """
-API 4xx/5xx 응답 시 ApiErrorLog에 기록.
-/api/ 경로만 대상, /api/logs/ 는 제외(에러 모니터링 API 자체 오류 무한 로깅 방지).
+로그 수집 미들웨어.
+
+- ErrorLoggingMiddleware: API 4xx/5xx 응답 시 ApiErrorLog에 기록.
+  /api/ 경로만 대상, /api/logs/ 는 제외(에러 모니터링 API 자체 오류 무한 로깅 방지).
+- DailyActiveUserMiddleware: 인증 사용자의 API 요청을 '방문'으로 기록.
 """
 import json
 import time
@@ -62,4 +65,34 @@ class ErrorLoggingMiddleware:
             )
         except Exception:
             pass
+        return response
+
+
+class DailyActiveUserMiddleware:
+    """
+    인증 사용자의 API 요청을 '방문'으로 보고 DailyActiveUser에 하루 1행 기록.
+
+    JWT 인증이 DRF 레벨(PendingAwareJWTAuthentication)이라 요청 단계에서는
+    request.user가 세션 기준 AnonymousUser다. DRF의 Request.user setter가
+    밑단 HttpRequest에도 써넣으므로, 응답 단계에서 읽어야 실제 인증 사용자를
+    얻을 수 있다. (ErrorLoggingMiddleware와 동일한 응답 단계 패턴)
+
+    DRF APIView.initial()이 매 요청 perform_authentication()을 호출하므로
+    모든 API 뷰에서 인증이 강제 수행되어 누락되지 않는다.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        path = getattr(request, "path", "") or ""
+        if not path.startswith("/api/"):
+            return response
+        try:
+            from .utils import record_daily_active_user
+
+            record_daily_active_user(getattr(request, "user", None))
+        except Exception:
+            pass  # 집계 실패가 응답을 깨뜨리지 않도록
         return response
