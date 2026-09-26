@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LoginLogo from "@/shared/components/layout/LoginLoGo";
 import { API_BASE } from "@/shared/api/api";
+import { sendTrackEvent } from "@/shared/api/logs";
+import { pushDataLayer } from "@/shared/utils/tracking";
 
 const KAKAO_REST_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY ?? "";
 
@@ -19,11 +21,20 @@ export default function LoginPage() {
   const [otpUserId, setOtpUserId] = useState<number | null>(null);
   const [otpError, setOtpError] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
+  const loginWallTrackedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     setReason(params.get("reason"));
+
+    // 로그인 요구 화면 노출 — 어디서(from) 왜(reason) 막혔는지 기록 (개발 모드 이중 실행 방지)
+    if (loginWallTrackedRef.current) return;
+    loginWallTrackedRef.current = true;
+    const from = params.get("from");
+    const wallReason = params.get("reason");
+    sendTrackEvent({ event_type: "login_wall_view", from, reason: wallReason });
+    pushDataLayer("login_wall_view", { from: from ?? "", reason: wallReason ?? "direct" });
   }, []);
 
   const handleKakaoLogin = () => {
