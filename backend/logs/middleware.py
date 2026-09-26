@@ -1,12 +1,35 @@
 """
 로그 수집 미들웨어.
 
+- EventContextMiddleware: X-Session-Id 헤더를 요청 단위로 보관해 모든 이벤트 로그에 연결.
 - ErrorLoggingMiddleware: API 4xx/5xx 응답 시 ApiErrorLog에 기록.
   /api/ 경로만 대상, /api/logs/ 는 제외(에러 모니터링 API 자체 오류 무한 로깅 방지).
 - DailyActiveUserMiddleware: 인증 사용자의 API 요청을 '방문'으로 기록.
 """
 import json
 import time
+
+# 비로그인 방문자가 로그인 상태를 확인할 때 받는 정상 응답. 에러로 집계하지 않는다.
+EXPECTED_UNAUTHENTICATED_PATHS = ("/api/users/me/",)
+
+
+class EventContextMiddleware:
+    """
+    프론트가 모든 API 요청에 붙이는 X-Session-Id(방문 단위 익명 ID)를 요청 동안 보관.
+    create_event_log가 호출부와 상관없이 같은 세션 ID를 기록할 수 있게 한다.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        from .utils import reset_request_session_id, set_request_session_id
+
+        token = set_request_session_id(request.headers.get("X-Session-Id"))
+        try:
+            return self.get_response(request)
+        finally:
+            reset_request_session_id(token)
 
 
 def _extract_message(response) -> str:
@@ -52,6 +75,8 @@ class ErrorLoggingMiddleware:
             return response
         status = getattr(response, "status_code", 0)
         if status < 400:
+            return response
+        if status == 401 and path in EXPECTED_UNAUTHENTICATED_PATHS:
             return response
         try:
             from .models import ApiErrorLog
