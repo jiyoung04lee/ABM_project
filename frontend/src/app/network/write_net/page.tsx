@@ -7,6 +7,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { createPost, fetchCategories } from "@/shared/api/network";
 import { fetchDraft, saveDraft, deleteDraft, uploadDraftImage } from "@/shared/api/draft";
+import { useTrackWriteStart } from "@/shared/hooks/useTrackWriteStart";
+import { pushDataLayer } from "@/shared/utils/tracking";
 
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -184,6 +186,7 @@ function WriteContent() {
   const sp = useSearchParams();
   const type = (sp.get("type") as NetworkType) ?? "student";
   const isMobile = useIsMobile();
+  useTrackWriteStart("network", type);
 
   const [title, setTitle] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
@@ -701,6 +704,7 @@ function WriteContent() {
       setIsSavingDraft(false);
       setSubmitting(true);
       await createPost(formData);
+      pushDataLayer("post_create", { section: "network", post_type: type });
 
       if (type !== "qa") {
         try {

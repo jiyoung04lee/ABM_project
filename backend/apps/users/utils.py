@@ -113,6 +113,61 @@ def delete_onboarding_nonce(signup_token: str) -> None:
     cache.delete(f"onboarding_nonce:{signup_token}")
 
 
+# ---------------------------------------------------------------------------
+# 가입 유입 경로 (첫 방문 기준)
+#
+# 프론트는 첫 방문 시의 utm·referrer·랜딩 페이지를 브라우저에 보관했다가
+# 카카오 로그인(JSON: attribution 객체)과 온보딩 제출(multipart: attr_ 접두 필드)에 함께 보낸다.
+# ---------------------------------------------------------------------------
+SIGNUP_ATTRIBUTION_FIELDS = {
+    # 요청 키: (User 필드, 최대 길이)
+    "utm_source": ("signup_utm_source", 50),
+    "utm_medium": ("signup_utm_medium", 50),
+    "utm_campaign": ("signup_utm_campaign", 100),
+    "referrer_host": ("signup_referrer", 100),
+    "landing_page": ("signup_landing_page", 200),
+}
+
+
+def extract_signup_attribution(data) -> dict[str, str]:
+    """요청 본문에서 가입 유입 정보를 꺼내 정리한다. 형식이 맞지 않는 값은 버린다."""
+    from logs.utils import clean_referrer_host, clean_short_text
+
+    raw = data.get("attribution")
+    if not isinstance(raw, dict):
+        raw = {key: data.get(f"attr_{key}") for key in SIGNUP_ATTRIBUTION_FIELDS}
+
+    attribution: dict[str, str] = {}
+    for key, (_field, max_length) in SIGNUP_ATTRIBUTION_FIELDS.items():
+        if key == "referrer_host":
+            value = clean_referrer_host(raw.get(key))
+        else:
+            value = clean_short_text(raw.get(key), max_length)
+        if key == "landing_page" and not value.startswith("/"):
+            value = ""
+        if value:
+            attribution[key] = value
+    return attribution
+
+
+def apply_signup_attribution(user, attribution: dict[str, str]) -> list[str]:
+    """
+    유입 정보를 User에 기록하고 변경된 필드 목록을 반환한다 (저장은 호출부에서).
+    이미 기록된 값이 하나라도 있으면 덮어쓰지 않는다 — 첫 방문 기준을 유지하기 위해서.
+    """
+    if not attribution:
+        return []
+    fields = [field for field, _ in SIGNUP_ATTRIBUTION_FIELDS.values()]
+    if any(getattr(user, field, "") for field in fields):
+        return []
+    updated: list[str] = []
+    for key, (field, _max_length) in SIGNUP_ATTRIBUTION_FIELDS.items():
+        if key in attribution:
+            setattr(user, field, attribution[key])
+            updated.append(field)
+    return updated
+
+
 def generate_private_media_url(file_field, expires_in: int = 300) -> str | None:
     """Return a short-lived signed URL for sensitive R2 media when configured."""
     if not file_field:

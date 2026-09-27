@@ -12,6 +12,17 @@ class EventLog(models.Model):
         ("signup", "회원가입"),
         ("login", "로그인"),
         ("search", "검색"),
+        ("login_wall_view", "로그인 요구 화면"),
+        ("write_start", "글쓰기 시작"),
+        ("draft_save", "임시저장"),
+    )
+
+    # 행동 시점의 방문자 유형 (utils.resolve_visitor_type 참고)
+    VISITOR_TYPE_CHOICES = (
+        ("guest", "비로그인"),
+        ("new", "신규 회원"),
+        ("member", "기존 회원"),
+        ("returning", "휴면 복귀 회원"),
     )
 
     SECTION_CHOICES = (
@@ -56,8 +67,24 @@ class EventLog(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # 세션 식별 (page_view 전용, 프론트에서 방문 단위로 생성해 전달)
+    # 세션 식별 (프론트에서 방문 단위로 생성, X-Session-Id 헤더로 모든 이벤트에 전달)
     session_id = models.CharField(max_length=64, blank=True, null=True, db_index=True)
+
+    # 행동 시점의 방문자 유형 (개인 식별 X)
+    visitor_type = models.CharField(
+        max_length=20,
+        choices=VISITOR_TYPE_CHOICES,
+        blank=True,
+        null=True,
+    )
+
+    # 이벤트별 부가 정보 (로그인 요구 사유, 유입 referrer 등). 짧은 값만 저장.
+    # db_default: 배포 중·롤백 시 이 컬럼을 모르는 이전 코드의 INSERT도 실패하지 않도록
+    properties = models.JSONField(
+        default=dict,
+        db_default=models.Value({}, output_field=models.JSONField()),
+        blank=True,
+    )
 
     class Meta:
         indexes = [

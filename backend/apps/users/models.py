@@ -244,6 +244,34 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name="로그인 점수 마지막 지급일",
     )
 
+    # 온보딩(프로필) 완료 시각 — '신규 회원' 판단 기준. 이 필드 추가 전 가입자는 비어 있음
+    profile_completed_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="프로필 완료일시"
+    )
+
+    # 가입 유입 경로 (첫 방문 기준, 최초 1회만 기록)
+    # db_default: 배포 중·롤백 시 이 컬럼을 모르는 이전 코드의 INSERT도 실패하지 않도록
+    signup_utm_source = models.CharField(
+        max_length=50, blank=True, default="", db_default="",
+        verbose_name="가입 유입 utm_source",
+    )
+    signup_utm_medium = models.CharField(
+        max_length=50, blank=True, default="", db_default="",
+        verbose_name="가입 유입 utm_medium",
+    )
+    signup_utm_campaign = models.CharField(
+        max_length=100, blank=True, default="", db_default="",
+        verbose_name="가입 유입 utm_campaign",
+    )
+    signup_referrer = models.CharField(
+        max_length=100, blank=True, default="", db_default="",
+        verbose_name="가입 유입 referrer 호스트",
+    )
+    signup_landing_page = models.CharField(
+        max_length=200, blank=True, default="", db_default="",
+        verbose_name="가입 유입 첫 방문 페이지",
+    )
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API_BASE, TokenStorage } from "./api";
+import { getOrCreateSessionId } from "@/shared/utils/tracking";
 
 const api = axios.create({
   baseURL: `${API_BASE}/api/`,
@@ -11,6 +12,9 @@ api.interceptors.request.use((config) => {
   if (access) {
     config.headers.Authorization = `Bearer ${access}`;
   }
+  // 모든 API 요청에 방문 단위 세션 ID를 붙여, 서버의 이벤트 로그가 같은 방문으로 이어지게 한다
+  const sessionId = getOrCreateSessionId();
+  if (sessionId) config.headers.set("X-Session-Id", sessionId);
   return config;
 });
 

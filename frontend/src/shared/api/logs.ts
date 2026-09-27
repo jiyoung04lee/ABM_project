@@ -9,13 +9,32 @@ export function getPageViewSection(pathname: string): (typeof PAGE_VIEW_SECTIONS
   if (pathname.startsWith("/department")) return "department";
   return null;
 }
-export function sendPageView(section: string, page?: string, sessionId?: string) {
+export function sendPageView(
+  section: string,
+  page?: string,
+  sessionId?: string,
+  sessionTouch?: { utm_source?: string; referrer_host?: string },
+) {
   if (!sessionId) return Promise.resolve();
   return api.post("logs/page-view/", {
     section,
     page: page || `/${section}`,
     session_id: sessionId,
+    // 이번 방문의 유입 경로 (세션 첫 페이지 기준)
+    utm_source: sessionTouch?.utm_source,
+    referrer_host: sessionTouch?.referrer_host,
   });
+}
+
+// ─── 프론트에서만 알 수 있는 행동 이벤트 (DB 저장) ───
+export type TrackEventPayload =
+  | { event_type: "login_wall_view"; from?: string | null; reason?: string | null }
+  | { event_type: "write_start"; section: "community" | "network"; post_type?: string }
+  | { event_type: "search"; keyword: string };
+
+/** 실패해도 화면 동작에 영향이 없도록 에러를 삼킨다. */
+export function sendTrackEvent(payload: TrackEventPayload) {
+  return api.post("logs/track/", payload).catch(() => {});
 }
 
 // ─── 대시보드 KPI (기간별 집계) ───

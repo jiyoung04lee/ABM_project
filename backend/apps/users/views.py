@@ -4,6 +4,7 @@ from typing import Any, cast
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.http import JsonResponse
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.db.models import Q
 from rest_framework import generics, permissions, status
@@ -16,7 +17,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.permissions import AllowAny
 
-from logs.utils import create_event_log
+from logs.utils import create_event_log, forget_visitor_type
 
 from .models import User, MonthlyWinner
 from .serializers import (
@@ -42,6 +43,8 @@ from .utils import (
     verify_onboarding_nonce,
     delete_onboarding_nonce,
     generate_private_media_url,
+    extract_signup_attribution,
+    apply_signup_attribution,
 )
 
 from .utils_score import give_login_point
@@ -598,15 +601,24 @@ class KakaoLoginView(APIView):
         if not user.name and name:
             user.name = name
             update_fields.append("name")
+        # 가입 전(프로필 미완성) 사용자만 첫 방문 유입 정보를 기록
+        if not user.is_profile_complete:
+            update_fields += apply_signup_attribution(
+                user, extract_signup_attribution(request.data)
+            )
         if update_fields:
             user.save(update_fields=update_fields)
 
+        # 로그인 이벤트에는 이번 방문(세션)의 유입 경로를 남긴다
         create_event_log(
             event_type="login",
             page="/login",
             user_type=user.user_type or None,
             grade_at_event=user.grade,
-            utm_source=request.query_params.get("utm_source"),
+            utm_source=(
+                request.data.get("session_utm_source")
+                or request.query_params.get("utm_source")
+            ),
             user=user,
         )
 
@@ -708,6 +720,18 @@ class CompleteProfileView(generics.GenericAPIView):
 
         user = serializer.save()
 
+        # 카카오 로그인 시점에 기록되지 않았다면 온보딩 제출 값으로 보완 (첫 방문 기준 유지)
+        update_fields = apply_signup_attribution(
+            user, extract_signup_attribution(request.data)
+        )
+        if not user.profile_completed_at:
+            user.profile_completed_at = timezone.now()
+            update_fields.append("profile_completed_at")
+        if update_fields:
+            user.save(update_fields=update_fields)
+        # 가입 완료 → 오늘부터 '신규 회원'으로 다시 계산
+        forget_visitor_type(user)
+
         add_score(user, 30)
 
         delete_signup_token(signup_token)
@@ -718,7 +742,9 @@ class CompleteProfileView(generics.GenericAPIView):
             page="/register",
             user_type=user.user_type or None,
             grade_at_event=user.grade,
-            utm_source=request.query_params.get("utm_source"),
+            utm_source=(
+                user.signup_utm_source or request.query_params.get("utm_source")
+            ),
             user=user,
         )
 

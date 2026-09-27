@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import re
 from collections import defaultdict
+from collections.abc import Mapping
 from datetime import date, timedelta
 
 from django.db.models import Avg, Case, Count, IntegerField, Min, Max, Sum, When
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from django.db.models import Q
@@ -18,6 +21,8 @@ from .utils import (
     EVENT_WEIGHTS,
     INTERACTION_EVENT_TYPES,
     analytics_today,
+    clean_referrer_host,
+    clean_short_text,
     get_analytics_timezone,
     refresh_event_setting_cache,
 )
@@ -831,20 +836,29 @@ class PageViewLogView(APIView):
     프론트에서 페이지 진입 시 호출. page_view 이벤트 저장.
     """
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "event_track"
 
     def post(self, request: Request) -> Response:
         from rest_framework import status
         from .utils import create_event_log, get_viewer_grade_info
 
         data = getattr(request, "data", {}) or {}
+        if not isinstance(data, Mapping):
+            return Response(
+                {"detail": "잘못된 요청 형식입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         section = str(data.get("section") or "").strip().lower()
         page = str(data.get("page") or "").strip() or None
-        session_id = (data.get("session_id") or "").strip() or None
+        session_id = str(data.get("session_id") or "").strip() or None
         if section not in PAGE_VIEW_SECTIONS:
             return Response(
                 {"detail": "section은 home, community, network, department 중 하나여야 합니다."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        # 이번 방문(세션)의 유입 정보. 세션 첫 페이지에서 프론트가 기록해 둔 값을 계속 전달한다.
+        referrer_host = clean_referrer_host(data.get("referrer_host"))
         user = getattr(request, "user", None)
         viewer = get_viewer_grade_info(user) if user else {}
         create_event_log(
@@ -854,8 +868,115 @@ class PageViewLogView(APIView):
             user_type=viewer.get("user_type"),
             grade_at_event=viewer.get("grade_at_event"),
             session_id=session_id,
+            utm_source=data.get("utm_source"),
+            properties={"referrer_host": referrer_host} if referrer_host else None,
             user=user,
         )
+        return Response({"ok": True}, status=status.HTTP_201_CREATED)
+
+
+_TRACK_TOKEN_RE = re.compile(r"^[a-z0-9_]{1,30}$")
+
+
+def _clean_track_token(value: object) -> str:
+    """로그인 요구 사유 등 짧은 식별자 (소문자·숫자·_)."""
+    text = str(value or "").strip().lower()
+    return text if _TRACK_TOKEN_RE.match(text) else ""
+
+
+# ---------------------------------------------------------------------------
+# 3-2b. 프론트에서만 알 수 있는 행동 이벤트 저장
+#    POST /api/logs/track/
+#    - login_wall_view: 로그인 화면 노출 (from, reason = 어디서 왜 로그인 요구를 받았나)
+#    - write_start: 글쓰기 화면 진입 (community | network)
+#    - search: 네트워크 검색 (네트워크 목록은 화면에서 필터링하므로 서버 요청이 없음)
+# ---------------------------------------------------------------------------
+TRACK_EVENT_TYPES = ("login_wall_view", "write_start", "search")
+WRITE_SECTIONS = ("community", "network")
+NETWORK_POST_TYPES = ("student", "graduate", "qa")
+
+
+class TrackEventView(APIView):
+    permission_classes = [AllowAny]
+    # ScopedRateThrottle은 뷰의 throttle_scope가 있어야 동작한다 (페이지뷰와 공용, settings 참고)
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "event_track"
+
+    def post(self, request: Request) -> Response:
+        from rest_framework import status
+        from .utils import (
+            create_event_log,
+            get_viewer_grade_info,
+            get_viewer_interest_info,
+        )
+
+        data = getattr(request, "data", {}) or {}
+        if not isinstance(data, Mapping):
+            return Response(
+                {"detail": "잘못된 요청 형식입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        event_type = str(data.get("event_type") or "").strip()
+        if event_type not in TRACK_EVENT_TYPES:
+            return Response(
+                {"detail": "지원하지 않는 event_type입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = getattr(request, "user", None)
+        if user is not None and not user.is_authenticated:
+            user = None
+        viewer = get_viewer_grade_info(user)
+        common = {
+            "user_type": viewer.get("user_type"),
+            "grade_at_event": viewer.get("grade_at_event"),
+            "user": user,
+        }
+
+        if event_type == "login_wall_view":
+            origin = _clean_track_token(data.get("from"))
+            reason = _clean_track_token(data.get("reason")) or "direct"
+            create_event_log(
+                event_type=event_type,
+                section=origin if origin in PAGE_VIEW_SECTIONS else None,
+                page="/login",
+                properties={"from": origin, "reason": reason} if origin else {"reason": reason},
+                **common,
+            )
+        elif event_type == "write_start":
+            section = str(data.get("section") or "").strip().lower()
+            if section not in WRITE_SECTIONS:
+                return Response(
+                    {"detail": "section은 community, network 중 하나여야 합니다."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            post_type = _clean_track_token(data.get("post_type"))
+            create_event_log(
+                event_type=event_type,
+                section=section,
+                page=f"/{section}/write",
+                properties=(
+                    {"post_type": post_type}
+                    if section == "network" and post_type in NETWORK_POST_TYPES
+                    else None
+                ),
+                **common,
+            )
+        else:  # search
+            keyword = clean_short_text(data.get("keyword"), 100)
+            if len(keyword) < 2:
+                return Response(
+                    {"detail": "검색어는 2자 이상이어야 합니다."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            create_event_log(
+                event_type=event_type,
+                section="network",
+                page="/network",
+                search_keyword=keyword,
+                **get_viewer_interest_info(user),
+                **common,
+            )
         return Response({"ok": True}, status=status.HTTP_201_CREATED)
 
 
