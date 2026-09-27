@@ -24,6 +24,7 @@ from .serializers import (
 )
 from .permissions import IsAuthorOrReadOnly
 from apps.notifications.models import Notification
+from apps.notifications.new_post_alerts import schedule_new_post_alert
 from apps.users.utils_score import (
     add_score,
     add_post_like_score,
@@ -124,6 +125,8 @@ class PostViewSet(ModelViewSet):
             user=self.request.user,
             **viewer,
         )
+        # 운영진 메일 알림 (저장 완료 후 백그라운드 발송)
+        schedule_new_post_alert(post, board="community")
 
     def perform_destroy(self, instance):
         instance.is_deleted = True
