@@ -31,6 +31,7 @@ from .serializers import (
 )
 from .permissions import IsAuthorOrReadOnly
 from logs.utils import (
+    analytics_today,
     create_event_log,
     get_author_grade_info,
     get_viewer_grade_info,
@@ -583,6 +584,21 @@ class DraftView(APIView):
                 "image_ids": request.data.get("image_ids", []),
             },
         )
+
+        # 자동 저장이 자주 호출되므로 사용자·글 유형별 하루 1건만 기록
+        dedupe_key = (
+            f"eventlog:draft_save:{request.user.pk}:{post_type}:"
+            f"{analytics_today().isoformat()}"
+        )
+        if cache.add(dedupe_key, 1, timeout=60 * 60 * 24):
+            create_event_log(
+                event_type="draft_save",
+                section="network",
+                page="/network/write",
+                properties={"post_type": post_type},
+                **get_viewer_grade_info(request.user),
+                user=request.user,
+            )
         return Response(DraftSerializer(draft).data, status=status.HTTP_200_OK)
 
     def delete(self, request):

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { createPost, getCategories } from "@/shared/api/community";
+import { useTrackWriteStart } from "@/shared/hooks/useTrackWriteStart";
+import { pushDataLayer } from "@/shared/utils/tracking";
 
 interface Category {
   id: number;
@@ -15,6 +17,7 @@ interface Category {
 
 export default function WritePage() {
   const router = useRouter();
+  useTrackWriteStart("community");
 
   const [title, setTitle] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
@@ -97,6 +100,7 @@ export default function WritePage() {
       }
 
       await createPost(formData);
+      pushDataLayer("post_create", { section: "community" });
 
       alert("작성 완료");
       router.push("/community");

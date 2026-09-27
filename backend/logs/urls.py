@@ -21,6 +21,7 @@ from .views import (
     SessionAnalyticsView,
     SessionJourneyView,
     SessionStatsView,
+    TrackEventView,
     UserManagementView,
 )
 
@@ -58,6 +59,7 @@ urlpatterns = [
     path("analytics/errors/", ErrorLogListView.as_view(), name="error-log-list"),
     path("analytics/errors/stats/", ErrorLogStatsView.as_view(), name="error-log-stats"),
     path("page-view/", PageViewLogView.as_view(), name="page-view"),
+    path("track/", TrackEventView.as_view(), name="track-event"),
     path("event-settings/", EventSettingListView.as_view(), name="event-setting-list"),
     path(
         "event-settings/<str:event_type>/",

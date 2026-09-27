@@ -9,6 +9,12 @@ import {
   ONBOARDING_SIGNUP_STORAGE_KEY,
   ONBOARDING_NONCE_STORAGE_KEY,
 } from "@/shared/api/api";
+import {
+  getFirstTouch,
+  getOrCreateSessionId,
+  getSessionTouch,
+  pushDataLayer,
+} from "@/shared/utils/tracking";
 
 
 function KakaoCallbackContent() {
@@ -40,9 +46,18 @@ function KakaoCallbackContent() {
       try {
         const res = await fetch(`${API_BASE}/api/users/kakao/login/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Session-Id": getOrCreateSessionId(),
+          },
           credentials: "include",
-          body: JSON.stringify({ code, redirect_uri: redirectUri }),
+          body: JSON.stringify({
+            code,
+            redirect_uri: redirectUri,
+            // 가입 유입 경로(첫 방문 기준)와 이번 방문의 유입 경로
+            attribution: getFirstTouch(),
+            session_utm_source: getSessionTouch().utm_source,
+          }),
         });
         const data = await res.json();
 
@@ -53,6 +68,11 @@ function KakaoCallbackContent() {
           setStatus("error");
           return;
         }
+
+        pushDataLayer("login", {
+          method: "kakao",
+          needs_profile: Boolean(data.needs_profile),
+        });
 
         if (data.needs_profile) {
           if (typeof data.signup_token === "string" && data.signup_token) {

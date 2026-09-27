@@ -9,6 +9,11 @@ import {
   ONBOARDING_SIGNUP_STORAGE_KEY,
   ONBOARDING_NONCE_STORAGE_KEY,
 } from "@/shared/api/api";
+import {
+  getFirstTouch,
+  getOrCreateSessionId,
+  pushDataLayer,
+} from "@/shared/utils/tracking";
 
 // UI 상 사용자 유형: 다부전공생은 재학생 + is_multi_major 로 매핑
 type UserType = "student" | "graduate" | "multi_major";
@@ -141,9 +146,15 @@ function OnboardingContent() {
         }
       }
 
+      // 가입 유입 경로(첫 방문 기준). 카카오 로그인 때 기록되지 않았으면 서버가 이 값으로 보완한다.
+      Object.entries(getFirstTouch()).forEach(([key, value]) => {
+        if (value) formData.append(`attr_${key}`, value);
+      });
+
       const nonce = sessionStorage.getItem(ONBOARDING_NONCE_STORAGE_KEY) ?? "";
       const headers: Record<string, string> = {
         "X-Onboarding-Nonce": nonce,
+        "X-Session-Id": getOrCreateSessionId(),
       };
       const res = await fetch(
         `${API_BASE}/api/users/social/complete-profile/`,
@@ -168,6 +179,12 @@ function OnboardingContent() {
         setError(data.detail || "입력 내용을 확인해주세요.");
         return;
       }
+
+      pushDataLayer("sign_up", {
+        method: "kakao",
+        user_type: backendUserType,
+        multi_major_pending: Boolean(data.multi_major_pending),
+      });
 
       // 다부전공 미승인: 백엔드가 tokens 없이 multi_major_pending만 반환
       if (data.multi_major_pending) {

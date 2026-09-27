@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   fetchCategories,
@@ -8,7 +8,13 @@ import {
   NetworkType,
   Category,
 } from "@/shared/api/network";
+import { sendTrackEvent } from "@/shared/api/logs";
+import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { useNetworkPosts } from "@/shared/hooks/useNetworkPosts";
+import { pushDataLayer } from "@/shared/utils/tracking";
+
+// 검색어 입력이 이 시간 동안 멈추면 검색 1건으로 기록
+const SEARCH_TRACK_DEBOUNCE_MS = 800;
 import { API_BASE } from "@/shared/api/api";
 import Image from "next/image";
 import { Eye, MessageCircle, Tag, Search } from "lucide-react";
@@ -1087,6 +1093,22 @@ function NetworkPageContent() {
   const [categorySlug, setCategorySlug] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
+
+  // 네트워크 검색은 화면에서만 필터링해 서버 요청이 없으므로, 입력이 멈춘 검색어를 따로 기록한다
+  const debouncedKeyword = useDebouncedValue(keyword.trim(), SEARCH_TRACK_DEBOUNCE_MS);
+  const lastTrackedSearchRef = useRef("");
+  useEffect(() => {
+    // 검색창을 비우면 같은 검색어를 다시 검색했을 때도 새로 기록되도록 초기화
+    if (debouncedKeyword.length < 2) {
+      lastTrackedSearchRef.current = "";
+      return;
+    }
+    const searchKey = `${tab}:${debouncedKeyword}`;
+    if (searchKey === lastTrackedSearchRef.current) return;
+    lastTrackedSearchRef.current = searchKey;
+    sendTrackEvent({ event_type: "search", keyword: debouncedKeyword });
+    pushDataLayer("search", { section: "network", tab, keyword: debouncedKeyword });
+  }, [debouncedKeyword, tab]);
 
   useEffect(() => {
     const t = searchParams.get("type") as NetworkType | null;

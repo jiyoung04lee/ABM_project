@@ -88,6 +88,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "logs.middleware.EventContextMiddleware",
     "logs.middleware.ErrorLoggingMiddleware",
     "logs.middleware.DailyActiveUserMiddleware",
 ]
@@ -260,6 +261,8 @@ REST_FRAMEWORK = {
         "password_reset": "3/min",
         "onboarding_session": "10/min",
         "onboarding_complete": "3/min",
+        # 페이지뷰·행동 이벤트 공용. 학교 와이파이처럼 여러 명이 같은 IP를 쓰는 경우를 고려해 넉넉히
+        "event_track": "240/min",
     },
     "DEFAULT_PAGINATION_CLASS": (
         "rest_framework.pagination.PageNumberPagination"
@@ -330,6 +333,7 @@ CORS_ALLOW_HEADERS = [
     "origin",
     "x-requested-with",
     "x-onboarding-nonce",
+    "x-session-id",
 ]
 
 # 소셜 온보딩 signup_token 캐시 TTL(초) = 쿠키 max_age
