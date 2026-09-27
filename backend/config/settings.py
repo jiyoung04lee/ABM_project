@@ -396,6 +396,16 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_TIMEOUT = 10
 
+# 새 글 운영진 메일 알림 (apps/notifications/new_post_alerts.py)
+# 받는 주소(쉼표로 여러 개 가능). 비어 있으면 알림을 보내지 않는다.
+NEW_POST_ALERT_EMAIL = os.environ.get("NEW_POST_ALERT_EMAIL", "")
+# 메일 속 글 링크의 기준 주소
+SITE_URL = os.environ.get("SITE_URL", "https://www.abmaive.com").rstrip("/")
+# 시간당 최대 발송 수. 관리자 OTP 메일과 같은 Gmail 계정이라 한도를 넘기지 않도록 제한
+NEW_POST_ALERT_MAX_PER_HOUR = int(os.environ.get("NEW_POST_ALERT_MAX_PER_HOUR", "30"))
+# True면 백그라운드 스레드 대신 즉시 발송 (테스트용)
+NEW_POST_ALERT_SYNC = False
+
 # ==================== 보안 설정 ====================
 SESSION_COOKIE_AGE = 3600
 X_FRAME_OPTIONS = "DENY"
