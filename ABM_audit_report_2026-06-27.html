@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ABM Project 감사 보고서</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --paper: #ffffff;
+      --ink: #15181d;
+      --muted: #5c6573;
+      --line: #dfe3ea;
+      --high: #b42318;
+      --medium: #b54708;
+      --refactor: #175cd3;
+      --cleanup: #475467;
+      --ok: #067647;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.68;
+    }
+
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 24px 72px;
+    }
+
+    header {
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 28px;
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 34px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 44px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      font-size: 23px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      line-height: 1.45;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 10px;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 0 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    code {
+      background: #eef1f6;
+      border: 1px solid #d9dee8;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+      word-break: break-word;
+    }
+
+    .meta {
+      color: var(--muted);
+      display: grid;
+      gap: 3px;
+    }
+
+    .summary {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px 22px;
+      margin: 24px 0 34px;
+    }
+
+    .summary h2 {
+      border: 0;
+      margin: 0 0 10px;
+      padding: 0;
+      font-size: 20px;
+    }
+
+    .finding {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--cleanup);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+    }
+
+    .finding.high {
+      border-left-color: var(--high);
+    }
+
+    .finding.medium {
+      border-left-color: var(--medium);
+    }
+
+    .finding.refactor {
+      border-left-color: var(--refactor);
+    }
+
+    .finding.cleanup {
+      border-left-color: var(--cleanup);
+    }
+
+    .badge {
+      display: inline-block;
+      min-width: 76px;
+      margin-right: 8px;
+      border-radius: 999px;
+      padding: 2px 9px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      vertical-align: 2px;
+    }
+
+    .badge.high {
+      background: var(--high);
+    }
+
+    .badge.medium {
+      background: var(--medium);
+    }
+
+    .badge.refactor {
+      background: var(--refactor);
+    }
+
+    .badge.cleanup {
+      background: var(--cleanup);
+    }
+
+    .label {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .refs {
+      margin-top: 8px;
+      color: var(--muted);
+    }
+
+    .priority {
+      background: #ecfdf3;
+      border: 1px solid #abefc6;
+      border-left: 5px solid var(--ok);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-top: 14px;
+    }
+
+    .note {
+      background: #fff8e6;
+      border: 1px solid #fedf89;
+      border-radius: 8px;
+      padding: 16px 18px;
+      color: #53380b;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      main {
+        max-width: none;
+        padding: 24px;
+      }
+
+      .finding,
+      .summary,
+      .priority,
+      .note {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>ABM Project 보안/리팩토링/정리 감사 보고서</h1>
+      <div class="meta">
+        <div>작성일: 2026-06-27, Asia/Seoul</div>
+        <div>대상 경로: <code>/Users/seunghyuk-kim/Desktop/ABM_project</code></div>
+        <div>작업 방식: 읽기 전용 정적 점검. 기존 소스 파일 수정/삭제 없음.</div>
+      </div>
+    </header>
+
+    <section class="summary">
+      <h2>요약</h2>
+      <ul>
+        <li>우선 처리 권장: JWT 쿠키 CSRF 방어, DM 권한 검증, 프로필 학적 검증 우회, 파일 업로드 검증, 민감 이미지 저장소 공개 여부, 관리자 OTP 보호.</li>
+        <li>중간 우선순위: 공개 API throttle, 댓글 parent 정합성, PII 암호화 설계, 로그 입력 길이 검증, 프론트 보안 헤더, 외부 AI 전송 데이터 정책.</li>
+        <li>정리/리팩토링: <code>community</code>/<code>networks</code> 중복, 대형 page/views 파일, 빈/미사용 파일, 혼재 라우트, 테스트 placeholder 정리.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>1. 보안 관련 주요 허점</h2>
+
+      <article class="finding high">
+        <h3><span class="badge high">HIGH</span>JWT 쿠키 기반 인증에서 CSRF 방어가 약함</h3>
+        <p><span class="label">영향:</span> access/refresh token을 HttpOnly 쿠키로 사용하고 <code>SameSite=None</code> 구성이 존재합니다. DRF 기본 인증 경로는 CSRF 검사를 강제하지 않는 경우가 많아, 상태 변경 API가 크로스사이트 요청에 노출될 수 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/config/settings.py:345</code>, <code>backend/config/settings.py:426</code>, <code>backend/apps/users/authentication.py:4</code></p>
+        <p><span class="label">권장:</span> 쿠키 JWT를 유지한다면 상태 변경 API에 CSRF 토큰 검증을 강제하거나, Authorization 헤더 기반으로 단일화하고 SameSite/Origin 검증 정책을 명확히 하세요.</p>
+      </article>
+
+      <article class="finding high">
+        <h3><span class="badge high">HIGH</span>토큰이 JSON 응답과 localStorage에도 저장됨</h3>
+        <p><span class="label">영향:</span> HttpOnly 쿠키를 쓰면서 access/refresh를 JSON으로도 내려주고 프론트에서 <code>localStorage</code>에 저장합니다. XSS 발생 시 토큰 탈취 가능성이 커집니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/users/views.py:647</code>, <code>backend/apps/users/views.py:748</code>, <code>backend/apps/users/views.py:855</code>, <code>frontend/src/shared/api/api.ts:12</code></p>
+        <p><span class="label">권장:</span> 운영에서는 HttpOnly 쿠키 또는 Authorization 헤더 중 하나로 일관화하고, <code>localStorage</code> 토큰 보관을 제거하는 방향이 안전합니다.</p>
+      </article>
+
+      <article class="finding high">
+        <h3><span class="badge high">HIGH</span>Direct Message 생성 권한 검증 누락</h3>
+        <p><span class="label">영향:</span> <code>MessageSerializer</code>의 <code>conversation</code>이 writable이고 <code>perform_create</code>에서 요청 사용자가 해당 대화 participant인지 확인하지 않습니다. 대화 ID를 알면 타인의 대화에 메시지를 삽입할 수 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/direct_messages/serializers.py:8</code>, <code>backend/apps/direct_messages/views.py:56</code></p>
+        <p><span class="label">권장:</span> <code>perform_create</code>에서 <code>conversation.participants</code>에 <code>request.user</code>가 포함되는지 검증하고, serializer에서 conversation 선택 범위를 사용자 소유 대화로 제한하세요.</p>
+      </article>
+
+      <article class="finding high">
+        <h3><span class="badge high">HIGH</span>Direct Message 수정/삭제 범위 과다</h3>
+        <p><span class="label">영향:</span> <code>MessageViewSet</code> queryset은 conversation 참여자 기준이라, 같은 대화 참여자가 상대방 메시지까지 수정/삭제할 수 있는 구조일 가능성이 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/direct_messages/views.py:49</code></p>
+        <p><span class="label">권장:</span> 수정/삭제는 sender 본인 또는 관리자만 가능하도록 object permission을 분리하세요.</p>
+      </article>
+
+      <article class="finding high">
+        <h3><span class="badge high">HIGH</span>프로필 수정으로 온보딩 학적 검증 우회 가능</h3>
+        <p><span class="label">영향:</span> 온보딩에서는 학번 형식, 중복, <code>StudentRegistry</code>, 이름 일치, 입학연도 등을 검증하지만 프로필 수정 serializer는 <code>student_id</code>, <code>name</code>, <code>grade</code>, <code>department</code>, <code>admission_year</code>를 거의 그대로 받습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/users/views.py:123</code>, <code>backend/apps/users/serializers.py:56</code>, <code>backend/apps/users/serializers.py:251</code>, <code>frontend/src/app/(main)/profile/edit/page.tsx:152</code></p>
+        <p><span class="label">권장:</span> 검증 완료 후 바뀌면 안 되는 필드는 read-only 처리하거나, 변경 시 온보딩과 동일한 검증/재승인 플로우를 적용하세요.</p>
+      </article>
+
+      <article class="finding high">
+        <h3><span class="badge high">HIGH</span>network draft 이미지 업로드 검증 및 소유권 연결 부족</h3>
+        <p><span class="label">영향:</span> <code>ImageUploadView</code>가 업로드 파일을 거의 검증하지 않고 <code>post=None</code>인 <code>PostFile</code>로 저장합니다. 이후 <code>image_id</code>를 통해 임의 파일 연결이 가능해질 수 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/networks/views.py:600</code>, <code>backend/apps/networks/views.py:610</code>, <code>backend/apps/networks/serializers.py:366</code></p>
+        <p><span class="label">권장:</span> 업로드 파일 MIME/확장자/크기 검증, 업로더 소유자 필드, draft 전용 모델 또는 임시 토큰을 도입하세요.</p>
+      </article>
+
+      <article class="finding high">
+        <h3><span class="badge high">HIGH</span>community 첨부파일 검증 함수가 실제 입력명과 어긋남</h3>
+        <p><span class="label">영향:</span> serializer 필드는 <code>new_files</code>인데 <code>validate_files</code>가 정의되어 있어 DRF 자동 검증이 호출되지 않습니다. update 경로도 <code>PostDetailSerializer</code>를 사용해 sanitize/update 로직이 죽어 있을 수 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/community/serializers.py:217</code>, <code>backend/apps/community/serializers.py:242</code>, <code>backend/apps/community/views.py:110</code></p>
+        <p><span class="label">권장:</span> <code>validate_new_files</code>로 맞추고, create/update 모두 동일한 sanitizer와 파일 검증 경로를 타도록 정리하세요.</p>
+      </article>
+
+      <article class="finding high">
+        <h3><span class="badge high">HIGH</span>관리자 OTP 검증에 시도 제한/잠금이 부족하고 난수도 random 기반</h3>
+        <p><span class="label">영향:</span> API OTP verify가 <code>AllowAny</code>이고 실패 횟수 제한이 보이지 않습니다. OTP 생성도 <code>random.randint</code>를 사용합니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/users/views.py:440</code>, <code>backend/apps/users/views.py:800</code>, <code>backend/apps/admin_otp/views.py:25</code></p>
+        <p><span class="label">권장:</span> <code>secrets</code> 기반 난수, user_id/IP별 시도 제한, 실패 횟수 잠금, OTP 해시 저장을 적용하세요.</p>
+      </article>
+
+      <article class="finding high">
+        <h3><span class="badge high">HIGH</span>복수전공 증빙 이미지가 public R2 설정과 충돌할 가능성</h3>
+        <p><span class="label">영향:</span> 접근 endpoint는 권한을 확인하지만, R2 설정은 public bucket 시 서명 URL 불필요(<code>querystring_auth=False</code>)라는 전제입니다. 실제 버킷이 public이면 민감 이미지가 우회 접근될 수 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/config/settings.py:190</code>, <code>backend/config/settings.py:206</code>, <code>backend/apps/users/models.py:175</code>, <code>backend/apps/users/views.py:866</code></p>
+        <p><span class="label">권장:</span> 민감 증빙 이미지는 별도 private bucket/storage에 저장하고, 짧은 만료 signed URL만 허용하는지 실제 R2 정책을 확인하세요.</p>
+      </article>
+
+      <article class="finding medium">
+        <h3><span class="badge medium">MEDIUM</span>댓글 parent가 같은 게시글 소속인지 검증하지 않음</h3>
+        <p><span class="label">영향:</span> 게시글 A에 댓글을 달면서 parent는 게시글 B의 댓글 ID를 넣을 수 있어 댓글 트리, 알림, 카운트가 오염될 수 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/community/views.py:221</code>, <code>backend/apps/community/serializers.py:356</code>, <code>backend/apps/networks/views.py:266</code>, <code>backend/apps/networks/serializers.py:579</code></p>
+        <p><span class="label">권장:</span> parent가 존재하면 <code>parent.post_id == 현재 post.id</code>인지 serializer 또는 view에서 강제하세요.</p>
+      </article>
+
+      <article class="finding medium">
+        <h3><span class="badge medium">MEDIUM</span>학번/닉네임 존재 여부 공개 API가 enumeration에 취약</h3>
+        <p><span class="label">영향:</span> <code>check_nickname</code>, <code>check_student_id</code>가 <code>AllowAny</code>이고 별도 throttle이 보이지 않습니다. 특히 학번은 대량 조회로 가입/존재 여부 추정이 가능합니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/users/views.py:235</code>, <code>backend/apps/users/views.py:253</code></p>
+        <p><span class="label">권장:</span> IP/세션별 throttle, captcha 또는 generic response를 검토하세요.</p>
+      </article>
+
+      <article class="finding medium">
+        <h3><span class="badge medium">MEDIUM</span>PageViewLog 공개 write API에 throttle이 없음</h3>
+        <p><span class="label">영향:</span> <code>AllowAny</code> page-view endpoint가 공개 쓰기이며 별도 제한이 보이지 않습니다. 로그 테이블 부풀리기나 분석 오염에 악용될 수 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/logs/views.py:827</code>, <code>backend/logs/urls.py:56</code></p>
+        <p><span class="label">권장:</span> 익명 로그 API용 throttle, payload 크기 제한, bot 필터링을 적용하세요.</p>
+      </article>
+
+      <article class="finding medium">
+        <h3><span class="badge medium">MEDIUM</span>PII 암호화 효과가 제한적</h3>
+        <p><span class="label">영향:</span> email/student_id 원문 필드가 계속 남아 있고 hash도 salt 없는 SHA-256입니다. 학번처럼 후보 공간이 작은 값은 사전 공격에 약합니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/users/models.py:77</code>, <code>backend/apps/users/models.py:112</code>, <code>backend/apps/users/utils_encryption.py:25</code></p>
+        <p><span class="label">권장:</span> 검색용 해시는 keyed HMAC/pepper를 쓰고, 원문 필드 유지 필요성을 재검토하세요.</p>
+      </article>
+
+      <article class="finding medium">
+        <h3><span class="badge medium">MEDIUM</span>EventLog 일부 문자열 길이 검증 누락</h3>
+        <p><span class="label">영향:</span> 모델 <code>max_length</code>가 있는 <code>page</code>, <code>utm_source</code> 등이 저장 전 잘리지 않아 PostgreSQL <code>DataError</code>/500을 유발할 수 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/logs/models.py:24</code>, <code>backend/logs/utils.py:153</code>, <code>backend/logs/views.py:833</code></p>
+        <p><span class="label">권장:</span> 로그 저장 전 모든 <code>max_length</code> 필드에 공통 truncation/validation을 적용하세요.</p>
+      </article>
+
+      <article class="finding medium">
+        <h3><span class="badge medium">MEDIUM</span>자기 글/댓글 좋아요 및 reaction race 처리 미흡</h3>
+        <p><span class="label">영향:</span> 본인 콘텐츠 좋아요 제한이 없고 reaction 생성에 transaction/IntegrityError 처리가 부족해 점수 파밍, 500, <code>like_count</code> 음수화가 가능합니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/users/utils_score.py:38</code>, <code>backend/apps/community/views.py:173</code>, <code>backend/apps/community/views.py:513</code>, <code>backend/apps/networks/views.py:218</code></p>
+        <p><span class="label">권장:</span> 자기 콘텐츠 반응 제한 정책, DB unique 충돌 처리, <code>F</code> expression 후 음수 clamp를 적용하세요.</p>
+      </article>
+
+      <article class="finding medium">
+        <h3><span class="badge medium">MEDIUM</span>Next 프론트 보안 헤더/CSP 부재</h3>
+        <p><span class="label">영향:</span> <code>next.config.ts</code>에는 image 설정만 있고 보안 헤더가 보이지 않습니다. GTM inline script와 localStorage 토큰 구조까지 고려하면 XSS 방어층이 약합니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>frontend/next.config.ts:1</code>, <code>frontend/src/app/layout.tsx:36</code>, <code>backend/config/settings.py:390</code></p>
+        <p><span class="label">권장:</span> Next <code>headers()</code>로 CSP, X-Content-Type-Options, Referrer-Policy 등 프론트 응답 헤더를 추가하세요.</p>
+      </article>
+
+      <article class="finding medium">
+        <h3><span class="badge medium">MEDIUM</span>관리자 인사이트가 검색어를 외부 Anthropic API로 전송</h3>
+        <p><span class="label">영향:</span> 검색 키워드가 개인정보를 포함할 수 있는데, 관리자 인사이트 생성 시 외부 AI 서비스로 전달됩니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/logs/views.py:1619</code></p>
+        <p><span class="label">권장:</span> 전송 데이터 최소화, 개인정보 마스킹, 관리자 UI 고지, 개인정보 처리방침 반영 여부를 확인하세요.</p>
+      </article>
+    </section>
+
+    <section>
+      <h2>2. 코드 리팩토링 필요 부분</h2>
+
+      <article class="finding refactor">
+        <h3><span class="badge refactor">REFACTOR</span>community와 networks 도메인 코드 중복</h3>
+        <p><span class="label">영향:</span> Post, Comment, Reaction, 파일, 썸네일, 좋아요, 알림 흐름이 거의 유사합니다. 같은 버그가 양쪽에 반복될 가능성이 큽니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/community/serializers.py</code>, <code>backend/apps/networks/serializers.py</code>, <code>backend/apps/community/views.py</code>, <code>backend/apps/networks/views.py</code></p>
+        <p><span class="label">권장:</span> 공통 mixin/service를 먼저 작은 단위로 추출하고, 게시판별 차이만 설정값으로 분리하세요.</p>
+      </article>
+
+      <article class="finding refactor">
+        <h3><span class="badge refactor">REFACTOR</span>대형 파일 분리 필요</h3>
+        <p><span class="label">영향:</span> 관리자 페이지와 로그 view, 네트워크 작성/목록 페이지가 매우 큽니다. 변경 영향 추적과 테스트가 어려워집니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/logs/views.py</code>, <code>frontend/src/app/admin/page.tsx</code>, <code>frontend/src/app/network/page.tsx</code>, <code>frontend/src/app/network/write_net/page.tsx</code></p>
+        <p><span class="label">권장:</span> API/service/view/component 단위로 나누고, 관리자 통계 query helper를 별도 모듈로 분리하세요.</p>
+      </article>
+
+      <article class="finding refactor">
+        <h3><span class="badge refactor">REFACTOR</span>TypeScript any 사용이 넓음</h3>
+        <p><span class="label">영향:</span> API 응답과 form 상태에서 <code>any</code>가 넓게 퍼져 있으면 런타임 필드 누락을 컴파일 단계에서 잡기 어렵습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>frontend/src</code></p>
+        <p><span class="label">권장:</span> 공유 API response 타입과 form DTO를 먼저 정의하고, 자주 쓰는 페이지부터 <code>any</code>를 줄이세요.</p>
+      </article>
+
+      <article class="finding refactor">
+        <h3><span class="badge refactor">REFACTOR</span>logs/views.py가 분석, 관리자 API, AI 인사이트, 유저 관리까지 담당</h3>
+        <p><span class="label">영향:</span> 하나의 views 파일에 역할이 과도하게 집중되어 있습니다. 성능 최적화와 권한 검토가 어려워집니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/logs/views.py:1</code>, <code>backend/logs/views.py:1252</code>, <code>backend/logs/views.py:1619</code></p>
+        <p><span class="label">권장:</span> analytics, admin_user_management, ai_insights, event_ingest 등으로 관심사를 분리하세요.</p>
+      </article>
+
+      <article class="finding refactor">
+        <h3><span class="badge refactor">REFACTOR</span>라우트/페이지 명명 혼재</h3>
+        <p><span class="label">영향:</span> <code>network/write</code>와 <code>network/write_net</code>처럼 기능이 겹쳐 보이는 경로가 섞여 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>frontend/src/app/network/write_net/page.tsx</code></p>
+        <p><span class="label">권장:</span> 실제 사용 경로를 기준으로 하나의 canonical route를 정하고 legacy route는 redirect/삭제 대상으로 분류하세요.</p>
+      </article>
+
+      <article class="finding refactor">
+        <h3><span class="badge refactor">REFACTOR</span>운영성능 리스크: unbounded list와 GET side effect</h3>
+        <p><span class="label">영향:</span> 관리자 유저 목록 무페이지네이션, 대화 메시지 전체 로딩, 알림 목록 조회 시 오래된 알림 삭제 같은 패턴이 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/logs/views.py:1252</code>, <code>backend/apps/direct_messages/views.py:25</code>, <code>backend/apps/notifications/views.py:23</code></p>
+        <p><span class="label">권장:</span> pagination, cursor, background cleanup job, 명시적 mutation endpoint를 적용하세요.</p>
+      </article>
+    </section>
+
+    <section>
+      <h2>3. 불필요하거나 정리할 코드/경로/API 후보</h2>
+
+      <article class="finding cleanup">
+        <h3><span class="badge cleanup">CLEANUP</span>루트의 파일명 <code>3</code></h3>
+        <p><span class="label">영향:</span> 의미를 알 수 없는 루트 파일입니다. 산출물/실수 생성 파일일 가능성이 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>3</code></p>
+        <p><span class="label">권장:</span> 내용과 생성 이력을 확인한 뒤 삭제 여부를 결정하세요.</p>
+      </article>
+
+      <article class="finding cleanup">
+        <h3><span class="badge cleanup">CLEANUP</span>루트 package-lock.json이 사실상 빈 lockfile</h3>
+        <p><span class="label">영향:</span> 루트 <code>package.json</code> 없이 <code>package-lock.json</code>만 있으면 혼란을 줍니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>package-lock.json</code></p>
+        <p><span class="label">권장:</span> 프론트 lockfile과 역할이 중복되는지 확인하고, 필요 없다면 제거 후보로 분류하세요.</p>
+      </article>
+
+      <article class="finding cleanup">
+        <h3><span class="badge cleanup">DOCS</span>frontend README가 기본 템플릿 수준</h3>
+        <p><span class="label">영향:</span> 프로젝트 실행, 환경변수, 배포, 테스트 방법이 실제 프로젝트 기준으로 정리되어 있지 않습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>frontend/README.md</code></p>
+        <p><span class="label">권장:</span> 개발자 온보딩 문서로 갱신하세요.</p>
+      </article>
+
+      <article class="finding cleanup">
+        <h3><span class="badge cleanup">CLEANUP</span>빈 admin_otp/models.py</h3>
+        <p><span class="label">영향:</span> Django app 관례상 남아 있을 수 있지만 실제 모델이 없다면 유지 필요성이 낮습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/admin_otp/models.py</code></p>
+        <p><span class="label">권장:</span> 관례 유지인지 불필요 파일인지 팀 기준으로 정하세요.</p>
+      </article>
+
+      <article class="finding cleanup">
+        <h3><span class="badge cleanup">CLEANUP</span>미사용 가능성이 높은 post service 파일</h3>
+        <p><span class="label">영향:</span> <code>features/post/services.ts</code>가 실제 import되지 않는 것으로 보입니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>frontend/src/features/post/services.ts</code></p>
+        <p><span class="label">권장:</span> 사용처 확인 후 삭제 또는 실제 API service로 통합하세요.</p>
+      </article>
+
+      <article class="finding cleanup">
+        <h3><span class="badge cleanup">CLEANUP</span>mobile/network의 빈 오타 파일들</h3>
+        <p><span class="label">영향:</span> <code>MobileCoummunity*</code> 파일들이 0바이트이고 import도 발견되지 않았습니다. <code>Coummunity</code> 오타도 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>frontend/src/features/mobile/network/MobileCoummunityDetailPage.tsx</code>, <code>MobileCoummunityListPage.tsx</code>, <code>MobileCoummunityWritePage.tsx</code></p>
+        <p><span class="label">권장:</span> 사용 계획이 없다면 제거 후보, 필요하다면 Community 명칭으로 재생성하세요.</p>
+      </article>
+
+      <article class="finding cleanup">
+        <h3><span class="badge cleanup">CLEANUP</span>placeholder 테스트/미완성 문자열</h3>
+        <p><span class="label">영향:</span> 의미 있는 검증 없이 placeholder로 남은 테스트나 화면의 생략 문자열은 유지보수 신뢰도를 떨어뜨립니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/*/tests.py</code>, <code>frontend/src/app/network/*</code></p>
+        <p><span class="label">권장:</span> 실제 regression 테스트로 바꾸거나 제거 후보로 분류하세요.</p>
+      </article>
+
+      <article class="finding cleanup">
+        <h3><span class="badge cleanup">CLEANUP</span>public top_active_users의 하드코딩 제외 목록</h3>
+        <p><span class="label">영향:</span> 특정 닉네임 제외가 코드와 monthly reset command에 중복 하드코딩되어 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/users/views.py:759</code>, <code>backend/apps/users/management/commands/reset_monthly_scores.py:19</code></p>
+        <p><span class="label">권장:</span> User 모델 또는 별도 정책 테이블에 <code>exclude_from_rankings</code> 같은 플래그로 관리하세요.</p>
+      </article>
+
+      <article class="finding cleanup">
+        <h3><span class="badge cleanup">CONFIG</span>입학연도 상한 2025 하드코딩</h3>
+        <p><span class="label">영향:</span> 2026년 기준 신규 입학연도 처리에 문제가 생길 수 있습니다.</p>
+        <p class="refs"><span class="label">근거:</span> <code>backend/apps/users/serializers.py:317</code>, <code>frontend/src/app/(auth)/onboarding/page.tsx:456</code>, <code>frontend/src/app/(main)/profile/edit/page.tsx:428</code></p>
+        <p><span class="label">권장:</span> 현재연도 또는 설정값 기반으로 바꾸고 백엔드/프론트 상한을 공유하세요.</p>
+      </article>
+    </section>
+
+    <section>
+      <h2>4. 권장 처리 순서</h2>
+      <div class="priority">
+        <ol>
+          <li>인증/권한: CSRF, localStorage token, DM conversation 권한, 프로필 학적 검증 우회.</li>
+          <li>파일/민감정보: community/network 업로드 검증, R2 private media 정책, PII hash/encryption 재설계.</li>
+          <li>남용 방지: OTP attempt lock, 공개 enumeration/page-view throttle, EventLog 길이 검증.</li>
+          <li>데이터 정합성: 댓글 parent 소속 검증, self-like/race 처리, like_count clamp.</li>
+          <li>운영성: pagination, GET side effect 제거, 관리자/로그 대형 view 분리.</li>
+          <li>정리: 빈/미사용 파일, 혼재 route, placeholder 테스트/문서 정비.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. 검증 제약</h2>
+      <div class="note">
+        <ul>
+          <li><code>npm audit</code>는 외부 npm audit 서비스로 의존성 정보를 전송해야 해서 승인 정책상 실행되지 않았습니다.</li>
+          <li><code>pip-audit</code>는 로컬에 설치되어 있지 않았습니다.</li>
+          <li><code>backend/venv</code>와 <code>frontend/node_modules</code>가 없어 Django check, Next build/test 같은 실행 검증은 하지 못했습니다.</li>
+          <li>본 보고서는 로컬 파일 읽기 기반의 정적 점검 결과입니다.</li>
+          <li>기존 소스 파일은 수정하거나 삭제하지 않았고, 새 HTML 산출물만 생성했습니다.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
