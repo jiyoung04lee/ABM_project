@@ -4,6 +4,7 @@ import { AxiosError } from "axios";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { getCommunityCategoryLabel } from "@/constants/communityCategories";
 
 import AttachmentField, {
   type ExistingPostFile,
@@ -147,7 +148,9 @@ export default function EditPage() {
 
       {/* 카테고리 */}
       <div className="mb-8">
-        <label className="block text-sm mb-3 text-[#6A7282]">카테고리</label>
+        <label className="block text-sm mb-3 text-[#6A7282]">
+          카테고리
+        </label>
         <select
           value={category ?? ""}
           onChange={(e) => setCategory(e.target.value)}
@@ -155,11 +158,12 @@ export default function EditPage() {
         >
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
-              {cat.name}
+              {getCommunityCategoryLabel(cat.name)}
             </option>
           ))}
         </select>
       </div>
+
 
       {/* 제목 */}
       <div className="mb-8">
