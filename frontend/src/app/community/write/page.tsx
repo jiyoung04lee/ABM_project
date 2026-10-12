@@ -4,6 +4,9 @@ import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import AttachmentField, {
+  useAttachments,
+} from "@/features/post/components/AttachmentField";
 import { createPost, getCategories } from "@/shared/api/community";
 import { useTrackWriteStart } from "@/shared/hooks/useTrackWriteStart";
 import { pushDataLayer } from "@/shared/utils/tracking";
@@ -25,28 +28,9 @@ export default function WritePage() {
   const [content, setContent] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [previewImages, setPreviewImages] = useState<string[]>([]);
-  const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
+  const { attachments, mainKey, mainImageIndex, addFiles, remove, selectMain } =
+    useAttachments();
   const [submitting, setSubmitting] = useState(false);
-
-  const handleFiles = (fileList: FileList | File[]) => {
-    const newFiles = Array.from(fileList);
-
-    if (!newFiles.length) return;
-
-    setFiles((prev) => [...prev, ...newFiles]);
-
-    const previews = newFiles
-      .filter((file) => file.type.startsWith("image/"))
-      .map((file) => URL.createObjectURL(file));
-
-    setPreviewImages((prev) => [...prev, ...previews]);
-
-    if (mainImageIndex === null && previews.length > 0) {
-      setMainImageIndex(0);
-    }
-  };
 
   // 카테고리 불러오기
   useEffect(() => {
@@ -59,13 +43,6 @@ export default function WritePage() {
       }
     });
   }, []);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = e.target.files;
-    if (!fileList) return;
-
-    handleFiles(fileList);
-  };
 
   const handleSubmit = async () => {
     if (submitting) return;
@@ -89,14 +66,11 @@ export default function WritePage() {
       formData.append("is_anonymous", String(isAnonymous));
       formData.append("category", category);
 
-      if (files.length > 0) {
-        files.forEach((file) => {
-          formData.append("new_files", file);
-        });
-
-        if (mainImageIndex !== null) {
-          formData.append("thumbnail_index", String(mainImageIndex));
-        }
+      attachments.forEach((item) => {
+        if (item.file) formData.append("new_files", item.file);
+      });
+      if (mainImageIndex !== null) {
+        formData.append("thumbnail_index", String(mainImageIndex));
       }
 
       await createPost(formData);
@@ -114,11 +88,6 @@ export default function WritePage() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const removeImage = (index: number) => {
-    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-    setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -171,70 +140,13 @@ export default function WritePage() {
       </div>
 
       {/* 파일 업로드 */}
-      <div className="mb-8">
-        <label className="block text-sm mb-3 text-[#6A7282]">
-          첨부파일 (이미지, PDF)
-        </label>
-
-        <label
-          htmlFor="fileUpload"
-          className="border-2 border-dashed border-[#E5E7EB] rounded-xl py-12 flex flex-col items-center justify-center text-[#6A7282] cursor-pointer"
-          onDragOver={(e) => {
-            e.preventDefault();
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-              handleFiles(e.dataTransfer.files);
-              e.dataTransfer.clearData();
-            }
-          }}
-        >
-          <input
-            type="file"
-            multiple
-            accept="image/*,application/pdf"
-            onChange={handleFileChange}
-            className="hidden"
-            id="fileUpload"
-          />
-          <img
-            src="/icons/upload.svg"
-            alt="upload"
-            className="w-10 h-10"
-          />
-          <p className="mt-4 text-sm">클릭하여 파일 업로드</p>
-          <p className="text-xs mt-1">이미지 또는 PDF 파일 (최대 10MB)</p>
-        </label>
-
-        {/* 이미지 미리보기 + 대표 선택 */}
-        {previewImages.length > 0 && (
-          <div className="grid grid-cols-4 gap-4 mt-6">
-            {previewImages.map((src, index) => (
-              <div
-                key={index}
-                onClick={() => setMainImageIndex(index)}
-                className={`relative cursor-pointer border-2 rounded-lg ${
-                  mainImageIndex === index
-                    ? "border-[#2B7FFF]"
-                    : "border-transparent"
-                }`}
-              >
-                <img
-                  src={src}
-                  className="w-full h-24 object-cover rounded-lg"
-                />
-
-                {mainImageIndex === index && (
-                  <div className="absolute top-1 right-1 bg-[#2B7FFF] text-white text-xs px-2 py-0.5 rounded">
-                    대표
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <AttachmentField
+        attachments={attachments}
+        mainKey={mainKey}
+        onAdd={addFiles}
+        onRemove={remove}
+        onSelectMain={selectMain}
+      />
 
       {/* 익명 */}
       <div className="flex items-center gap-2 mt-4 mb-12">
