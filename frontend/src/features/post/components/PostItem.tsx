@@ -81,34 +81,36 @@ export default function PostItem({ post }: Props) {
           />
         </div>
 
-        {post.thumbnail && (
-          <div className="mb-4 rounded-lg overflow-hidden">
+        <div className="flex items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[16px] font-semibold text-[#0A0A0A]">
+              {post.title}
+            </h3>
+
+            <p className="text-[15px] text-[#4B5563] mt-2 whitespace-pre-line">
+              {truncatedContent}
+              {isLong && (
+                <span
+                  onClick={() => router.push(`/community/${post.id}`)}
+                  className="text-[#6B7280] cursor-pointer ml-1"
+                >
+                  ... 더보기
+                </span>
+              )}
+            </p>
+          </div>
+
+          {post.thumbnail && (
             <img
               src={post.thumbnail}
               alt={post.title}
-              width={800}
-              height={200}
+              width={120}
+              height={120}
               loading="lazy"
-              className="w-full object-cover rounded-lg"
+              className="shrink-0 w-[88px] h-[88px] sm:w-[120px] sm:h-[120px] object-cover rounded-xl"
             />
-          </div>
-        )}
-
-        <h3 className="text-[16px] font-semibold text-[#0A0A0A]">
-          {post.title}
-        </h3>
-
-        <p className="text-[15px] text-[#4B5563] mt-2 whitespace-pre-line">
-          {truncatedContent}
-          {isLong && (
-            <span
-              onClick={() => router.push(`/community/${post.id}`)}
-              className="text-[#6B7280] cursor-pointer ml-1"
-            >
-              ... 더보기
-            </span>
           )}
-        </p>
+        </div>
 
         <div className="mt-4 flex justify-end gap-4 text-[12px] text-[#6A7282]">
           <button
