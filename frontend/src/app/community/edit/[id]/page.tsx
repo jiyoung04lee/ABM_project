@@ -5,6 +5,11 @@ import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
+import AttachmentField, {
+  type ExistingPostFile,
+  toExistingAttachments,
+  useAttachments,
+} from "@/features/post/components/AttachmentField";
 import {
   updatePost,
   getCategories,
@@ -30,15 +35,16 @@ export default function EditPage() {
   const [content, setContent] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [previewImages, setPreviewImages] = useState<string[]>([]);
-  const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
-
+  const {
+    attachments,
+    mainKey,
+    mainImageIndex,
+    addFiles,
+    remove,
+    selectMain,
+    reset,
+  } = useAttachments();
   const [submitting, setSubmitting] = useState(false);
-  const [existingFiles, setExistingFiles] = useState<number[]>([]);
-  const [existingImages, setExistingImages] = useState<
-    { id: number; url: string }[]
-  >([]);
 
   /* 게시글 불러오기 */
   useEffect(() => {
@@ -52,60 +58,36 @@ export default function EditPage() {
         setCategory(post.category ? String(post.category) : null);
         setIsAnonymous(post.is_anonymous);
 
-        if (post.files) {
-          setExistingFiles(post.files.map((f: any) => f.id));
-
-          const images = post.files
-            .filter((f: any) => f.file_type === "image")
-            .map((f: any) => ({
-              id: f.id,
-              url: f.file,
-            }));
-
-          setExistingImages(images);
-        }
+        const existing = toExistingAttachments(
+          (post.files ?? []) as ExistingPostFile[]
+        );
+        // 지금 대표 이미지(post.thumbnail)를 대표로 표시. 없으면 첫 번째 이미지
+        const main = existing.find(
+          (a) => a.kind === "image" && a.previewUrl === post.thumbnail
+        );
+        reset(existing, main?.key);
       } catch (err) {
         console.error(err);
       }
     };
 
     init();
-  }, [postId]);
+  }, [postId, reset]);
 
   /* 카테고리 */
-
   useEffect(() => {
     getCategories("community").then((res) => {
       setCategories(res.data.results);
     });
   }, []);
 
-  /* 파일 */
-
-  const handleFiles = (fileList: FileList | File[]) => {
-    const newFiles = Array.from(fileList);
-
-    setFiles((prev) => [...prev, ...newFiles]);
-
-    const previews = newFiles
-      .filter((file) => file.type.startsWith("image/"))
-      .map((file) => URL.createObjectURL(file));
-
-    setPreviewImages((prev) => [...prev, ...previews]);
-
-    if (mainImageIndex === null && previews.length > 0) {
-      setMainImageIndex(0);
-    }
-  };
-
-  // 기존 파일 삭제 
-  const removeExistingImage = (id: number) => {
-    setExistingImages((prev) => prev.filter((img) => img.id !== id));
-    setExistingFiles((prev) => prev.filter((fileId) => fileId !== id));
-  };
-
   const handleSubmit = async () => {
     if (submitting) return;
+
+    if (!title.trim() || !content.trim()) {
+      alert("제목과 내용을 입력해주세요.");
+      return;
+    }
 
     const formData = new FormData();
 
@@ -114,12 +96,19 @@ export default function EditPage() {
     formData.append("is_anonymous", String(isAnonymous));
     formData.append("category", category ?? "");
 
-    existingFiles.forEach((id) => {
+    const keptIds = attachments
+      .filter((item) => item.existingId !== undefined)
+      .map((item) => item.existingId as number);
+    keptIds.forEach((id) => {
       formData.append("existing_files", String(id));
     });
+    // multipart는 빈 목록을 보낼 수 없어서, 기존 파일을 모두 지웠으면 따로 알린다
+    if (keptIds.length === 0) {
+      formData.append("clear_files", "true");
+    }
 
-    files.forEach((file) => {
-      formData.append("new_files", file);
+    attachments.forEach((item) => {
+      if (item.file) formData.append("new_files", item.file);
     });
 
     if (mainImageIndex !== null) {
@@ -148,6 +137,7 @@ export default function EditPage() {
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
 
+      {/* 상단 */}
       <div className="flex items-center gap-4 mb-10">
         <button onClick={() => router.back()}>
           <Image src="/icons/back.svg" alt="back" width={24} height={24} />
@@ -156,84 +146,79 @@ export default function EditPage() {
       </div>
 
       {/* 카테고리 */}
-
-      <select
-        value={category ?? ""}
-        onChange={(e) => setCategory(e.target.value)}
-        className="w-full border rounded-xl p-2 mb-6"
-      >
-        {categories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
+      <div className="mb-8">
+        <label className="block text-sm mb-3 text-[#6A7282]">카테고리</label>
+        <select
+          value={category ?? ""}
+          onChange={(e) => setCategory(e.target.value)}
+          className="text-[15px] w-full border border-[#E5E7EB] rounded-xl px-4 pr-10 py-2 focus:outline-none focus:ring-1 focus:ring-[#2B7FFF]"
+        >
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* 제목 */}
-
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="w-full border rounded-xl p-3 mb-6"
-      />
+      <div className="mb-8">
+        <label className="block text-sm mb-3 text-[#6A7282]">제목</label>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="제목을 입력하세요"
+          className="text-[15px] w-full border border-[#E5E7EB] rounded-xl px-4 py-2 focus:outline-none focus:ring-1 focus:ring-[#2B7FFF]"
+        />
+      </div>
 
       {/* 내용 */}
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="w-full h-[400px] border rounded-xl p-4 mb-6"
+      <div className="mb-8">
+        <label className="block text-sm mb-3 text-[#6A7282]">내용</label>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="내용을 입력하세요"
+          className="text-[15px] w-full !h-[400px] resize-none border border-[#E5E7EB] rounded-xl p-6 focus:outline-none focus:ring-1 focus:ring-[#2B7FFF]"
+        />
+      </div>
+
+      {/* 파일 업로드 */}
+      <AttachmentField
+        attachments={attachments}
+        mainKey={mainKey}
+        onAdd={addFiles}
+        onRemove={remove}
+        onSelectMain={selectMain}
       />
 
-      {/* 기존 이미지 */}
-      {existingImages.length > 0 && (
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          {existingImages.map((img) => (
-            <div key={img.id} className="relative">
-              <img
-                src={img.url}
-                className="w-full h-24 object-cover rounded-lg"
-              />
-
-              <button
-                onClick={() => removeExistingImage(img.id)}
-                className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded"
-              >
-                삭제
-              </button>
-            </div>
-          ))}
-        </div>
-)}
-
       {/* 익명 */}
-
-      <div className="flex gap-2 mb-10">
+      <div className="flex items-center gap-2 mt-4 mb-12">
         <input
           type="checkbox"
           checked={isAnonymous}
           onChange={() => setIsAnonymous(!isAnonymous)}
+          className="w-4 h-4 accent-[#2B7FFF]"
         />
-        <span className="text-sm">익명 작성</span>
+        <span className="text-sm text-[#6A7282]">익명으로 작성</span>
       </div>
 
       {/* 버튼 */}
-
-      <div className="flex gap-4">
+      <div className="flex gap-4 w-full">
         <button
           onClick={() => router.back()}
-          className="flex-1 border rounded-xl py-3"
+          className="flex-1 py-3 border border-[#E5E7EB] rounded-xl font-medium text-[#6A7282] hover:bg-gray-50 transition"
         >
           취소
         </button>
-
         <button
           onClick={handleSubmit}
-          className="flex-1 bg-[#2B7FFF] text-white rounded-xl py-3"
+          disabled={submitting}
+          className="flex-1 py-3 bg-[#2B7FFF] text-white rounded-xl font-semibold hover:bg-[#1a66e6] transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          수정하기
+          {submitting ? "수정 중..." : "수정하기"}
         </button>
       </div>
-
     </div>
   );
 }

@@ -107,7 +107,8 @@ class PostViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == "list":
             return PostListSerializer
-        if self.action == "create":
+        # 수정도 첨부파일(추가·삭제·대표 이미지)을 받는다
+        if self.action in ("create", "update", "partial_update"):
             return PostCreateSerializer
         return PostDetailSerializer
 
