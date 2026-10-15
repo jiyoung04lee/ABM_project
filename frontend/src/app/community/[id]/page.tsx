@@ -18,6 +18,7 @@ import api from "@/shared/api/axios";
 import PostMeta from "@/features/post/components/PostMeta";
 import Image from "next/image";
 import { Pin } from "lucide-react";
+import { getCommunityCategoryLabel } from "@/constants/communityCategories";
 
 export default function PostDetailPage() {
   const { id } = useParams();
@@ -290,7 +291,7 @@ export default function PostDetailPage() {
       {post.category && (
         <div className="mt-2 mb-6">
           <span className="inline-flex px-3 py-[6px] rounded-full text-[14px] bg-[#EFF6FF] text-[#155DFC]">
-            {post.category_name}
+            {getCommunityCategoryLabel(post.category_name ?? "")}
           </span>
         </div>
       )}

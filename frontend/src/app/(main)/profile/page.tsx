@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import api from "@/shared/api/axios";
 import { deletePost as deleteCommunityPost, deleteComment as deleteCommunityComment } from "@/shared/api/community";
 import { deletePost as deleteNetworkPost, } from "@/shared/api/network";
+import { getCommunityCategoryLabel } from "@/constants/communityCategories";
 
  type UserType = "student" | "graduate";
 
@@ -468,7 +469,7 @@ function buildYearGradeStatus(user: UserMeResponse | null) {
                             const categoryLabel =
                               post.board_type === "network"
                                 ? "네트워크"
-                                : (post.category_name ?? "커뮤니티");
+                                : getCommunityCategoryLabel(post.category_name ?? "커뮤니티");
                             const views = post.view_count ?? 0;
 
                             return (

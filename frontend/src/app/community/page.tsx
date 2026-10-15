@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WriteBox from "@/features/post/components/WriteBox";
 import PostItem from "@/features/post/components/PostItem";
 import FilterBar from "@/features/post/components/FilterBar";
@@ -19,11 +19,27 @@ export default function CommunityPage() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const debouncedKeyword = useDebouncedValue(searchKeyword.trim(), SEARCH_DEBOUNCE_MS);
 
-  const { posts, isLoading: loading } = useCommunityPosts(
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { posts, isLoading: loading, isLoadingMore, hasMore, loadMore, retry, error } = useCommunityPosts(
     selectedFilter,
     sortType,
     debouncedKeyword
   );
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !isReady || loading || isLoadingMore || !hasMore || error) return;
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMore();
+      },
+      { rootMargin: "300px" }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [isReady, loading, isLoadingMore, hasMore, error, loadMore]);
 
   // 검색 이벤트의 DB 기록은 서버(글 목록 API)가 한다. 여기서는 GA4 참고용만 보낸다.
   useEffect(() => {
@@ -61,7 +77,7 @@ export default function CommunityPage() {
               </div>
             ))}
           </div>
-        ) : posts.length === 0 ? (
+        ) : posts.length === 0 && !error ? (
           <div className="py-6 text-sm text-gray-500 text-center">
             아직 작성된 글이 없습니다.
           </div>
@@ -69,6 +85,27 @@ export default function CommunityPage() {
           posts.map((post) => <PostItem key={post.id} post={post} />)
         )}
       </div>
+
+      {isReady && !loading && (
+        <div ref={loadMoreRef} className="py-6 text-center text-sm text-gray-500">
+          {error ? (
+            <div role="alert">
+              <p>{posts.length > 0 ? "다음 글을 불러오지 못했습니다." : "글을 불러오지 못했습니다."}</p>
+              <button type="button" onClick={retry} className="mt-2 text-[#2B7FFF] hover:underline">
+                다시 시도
+              </button>
+            </div>
+          ) : isLoadingMore ? (
+            <p role="status">글을 불러오는 중입니다...</p>
+          ) : hasMore ? (
+            <button type="button" onClick={loadMore} className="text-[#2B7FFF] hover:underline">
+              더 보기
+            </button>
+          ) : posts.length > 0 ? (
+            <p>모든 글을 확인했습니다.</p>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

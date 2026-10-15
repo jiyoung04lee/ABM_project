@@ -8,6 +8,7 @@ import AttachmentField, {
   useAttachments,
 } from "@/features/post/components/AttachmentField";
 import { createPost, getCategories } from "@/shared/api/community";
+import { getCommunityCategoryLabel } from "@/constants/communityCategories";
 import { useTrackWriteStart } from "@/shared/hooks/useTrackWriteStart";
 import { pushDataLayer } from "@/shared/utils/tracking";
 
@@ -111,7 +112,7 @@ export default function WritePage() {
         >
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
-              {cat.name}
+              {getCommunityCategoryLabel(cat.name)}
             </option>
           ))}
         </select>
