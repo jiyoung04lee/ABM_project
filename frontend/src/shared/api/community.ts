@@ -1,12 +1,26 @@
 import api from "./axios";
+import type { Post } from "@/features/post/types";
+
+interface CommunityPostListData {
+  pinned?: Post[] | Post | null;
+  posts: Post[];
+}
+
+export type CommunityPostListResponse = CommunityPostListData | {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: CommunityPostListData;
+};
 
 // 게시글 목록 
 export const getPosts = (params?: {
   category?: string;
   ordering?: string;
   search?: string;
+  page?: number;
 }) => {
-  return api.get("community/posts/", { params });
+  return api.get<CommunityPostListResponse>("community/posts/", { params });
 };
 
 // 게시글 상세
